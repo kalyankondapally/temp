@@ -524,42 +524,40 @@ public:
     // *****************************************************************
 
     // Get object type has human-readable string.
-    static const char* getObjectTypeString( uint32_t objType );
+    static const char* getObjectTypeString(uint32_t objType);
 
     // Get panel fitter property mode as human-readable string.
-    static const char* getPanelFitterModeString( uint32_t mode );
+    static const char* getPanelFitterModeString(uint32_t mode);
 
     // Get DPMS property mode as human-readable string.
-    static const char* getDPMSModeString( int32_t mode );
+    static const char* getDPMSModeString(int32_t mode);
 
     // Get string form of UEvent.
-    static const char* UEventToString( UEvent eUE );
+    static const char* UEventToString(UEvent eUE);
 
     // Get human-readable string for specific zorder.
-    static const char* zOrderToString( uint32_t zorder );
+    static const char* zOrderToString(uint32_t zorder);
 
     // Convert a connector type to its human-readable string equivalent.
-    static const char* connectorTypeToString( uint32_t connectorType );
+    static const char* connectorTypeToString(uint32_t connectorType);
 
     // Convert a human-readable string equivalent to a connector type.
-    static uint32_t stringToConnectorType( const char * connectorString );
+    static uint32_t stringToConnectorType(const char* connectorString);
 
     // Get human-readable string for a drm mode info block.
-    static String8 modeInfoToString( const drmModeModeInfo& m );
+    static HWCString modeInfoToString(const drmModeModeInfo& m);
 
     // Returns true if two modes are the same.
-    static bool modeInfoCompare( const drmModeModeInfo& a, const drmModeModeInfo& b );
+    static bool modeInfoCompare(const drmModeModeInfo& a,
+                                const drmModeModeInfo& b);
 
     // Get fb format as string.
-    static String8 fbFormatToString( uint32_t fbFormat )
-    {
-        String8 str;
-        str = String8::format( "%c%c%c%c",
-            (char)(fbFormat & 0xFF),
-            (char)((fbFormat>>8) & 0xFF),
-            (char)((fbFormat>>16) & 0xFF),
-            (char)((fbFormat>>24) & 0xFF) );
-        return str;
+    static HWCString fbFormatToString(uint32_t fbFormat) {
+      HWCString str;
+      str = HWCString::format(
+          "%c%c%c%c", (char)(fbFormat & 0xFF), (char)((fbFormat >> 8) & 0xFF),
+          (char)((fbFormat >> 16) & 0xFF), (char)((fbFormat >> 24) & 0xFF));
+      return str;
     }
 
     static uint32_t hwcTransformToDrm(ETransform transform);
@@ -571,16 +569,17 @@ public:
 
 #if VPG_DRM_HAVE_ATOMIC_SETDISPLAY
     // Return complete display state as string (pipe + all planes).
-    static String8 drmDisplayToString( const struct drm_mode_set_display& display );
+    static HWCString drmDisplayToString(
+        const struct drm_mode_set_display& display);
     // Return display pipe state as string.
-    static String8 drmDisplayPipeToString( const struct drm_mode_set_display& display );
+    static HWCString drmDisplayPipeToString(
+        const struct drm_mode_set_display& display);
     // Return one or all planes state as string.
-    static String8 drmDisplayPlaneToString( const struct drm_mode_set_display& display, int32_t plane = -1 );
+    static HWCString drmDisplayPlaneToString(
+        const struct drm_mode_set_display& display, int32_t plane = -1);
 #endif
 
-private:
-
-
+   private:
     friend class Singleton<Drm>;
     Drm();
     ~Drm();

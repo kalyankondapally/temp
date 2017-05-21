@@ -14,15 +14,12 @@
 // limitations under the License.
 */
 
-#ifndef INTEL_UFO_HWC_ABSTRACTLOG_H
-#define INTEL_UFO_HWC_ABSTRACTLOG_H
+#ifndef COMMON_UTILS_LOG_ABSTRACTLOG_H
+#define COMMON_UTILS_LOG_ABSTRACTLOG_H
 
-#include <utils/Timers.h>
 #include <string>
 
-namespace intel {
-namespace ufo {
-namespace hwc {
+namespace hwcomposer {
 
 #define HWCLOG_STRING_RESERVATION_SIZE 1024
 
@@ -145,18 +142,14 @@ protected:
     }
 };
 
-class AbstractLogRead
-{
-public:
-    virtual ~AbstractLogRead()
-    {
-    }
+class AbstractLogRead {
+ public:
+  virtual ~AbstractLogRead() {
+  }
 
-    virtual char*       read(uint32_t& size, bool& lost) = 0;
+  virtual char* read(uint32_t& size, bool& lost) = 0;
 };
 
-}; // namespace hwc
-}; // namespace ufo
-}; // namespace intel
+};  // namespace hwcomposer
 
-#endif // INTEL_UFO_HWC_LOG_H
+#endif  // INTEL_UFO_HWC_LOG_H

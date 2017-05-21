@@ -14,18 +14,18 @@
 // limitations under the License.
 */
 
-#ifndef INTEL_UFO_HWC_PERSISTENTREGISTRY_H
-#define INTEL_UFO_HWC_PERSISTENTREGISTRY_H
+#ifndef COMMON_CORE_PERSISTENTREGISTRY_H_
+#define COMMON_CORE_PERSISTENTREGISTRY_H_
 
-#include "Common.h"
-#include <utils/Mutex.h>
-#include <utils/Thread.h>
+#include "hwcutils.h"
 
+#include <map>
+#include <thread>
+#include <mutex>
+#include <condition_variable>
 #include <atomic>
 
-namespace intel {
-namespace ufo {
-namespace hwc {
+namespace hwcomposer {
 
 // Class PersistentRegistry provides a database of key-value pairs
 // that will survive across device reboots.
@@ -56,38 +56,48 @@ public:
 
     // Write an entry.
     // A write to the registry will trigger an automatic save.
-    void write( const String8& key, const String8& value );
+    void write(const HWCString& key, const HWCString& value);
 
     // Read an entry.
     // Returns true and value on success.
     // Returns false if entry is not found.
-    bool read( const String8& key, String8& value ) const;
+    bool read(const HWCString& key, HWCString& value) const;
 
     // Read an entry.
     // Value is returned upto maxChars including NULL termination.
     // Returns true and value on success.
     // Returns false if entry is not found or if maxChars is too small.
-    bool read( const String8& key, char* pValue, const uint32_t maxChars ) const;
+    bool read(const HWCString& key, char* pValue,
+              const uint32_t maxChars) const;
 
     // Accessors for status.
-    uint32_t getEntries( void ) { return mEntries.size(); }
-    bool isOpen( void ) { return mbOpen; }
-    bool isDirty( void ) { return mbDirty; }
-    bool isSaving( void ) { return mbSaving; }
+    uint32_t getEntries(void) {
+      return mEntries.size();
+    }
+    bool isOpen(void) {
+      return mbOpen;
+    }
+    bool isDirty(void) {
+      return mbDirty;
+    }
+    bool isSaving(void) {
+      return mbSaving;
+    }
 
     // Dump state.
-    String8 dump( void ) const;
+    HWCString dump(void) const;
 
-private:
+   private:
     // Async writer used for async auto-save.
-    class AsyncWriter : public Thread
-    {
-    public:
-        AsyncWriter( PersistentRegistry* pRegistry ) : mpRegistry( pRegistry ) { }
-        virtual bool threadLoop();
-    protected:
-        PersistentRegistry* mpRegistry;
-    };
+    /* class AsyncWriter : public Thread
+     {
+     public:
+         AsyncWriter( PersistentRegistry* pRegistry ) : mpRegistry( pRegistry )
+     { }
+         virtual bool threadLoop();
+     protected:
+         PersistentRegistry* mpRegistry;
+     };*/
 
     friend class AsyncWriter;
 
@@ -97,39 +107,37 @@ private:
 
     // Load the registry from disk.
     // Lock must be held.
-    void loadFromDisk( void );
+    void loadFromDisk(void);
 
     // Block until the registry is dirtied.
-    void waitDirty( void ) const;
+    void waitDirty(void) const;
 
     // Filename including full path of cache file.
-    String8 mCacheFilepath;
+    HWCString mCacheFilepath;
 
     // Registry entries.
-    std::map< String8, String8 > mEntries;
+    std::map<HWCString, HWCString> mEntries;
 
     // Async writer used for auto-save.
-    sp<AsyncWriter> mpAsyncWriter;
+    // sp<AsyncWriter> mpAsyncWriter;
 
     // Is the registry open?
-    bool mbOpen:1;
+    bool mbOpen : 1;
 
     // Is there a thread currently saving?
-    bool mbSaving:1;
+    bool mbSaving : 1;
 
     // Is the registry dirty (does it need saving)?
     std::atomic<bool> mbDirty;
 
     // Thread safe class.
-    mutable Mutex mLock;
+    mutable std::mutex mLock;
 
     // Signals to support async/batched saves.
-    mutable Condition mSignalSaveDone;
-    mutable Condition mSignalDirty;
+    mutable std::condition_variable mSignalSaveDone;
+    mutable std::condition_variable mSignalDirty;
 };
 
-}; // namespace hwc
-}; // namespace ufo
-}; // namespace intel
+};  // namespace hwcomposer
 
-#endif // INTEL_UFO_HWC_PERSISTENTREGISTRY_H
+#endif  // COMMON_CORE_PERSISTENTREGISTRY_H_

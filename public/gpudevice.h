@@ -23,6 +23,8 @@
 #include <memory>
 #include <vector>
 
+#include "option.h"
+
 namespace hwcomposer {
 
 class NativeDisplay;
@@ -60,6 +62,8 @@ class GpuDevice {
   // till all cleanup is done.
   ScopedFd fd_;
   std::unique_ptr<DisplayManager> display_manager_;
+  Option mOptionVppComposer;
+  Option mOptionPartGlComp;
   bool initialized_;
 };
 

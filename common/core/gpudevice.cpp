@@ -351,7 +351,10 @@ void GpuDevice::DisplayManager::RegisterHotPlugEventCallback(
   callback_ = callback;
 }
 
-GpuDevice::GpuDevice() : initialized_(false) {
+GpuDevice::GpuDevice()
+    : initialized_(false),
+      mOptionVppComposer("vppcomposer", 1),
+      mOptionPartGlComp("partglcomp", 1) {
   CTRACE();
 }
 

@@ -14,22 +14,14 @@
 // limitations under the License.
 */
 
-#ifndef INTEL_UFO_HWC_LOG_H
-#define INTEL_UFO_HWC_LOG_H
+#ifndef COMMON_UTILS_LOG_H
+#define COMMON_UTILS_LOG_H
 
-#include "Common.h"
-#include "IDiagnostic.h"
-#include "Option.h"
-#include "Content.h"
+#include "hwcutils.h"
+#include "option.h"
 #include "AbstractLog.h"
 
-#include <utils/Mutex.h>
-
-class Hwc;
-
-namespace intel {
-namespace ufo {
-namespace hwc {
+namespace hwcomposer {
 
 using intel::ufo::hwc::services::IDiagnostic;
 
@@ -126,65 +118,56 @@ public:
     }
 
     // Always log to HWC log; conditionally log to Android log
-    static void alogd(bool enableDebug, const char* fmt, ...)
-    {
-        va_list args;
-        va_start(args, fmt);
+    static void alogd(bool enableDebug, const char* fmt, ...) {
+      va_list args;
+      va_start(args, fmt);
 
-        if (sbLogViewerBuild && spLog)
-        {
-            const char* str = spLog->addInternal(fmt, args);
+      if (sbLogViewerBuild && spLog) {
+        const char* str = spLog->addInternal(fmt, args);
 
-            if (enableDebug)
-            {
-                nsecs_t timestamp = systemTime(CLOCK_MONOTONIC);
-                ALOGD( INTEL_UFO_HWC_TIMESTAMP_STR " %s", INTEL_UFO_HWC_TIMESTAMP_PARAM( timestamp ), str);
-            }
+        if (enableDebug) {
+          nsecs_t timestamp = systemTime(CLOCK_MONOTONIC);
+          DTRACE(INTEL_UFO_HWC_TIMESTAMP_STR " %s",
+                 INTEL_UFO_HWC_TIMESTAMP_PARAM(timestamp), str);
         }
-        else if (enableDebug)
-        {
-            LOG_PRI_VA(ANDROID_LOG_DEBUG, LOG_TAG, fmt, args);
-        }
+      } else if (enableDebug) {
+        LOG_PRI_VA(ANDROID_LOG_DEBUG, LOG_TAG, fmt, args);
+      }
 
-        va_end(args);
+      va_end(args);
     }
 
     // Always log to both HWC log and Android log
-    static void alogi(const char* fmt, ...)
-    {
-        va_list args;
-        va_start(args, fmt);
+    static void alogi(const char* fmt, ...) {
+      va_list args;
+      va_start(args, fmt);
 
-        if (sbLogViewerBuild && spLog)
-        {
-            const char* str = spLog->addInternal(fmt, args);
-            nsecs_t timestamp = systemTime(CLOCK_MONOTONIC);
-            ALOGI( INTEL_UFO_HWC_TIMESTAMP_STR " %s", INTEL_UFO_HWC_TIMESTAMP_PARAM( timestamp ), str);
-        }
-        va_end(args);
+      if (sbLogViewerBuild && spLog) {
+        const char* str = spLog->addInternal(fmt, args);
+        nsecs_t timestamp = systemTime(CLOCK_MONOTONIC);
+        ITRACE(INTEL_UFO_HWC_TIMESTAMP_STR " %s",
+               INTEL_UFO_HWC_TIMESTAMP_PARAM(timestamp), str);
+      }
+      va_end(args);
     }
 
     // Conditionally log error to both HWC log and Android log
-    static void aloge(bool enable, const char* fmt, ...)
-    {
-        va_list args;
-        va_start(args, fmt);
+    static void aloge(bool enable, const char* fmt, ...) {
+      va_list args;
+      va_start(args, fmt);
 
-        if (enable)
-        {
-            if (sbLogViewerBuild && spLog)
-            {
-                const char* str = spLog->addInternal(fmt, args);
-                nsecs_t timestamp = systemTime(CLOCK_MONOTONIC);
-                ALOGE( INTEL_UFO_HWC_TIMESTAMP_STR " %s", INTEL_UFO_HWC_TIMESTAMP_PARAM( timestamp ), str);
-            }
-            else
-            {
-                LOG_PRI_VA(ANDROID_LOG_ERROR, LOG_TAG, fmt, args);
-            }
+      if (enable) {
+        if (sbLogViewerBuild && spLog) {
+          const char* str = spLog->addInternal(fmt, args);
+          nsecs_t timestamp = systemTime(CLOCK_MONOTONIC);
+          ETRACE(INTEL_UFO_HWC_TIMESTAMP_STR " %s",
+                 INTEL_UFO_HWC_TIMESTAMP_PARAM(timestamp), str);
+        } else {
+          LOG_PRI_VA(ANDROID_LOG_ERROR, LOG_TAG, fmt, args);
         }
+      }
 
-        va_end(args);
+      va_end(args);
     }
 
     // Test if logging would generate output.
@@ -222,24 +205,25 @@ private:
     const char* addInternal(const char* description, va_list& args);
 
     // Logger instance
-    static Log*                 spLog;
-    BasicLog*                   mLog;
-    AbstractLogWrite*           mpLogWrite;  // In validation mode this may point to a different object.
+    static Log* spLog;
+    BasicLog* mLog;
+    AbstractLogWrite*
+        mpLogWrite;  // In validation mode this may point to a different object.
 
-    // String8 input parameters don't compile to nothing. Hence, making this private will cause an error on
+    // HWCString input parameters don't compile to nothing. Hence, making this
+    // private will cause an error on
     // any merges that havnt been updated to use char* strings.
-    static void add(String8 fmt, ...);
+    static void add(HWCString fmt, ...);
 
-// Composition validation support
-private:
-    void validate(const Content::LayerStack& layers, const Layer& target, const char* composer);
+    // Composition validation support
+   private:
+    void validate(const Content::LayerStack& layers, const Layer& target,
+                  const char* composer);
 
     // Interface for composition validation
     validation::AbstractCompositionChecker* mpCheckComposition;
 };
 
-}; // namespace hwc
-}; // namespace ufo
-}; // namespace intel
+};  // namespace hwcomposer
 
-#endif // INTEL_UFO_HWC_LOG_H
+#endif  // INTEL_UFO_HWC_LOG_H

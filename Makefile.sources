@@ -23,7 +23,12 @@ common_SOURCES =              \
     common/utils/hwcthread.cpp \
     common/utils/hwcutils.cpp \
     common/utils/disjoint_layers.cpp \
+    common/utils/option.cpp \
+    common/utils/optionmanager.cpp \
     os/linux/gbmbufferhandler.cpp \
+    os/linux/platformdefines.cpp \
+    os/linux/sharedbuffer.cpp \
+    os/linux/string8.cpp \
     common/compositor/scopedrendererstate.cpp \
 	$(NULL)
 

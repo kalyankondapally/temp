@@ -38,6 +38,8 @@ extern "C" {
 // #define ENABLE_HOT_PLUG_EVENT_TRACING 1
 // #define FUNCTION_CALL_TRACING 1
 #define COMPOSITOR_TRACING 1
+// FIXME: Make this a build option.
+//#define HWC_DEVELOPER_BUILD 1
 
 // Function call tracing
 #ifdef FUNCTION_CALL_TRACING
@@ -206,6 +208,18 @@ class TraceFunc {
       "-----------------------------");
 #else
 #define DUMP_CURRENT_COMPOSITION_PLANES() ((void)0)
+#endif
+
+// Utility function - returns human-readable string from a HAL format number.
+const char* getHALFormatString(int32_t halFormat);
+const char* getHALFormatShortString(int32_t halFormat);
+// Utility function - returns human-readable string from a DRM format number.
+const char* getDRMFormatString(int32_t drmFormat);
+
+#ifdef HWC_DEVELOPER_BUILD
+#define HWC_ASSERT_LOCK_NOT_HELD(mLock) assert(!mLock.islocked());
+#else
+#define HWC_ASSERT_LOCK_NOT_HELD(mLock) ((void)0)
 #endif
 
 // _cplusplus

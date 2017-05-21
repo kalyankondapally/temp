@@ -26,33 +26,42 @@ class SpinLock {
   void lock() {
     while (atomic_lock_.test_and_set(std::memory_order_acquire)) {
     }
+#ifdef HWC_DEVELOPER_BUILD
+    locked_ = true;
+#endif
   }
 
   void unlock() {
     atomic_lock_.clear(std::memory_order_release);
+#ifdef HWC_DEVELOPER_BUILD
+    locked_ = false;
+#endif
   }
 
+#ifdef HWC_DEVELOPER_BUILD
+  bool islocked() const {
+    return locked_;
+  }
+#endif
  private:
   std::atomic_flag atomic_lock_ = ATOMIC_FLAG_INIT;
+#ifdef HWC_DEVELOPER_BUILD
+  bool locked_ = false;
+#endif
 };
 
 class ScopedSpinLock {
  public:
   explicit ScopedSpinLock(SpinLock& lock) : lock_(lock) {
     lock_.lock();
-    locked_ = true;
   }
 
   ~ScopedSpinLock() {
-    if (locked_) {
-      lock_.unlock();
-      locked_ = false;
-    }
+    lock_.unlock();
   }
 
  private:
   SpinLock& lock_;
-  bool locked_;
 };
 
 class ScopedSpinLocks {

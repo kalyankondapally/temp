@@ -515,310 +515,306 @@ bool Drm::disableVSync(DrmDisplay* pDisp, bool bWait)
     return mpEventThread->disableVSync(pDisp, bWait);
 }
 
-int Drm::setCrtc( uint32_t crtc_id, uint32_t fb, uint32_t x, uint32_t y,
-                  uint32_t* connector_id, uint32_t count, drmModeModeInfoPtr modeInfo )
-{
-    ATRACE_CALL_IF(DRM_CALL_TRACE);
-    ATRACE_INT_IF(DRM_CALL_TRACE, String8::format("HWC:D%d MP", crtc_id).string(), fb);
-    Log::alogd( DRM_STATE_DEBUG,
-              "drmModeSetCrtc( crtc_id %u, fb %u, x %u, y %u, connector_id %p, count %u, modeInfo %p )",
-              crtc_id, fb, x, y, connector_id, count, modeInfo );
-    int ret = drmModeSetCrtc( mDrmFd, crtc_id, fb, x, y, connector_id, count, modeInfo );
-    Log::aloge( ret != SUCCESS,
-             "Failed to set Crtc crtc_id %u, fb %u, x %u, y %u, connector_id %p, count %u, modeInfo %p  ret %d/%s",
-             crtc_id, fb, x, y, connector_id, count, modeInfo, ret, strerror(errno) );
-    return ret;
+int Drm::setCrtc(uint32_t crtc_id, uint32_t fb, uint32_t x, uint32_t y,
+                 uint32_t* connector_id, uint32_t count,
+                 drmModeModeInfoPtr modeInfo) {
+  ATRACE_CALL_IF(DRM_CALL_TRACE);
+  ATRACE_INT_IF(DRM_CALL_TRACE,
+                HWCString::format("HWC:D%d MP", crtc_id).string(), fb);
+  Log::alogd(DRM_STATE_DEBUG,
+             "drmModeSetCrtc( crtc_id %u, fb %u, x %u, y %u, connector_id %p, "
+             "count %u, modeInfo %p )",
+             crtc_id, fb, x, y, connector_id, count, modeInfo);
+  int ret =
+      drmModeSetCrtc(mDrmFd, crtc_id, fb, x, y, connector_id, count, modeInfo);
+  Log::aloge(ret != SUCCESS,
+             "Failed to set Crtc crtc_id %u, fb %u, x %u, y %u, connector_id "
+             "%p, count %u, modeInfo %p  ret %d/%s",
+             crtc_id, fb, x, y, connector_id, count, modeInfo, ret,
+             strerror(errno));
+  return ret;
 }
 
-drmModeCrtcPtr Drm::getCrtc( uint32_t crtc_id )
-{
-    ATRACE_CALL_IF(DRM_CALL_TRACE);
-    Log::alogd( DRM_STATE_DEBUG, "drmModeGetCrtc( crtc_id %u )", crtc_id );
-    drmModeCrtcPtr ret = drmModeGetCrtc( mDrmFd, crtc_id );
-    Log::aloge( ret == NULL, "Could not get Crtc crtc_id %u", crtc_id );
-    return ret;
+drmModeCrtcPtr Drm::getCrtc(uint32_t crtc_id) {
+  ATRACE_CALL_IF(DRM_CALL_TRACE);
+  Log::alogd(DRM_STATE_DEBUG, "drmModeGetCrtc( crtc_id %u )", crtc_id);
+  drmModeCrtcPtr ret = drmModeGetCrtc(mDrmFd, crtc_id);
+  Log::aloge(ret == NULL, "Could not get Crtc crtc_id %u", crtc_id);
+  return ret;
 }
 
-void Drm::freeCrtc( drmModeCrtcPtr ptr )
-{
-    ATRACE_CALL_IF(DRM_CALL_TRACE);
-    Log::alogd( DRM_STATE_DEBUG, "drmModeFreeCrtc( ptr %p )", ptr );
-    Log::aloge( !ptr, "Missing Crtc ptr" );
-    drmModeFreeCrtc( ptr );
+void Drm::freeCrtc(drmModeCrtcPtr ptr) {
+  ATRACE_CALL_IF(DRM_CALL_TRACE);
+  Log::alogd(DRM_STATE_DEBUG, "drmModeFreeCrtc( ptr %p )", ptr);
+  Log::aloge(!ptr, "Missing Crtc ptr");
+  drmModeFreeCrtc(ptr);
 }
 
-drmModeResPtr Drm::getResources( void )
-{
-    ATRACE_CALL_IF(DRM_CALL_TRACE);
-    Log::alogd( DRM_STATE_DEBUG, "drmModeGetResources(  )" );
-    drmModeResPtr ret = drmModeGetResources( mDrmFd);
-    Log::aloge( ret == NULL, "Could not get resources" );
-    return ret;
+drmModeResPtr Drm::getResources(void) {
+  ATRACE_CALL_IF(DRM_CALL_TRACE);
+  Log::alogd(DRM_STATE_DEBUG, "drmModeGetResources(  )");
+  drmModeResPtr ret = drmModeGetResources(mDrmFd);
+  Log::aloge(ret == NULL, "Could not get resources");
+  return ret;
 }
 
-void Drm::freeResources( drmModeResPtr ptr )
-{
-    ATRACE_CALL_IF(DRM_CALL_TRACE);
-    Log::alogd( DRM_STATE_DEBUG, "drmModeFreeResources( ptr %p )", ptr );
-    Log::aloge( !ptr, "Missing resources ptr" );
-    drmModeFreeResources( ptr );
+void Drm::freeResources(drmModeResPtr ptr) {
+  ATRACE_CALL_IF(DRM_CALL_TRACE);
+  Log::alogd(DRM_STATE_DEBUG, "drmModeFreeResources( ptr %p )", ptr);
+  Log::aloge(!ptr, "Missing resources ptr");
+  drmModeFreeResources(ptr);
 }
 
-drmModeEncoderPtr Drm::getEncoder( uint32_t encoder_id )
-{
-    ATRACE_CALL_IF(DRM_CALL_TRACE);
-    Log::alogd( DRM_STATE_DEBUG, "drmModeGetEncoder( encoder_id %u )", encoder_id );
-    drmModeEncoderPtr ret = drmModeGetEncoder( mDrmFd, encoder_id );
-    Log::aloge( ret == NULL, "Could not get encoder encoder_id %u", encoder_id );
-    return ret;
+drmModeEncoderPtr Drm::getEncoder(uint32_t encoder_id) {
+  ATRACE_CALL_IF(DRM_CALL_TRACE);
+  Log::alogd(DRM_STATE_DEBUG, "drmModeGetEncoder( encoder_id %u )", encoder_id);
+  drmModeEncoderPtr ret = drmModeGetEncoder(mDrmFd, encoder_id);
+  Log::aloge(ret == NULL, "Could not get encoder encoder_id %u", encoder_id);
+  return ret;
 }
 
-void Drm::freeEncoder( drmModeEncoderPtr ptr )
-{
-    ATRACE_CALL_IF(DRM_CALL_TRACE);
-    Log::alogd( DRM_STATE_DEBUG, "drmModeFreeEncoder( ptr %p )", ptr );
-    Log::aloge( !ptr, "Missing encoder ptr" );
-    drmModeFreeEncoder( ptr );
+void Drm::freeEncoder(drmModeEncoderPtr ptr) {
+  ATRACE_CALL_IF(DRM_CALL_TRACE);
+  Log::alogd(DRM_STATE_DEBUG, "drmModeFreeEncoder( ptr %p )", ptr);
+  Log::aloge(!ptr, "Missing encoder ptr");
+  drmModeFreeEncoder(ptr);
 }
 
-drmModeConnectorPtr Drm::getConnector( uint32_t connector_id )
-{
-    ATRACE_CALL_IF(DRM_CALL_TRACE);
-    Log::alogd( DRM_STATE_DEBUG, "drmModeGetConnector( connector_id %u )", connector_id );
-    drmModeConnectorPtr ret = drmModeGetConnector( mDrmFd, connector_id );
-    Log::aloge( ret == NULL, "Could not get connector connector_id %u", connector_id );
-    return ret;
+drmModeConnectorPtr Drm::getConnector(uint32_t connector_id) {
+  ATRACE_CALL_IF(DRM_CALL_TRACE);
+  Log::alogd(DRM_STATE_DEBUG, "drmModeGetConnector( connector_id %u )",
+             connector_id);
+  drmModeConnectorPtr ret = drmModeGetConnector(mDrmFd, connector_id);
+  Log::aloge(ret == NULL, "Could not get connector connector_id %u",
+             connector_id);
+  return ret;
 }
 
-void Drm::freeConnector( drmModeConnectorPtr ptr )
-{
-    ATRACE_CALL_IF(DRM_CALL_TRACE);
-    Log::alogd( DRM_STATE_DEBUG, "drmModeFreeConnector( ptr %p )", ptr );
-    ALOGE_IF( !ptr, "Missing connector ptr" );
-    drmModeFreeConnector( ptr );
+void Drm::freeConnector(drmModeConnectorPtr ptr) {
+  ATRACE_CALL_IF(DRM_CALL_TRACE);
+  Log::alogd(DRM_STATE_DEBUG, "drmModeFreeConnector( ptr %p )", ptr);
+  ALOGE_IF(!ptr, "Missing connector ptr");
+  drmModeFreeConnector(ptr);
 }
 
-drmModePlaneResPtr Drm::getPlaneResources( void )
-{
-    ATRACE_CALL_IF(DRM_CALL_TRACE);
-    Log::alogd( DRM_STATE_DEBUG, "drmModeGetPlaneResources( )" );
-    drmModePlaneResPtr ret = drmModeGetPlaneResources( mDrmFd );
-    Log::aloge( ret == NULL, "Could not get plane resources" );
-    return ret;
+drmModePlaneResPtr Drm::getPlaneResources(void) {
+  ATRACE_CALL_IF(DRM_CALL_TRACE);
+  Log::alogd(DRM_STATE_DEBUG, "drmModeGetPlaneResources( )");
+  drmModePlaneResPtr ret = drmModeGetPlaneResources(mDrmFd);
+  Log::aloge(ret == NULL, "Could not get plane resources");
+  return ret;
 }
 
-void Drm::freePlaneResources( drmModePlaneResPtr ptr )
-{
-    ATRACE_CALL_IF(DRM_CALL_TRACE);
-    Log::alogd( DRM_STATE_DEBUG, "drmModeFreePlaneResources( ptr %p )", ptr );
-    ALOGE_IF( !ptr, "Missing plane resources ptr" );
-    drmModeFreePlaneResources( ptr );
+void Drm::freePlaneResources(drmModePlaneResPtr ptr) {
+  ATRACE_CALL_IF(DRM_CALL_TRACE);
+  Log::alogd(DRM_STATE_DEBUG, "drmModeFreePlaneResources( ptr %p )", ptr);
+  ALOGE_IF(!ptr, "Missing plane resources ptr");
+  drmModeFreePlaneResources(ptr);
 }
 
-drmModePlanePtr Drm::getPlane( uint32_t plane_id )
-{
-    ATRACE_CALL_IF(DRM_CALL_TRACE);
-    Log::alogd( DRM_STATE_DEBUG, "drmModeGetPlane( plane_id %u )", plane_id );
-    drmModePlanePtr ret = drmModeGetPlane( mDrmFd, plane_id );
-    Log::aloge( ret == NULL, "Could not get plane plane_id %u", plane_id );
-    return ret;
+drmModePlanePtr Drm::getPlane(uint32_t plane_id) {
+  ATRACE_CALL_IF(DRM_CALL_TRACE);
+  Log::alogd(DRM_STATE_DEBUG, "drmModeGetPlane( plane_id %u )", plane_id);
+  drmModePlanePtr ret = drmModeGetPlane(mDrmFd, plane_id);
+  Log::aloge(ret == NULL, "Could not get plane plane_id %u", plane_id);
+  return ret;
 }
 
-void Drm::freePlane( drmModePlanePtr ptr )
-{
-    ATRACE_CALL_IF(DRM_CALL_TRACE);
-    Log::alogd( DRM_STATE_DEBUG, "drmModeFreePlane( ptr %p )", ptr );
-    ALOGE_IF( !ptr, "Missing plane ptr" );
-    drmModeFreePlane( ptr );
+void Drm::freePlane(drmModePlanePtr ptr) {
+  ATRACE_CALL_IF(DRM_CALL_TRACE);
+  Log::alogd(DRM_STATE_DEBUG, "drmModeFreePlane( ptr %p )", ptr);
+  ALOGE_IF(!ptr, "Missing plane ptr");
+  drmModeFreePlane(ptr);
 }
 
-uint32_t Drm::getPanelFitterPropertyID( uint32_t connector_id )
-{
-    uint32_t propId = INVALID_PROPERTY;
+uint32_t Drm::getPanelFitterPropertyID(uint32_t connector_id) {
+  uint32_t propId = INVALID_PROPERTY;
 #if VPG_DRM_HAVE_PANEL_FITTER
-    return getConnectorPropertyID( connector_id, DRM_PFIT_PROP );
+  return getConnectorPropertyID(connector_id, DRM_PFIT_PROP);
 #else
-    HWC_UNUSED( connector_id );
+  HWC_UNUSED(connector_id);
 #endif
-    ALOGW_IF( propId == INVALID_PROPERTY, "Panel fitter property not available" );
-    return propId;
+  ALOGW_IF(propId == INVALID_PROPERTY, "Panel fitter property not available");
+  return propId;
 }
 
-uint32_t Drm::getPanelFitterSourceSizePropertyID( uint32_t connector_id )
-{
-    uint32_t propId = INVALID_PROPERTY;
+uint32_t Drm::getPanelFitterSourceSizePropertyID(uint32_t connector_id) {
+  uint32_t propId = INVALID_PROPERTY;
 #if VPG_DRM_HAVE_PANEL_FITTER_SOURCE_SIZE
-    propId = getConnectorPropertyID( connector_id, DRM_SCALING_SRC_SIZE_PROP );
+  propId = getConnectorPropertyID(connector_id, DRM_SCALING_SRC_SIZE_PROP);
 #else
-    HWC_UNUSED( connector_id );
+  HWC_UNUSED(connector_id);
 #endif
-    ALOGW_IF( sbInternalBuild && propId == INVALID_PROPERTY, "Panel fitter source size property not available" );
-    return propId;
+  ALOGW_IF(sbInternalBuild && propId == INVALID_PROPERTY,
+           "Panel fitter source size property not available");
+  return propId;
 }
 
-uint32_t Drm::getDPMSPropertyID( uint32_t connector_id )
-{
-    return getConnectorPropertyID( connector_id, DRM_DPMS_PROP );
+uint32_t Drm::getDPMSPropertyID(uint32_t connector_id) {
+  return getConnectorPropertyID(connector_id, DRM_DPMS_PROP);
 }
 
-uint32_t Drm::getDRRSPropertyID( uint32_t connector_id )
-{
-    return getConnectorPropertyID( connector_id, DRM_DRRS_PROP );
+uint32_t Drm::getDRRSPropertyID(uint32_t connector_id) {
+  return getConnectorPropertyID(connector_id, DRM_DRRS_PROP);
 }
 
-uint32_t Drm::getConnectorPropertyID( uint32_t connector_id, const char* pchPropName )
-{
-    return getPropertyID (connector_id, DRM_MODE_OBJECT_CONNECTOR, pchPropName);
+uint32_t Drm::getConnectorPropertyID(uint32_t connector_id,
+                                     const char* pchPropName) {
+  return getPropertyID(connector_id, DRM_MODE_OBJECT_CONNECTOR, pchPropName);
 }
-uint32_t Drm::getPlanePropertyID( uint32_t plane_id, const char* pchPropName )
-{
-    return getPropertyID (plane_id, DRM_MODE_OBJECT_PLANE, pchPropName);
+uint32_t Drm::getPlanePropertyID(uint32_t plane_id, const char* pchPropName) {
+  return getPropertyID(plane_id, DRM_MODE_OBJECT_PLANE, pchPropName);
 }
 
-uint32_t Drm::getPropertyID( uint32_t obj_id, uint32_t obj_type, const char* pchPropName )
-{
-    ATRACE_CALL_IF(DRM_CALL_TRACE);
-    uint32_t prop_id = INVALID_PROPERTY;
+uint32_t Drm::getPropertyID(uint32_t obj_id, uint32_t obj_type,
+                            const char* pchPropName) {
+  ATRACE_CALL_IF(DRM_CALL_TRACE);
+  uint32_t prop_id = INVALID_PROPERTY;
 
-    drmModeObjectPropertiesPtr props;
+  drmModeObjectPropertiesPtr props;
 
-    //Get the Connector property
-    ALOGD_IF( DRM_STATE_DEBUG, "drmModeObjectGetProperties( obj_id %u, obj_type %u )", obj_id, obj_type );
-    props = drmModeObjectGetProperties( mDrmFd, obj_id, obj_type );
-    if ( !props )
-    {
-        ALOGE("Display enumPropertyID - could not get connector properties");
-        return -1;
+  // Get the Connector property
+  ALOGD_IF(DRM_STATE_DEBUG,
+           "drmModeObjectGetProperties( obj_id %u, obj_type %u )", obj_id,
+           obj_type);
+  props = drmModeObjectGetProperties(mDrmFd, obj_id, obj_type);
+  if (!props) {
+    ALOGE("Display enumPropertyID - could not get connector properties");
+    return -1;
+  }
+
+  for (uint32_t j = 0; j < props->count_props; j++) {
+    drmModePropertyPtr prop;
+    ALOGD_IF(DRM_STATE_DEBUG, "drmModeGetProperty( property_id %u )",
+             props->props[j]);
+    prop = drmModeGetProperty(mDrmFd, props->props[j]);
+    if (prop == NULL) {
+      ALOGE("Get Property return NULL");
+      drmModeFreeObjectProperties(props);
+      return -1;
     }
-
-    for (uint32_t j = 0; j < props->count_props; j++) {
-        drmModePropertyPtr prop;
-        ALOGD_IF( DRM_STATE_DEBUG, "drmModeGetProperty( property_id %u )", props->props[j] );
-        prop = drmModeGetProperty( mDrmFd, props->props[j] );
-        if(prop == NULL) {
-            ALOGE("Get Property return NULL");
-            drmModeFreeObjectProperties( props );
-            return -1;
-        }
-        if (!strcmp(prop->name,pchPropName)) {
-            Log::alogd( DRM_STATE_DEBUG, "drmModeGetProperty ( %s ) property_id %u", pchPropName, props->props[j] );
-            prop_id = prop->prop_id;
-            drmModeFreeProperty( prop );
-            break;
-        }
-        ALOGD_IF( DRM_STATE_DEBUG,  "drmModeFreeProperty( ptr %p id:%d name:%s)", prop, prop->prop_id, prop->name );
-        drmModeFreeProperty( prop );
+    if (!strcmp(prop->name, pchPropName)) {
+      Log::alogd(DRM_STATE_DEBUG, "drmModeGetProperty ( %s ) property_id %u",
+                 pchPropName, props->props[j]);
+      prop_id = prop->prop_id;
+      drmModeFreeProperty(prop);
+      break;
     }
+    ALOGD_IF(DRM_STATE_DEBUG, "drmModeFreeProperty( ptr %p id:%d name:%s)",
+             prop, prop->prop_id, prop->name);
+    drmModeFreeProperty(prop);
+  }
 
-    Log::alogd( DRM_STATE_DEBUG, "drmModeFreeObjectProperties( ptr %p )", props );
-    drmModeFreeObjectProperties( props );
+  Log::alogd(DRM_STATE_DEBUG, "drmModeFreeObjectProperties( ptr %p )", props);
+  drmModeFreeObjectProperties(props);
 
-    ALOGD_IF( sbInternalBuild && prop_id == INVALID_PROPERTY, "Drm property %s not found", pchPropName );
+  ALOGD_IF(sbInternalBuild && prop_id == INVALID_PROPERTY,
+           "Drm property %s not found", pchPropName);
 
-    return prop_id;
+  return prop_id;
 }
 
-int Drm::acquirePanelFitter( uint32_t connector_id )
-{
-    ATRACE_CALL_IF(DRM_CALL_TRACE);
-    ALOG_ASSERT( connector_id < 64 );
-    const uint64_t connectorMask = (1ULL<<connector_id);
-    if ( mAcquiredPanelFitters & connectorMask )
-    {
-        Log::alogd( DRM_STATE_DEBUG,  "drm acquired panel fitter [connector_id %u, acquired 0x%llx ] [No Change]",
-            connector_id, mAcquiredPanelFitters );
-        return SUCCESS;
-    }
-    // Current implementation assumes one panel
-    // fitter shared between all connectors.
-    if ( mAcquiredPanelFitters )
-    {
-        Log::alogd( DRM_STATE_DEBUG,  "drm did not acquire panel fitter [connector_id %u, acquired 0x%llx ]",
-            connector_id, mAcquiredPanelFitters );
-        return BAD_VALUE;
-    }
-    mAcquiredPanelFitters |= connectorMask;
-    Log::alogd( DRM_STATE_DEBUG,  "drm acquired panel fitter [connector_id %u, acquired 0x%llx ]",
-        connector_id, mAcquiredPanelFitters );
+int Drm::acquirePanelFitter(uint32_t connector_id) {
+  ATRACE_CALL_IF(DRM_CALL_TRACE);
+  ALOG_ASSERT(connector_id < 64);
+  const uint64_t connectorMask = (1ULL << connector_id);
+  if (mAcquiredPanelFitters & connectorMask) {
+    Log::alogd(DRM_STATE_DEBUG,
+               "drm acquired panel fitter [connector_id %u, acquired 0x%llx ] "
+               "[No Change]",
+               connector_id, mAcquiredPanelFitters);
     return SUCCESS;
-}
-
-int Drm::releasePanelFitter( uint32_t connector_id )
-{
-    ATRACE_CALL_IF(DRM_CALL_TRACE);
-    ALOG_ASSERT( connector_id < 64 );
-    const uint64_t connectorMask = (1ULL<<connector_id);
-    if ( mAcquiredPanelFitters & connectorMask )
-    {
-        mAcquiredPanelFitters &= ~connectorMask;
-        Log::alogd( DRM_STATE_DEBUG,  "drm released panel fitter [connector_id %u, acquired 0x%llx ]",
-            connector_id, mAcquiredPanelFitters );
-        return SUCCESS;
-    }
-    ALOGE( "panel fitter not acquired for connector id %u", connector_id );
+  }
+  // Current implementation assumes one panel
+  // fitter shared between all connectors.
+  if (mAcquiredPanelFitters) {
+    Log::alogd(
+        DRM_STATE_DEBUG,
+        "drm did not acquire panel fitter [connector_id %u, acquired 0x%llx ]",
+        connector_id, mAcquiredPanelFitters);
     return BAD_VALUE;
+  }
+  mAcquiredPanelFitters |= connectorMask;
+  Log::alogd(DRM_STATE_DEBUG,
+             "drm acquired panel fitter [connector_id %u, acquired 0x%llx ]",
+             connector_id, mAcquiredPanelFitters);
+  return SUCCESS;
 }
 
-bool Drm::isPanelFitterAcquired( uint32_t connector_id )
-{
-    const uint64_t connectorMask = (1ULL<<connector_id);
-    return ( ( mAcquiredPanelFitters & connectorMask ) != 0 );
+int Drm::releasePanelFitter(uint32_t connector_id) {
+  ATRACE_CALL_IF(DRM_CALL_TRACE);
+  ALOG_ASSERT(connector_id < 64);
+  const uint64_t connectorMask = (1ULL << connector_id);
+  if (mAcquiredPanelFitters & connectorMask) {
+    mAcquiredPanelFitters &= ~connectorMask;
+    Log::alogd(DRM_STATE_DEBUG,
+               "drm released panel fitter [connector_id %u, acquired 0x%llx ]",
+               connector_id, mAcquiredPanelFitters);
+    return SUCCESS;
+  }
+  ALOGE("panel fitter not acquired for connector id %u", connector_id);
+  return BAD_VALUE;
 }
 
-int Drm::setPanelFitterProperty( uint32_t connector_id, int32_t pfit_prop_id, uint32_t mode,
-                                 int32_t dstX, int32_t dstY, uint32_t dstW, uint32_t dstH )
-{
-    ATRACE_CALL_IF(DRM_CALL_TRACE);
+bool Drm::isPanelFitterAcquired(uint32_t connector_id) {
+  const uint64_t connectorMask = (1ULL << connector_id);
+  return ((mAcquiredPanelFitters & connectorMask) != 0);
+}
+
+int Drm::setPanelFitterProperty(uint32_t connector_id, int32_t pfit_prop_id,
+                                uint32_t mode, int32_t dstX, int32_t dstY,
+                                uint32_t dstW, uint32_t dstH) {
+  ATRACE_CALL_IF(DRM_CALL_TRACE);
 #if VPG_DRM_HAVE_PANEL_FITTER
-    ALOG_ASSERT( connector_id < 64 );
-    const uint64_t connectorMask = (1ULL<<connector_id);
-    if ( !( mAcquiredPanelFitters & connectorMask ) )
-    {
-        ALOGE( "panel fitter not acquired for connector id %u", connector_id );
-        return BAD_VALUE;
-    }
+  ALOG_ASSERT(connector_id < 64);
+  const uint64_t connectorMask = (1ULL << connector_id);
+  if (!(mAcquiredPanelFitters & connectorMask)) {
+    ALOGE("panel fitter not acquired for connector id %u", connector_id);
+    return BAD_VALUE;
+  }
 
-    if ( pfit_prop_id == -1 )
-    {
-        ALOGE( "Panel fitter not available" );
-        return BAD_VALUE;
-    }
+  if (pfit_prop_id == -1) {
+    ALOGE("Panel fitter not available");
+    return BAD_VALUE;
+  }
 
-    Log::alogd( DRM_STATE_DEBUG,
-        "drmModeObjectSetProperty( connector_id %u, object_type 0x%x, property_id %u[PFIT], mode %u[%s] "
-        "dstX %d, dstY %d, dstW %d, dstH %d )",
-        connector_id, DRM_MODE_OBJECT_CONNECTOR, pfit_prop_id,
-        mode, getPanelFitterModeString( mode ),
-        dstX, dstY, dstW, dstH );
+  Log::alogd(DRM_STATE_DEBUG,
+             "drmModeObjectSetProperty( connector_id %u, object_type 0x%x, "
+             "property_id %u[PFIT], mode %u[%s] "
+             "dstX %d, dstY %d, dstW %d, dstH %d )",
+             connector_id, DRM_MODE_OBJECT_CONNECTOR, pfit_prop_id, mode,
+             getPanelFitterModeString(mode), dstX, dstY, dstW, dstH);
 #if VPG_DRM_HAVE_PANEL_FITTER_MANUAL
-    if ( ( mode == DRM_PFIT_MANUAL ) && ( !dstW || dstH ) )
-    {
-        ALOGE( "Manual panel fitter mode requires explicit destination frame [%d,%d %dx%d]",
-            dstX, dstY, dstW, dstH );
-        return BAD_VALUE;
-    }
-    // TODO:
-    // Manual mode requires implementation once KMD property support
-    // for dest frame has been confirmed.
-    ALOGE_IF( mode == DRM_PFIT_MANUAL, "Manual pannel fitter mode is not implemented." );
+  if ((mode == DRM_PFIT_MANUAL) && (!dstW || dstH)) {
+    ALOGE(
+        "Manual panel fitter mode requires explicit destination frame [%d,%d "
+        "%dx%d]",
+        dstX, dstY, dstW, dstH);
     return BAD_VALUE;
+  }
+  // TODO:
+  // Manual mode requires implementation once KMD property support
+  // for dest frame has been confirmed.
+  ALOGE_IF(mode == DRM_PFIT_MANUAL,
+           "Manual pannel fitter mode is not implemented.");
+  return BAD_VALUE;
 #endif
-    if (drmModeObjectSetProperty( mDrmFd, connector_id, DRM_MODE_OBJECT_CONNECTOR, (uint32_t)pfit_prop_id, mode ))
-    {
-       ALOGE("set panel fitter property failed");
-       return -1;
-    }
-    return 0;
-#else // VPG_DRM_HAVE_PANEL_FITTER
-    HWC_UNUSED( connector_id );
-    HWC_UNUSED( pfit_prop_id );
-    HWC_UNUSED( mode );
-    HWC_UNUSED( dstX );
-    HWC_UNUSED( dstY );
-    HWC_UNUSED( dstW );
-    HWC_UNUSED( dstH );
-    ALOGE( "Panel fitter support missing" );
-    return BAD_VALUE;
+  if (drmModeObjectSetProperty(mDrmFd, connector_id, DRM_MODE_OBJECT_CONNECTOR,
+                               (uint32_t)pfit_prop_id, mode)) {
+    ALOGE("set panel fitter property failed");
+    return -1;
+  }
+  return 0;
+#else  // VPG_DRM_HAVE_PANEL_FITTER
+  HWC_UNUSED(connector_id);
+  HWC_UNUSED(pfit_prop_id);
+  HWC_UNUSED(mode);
+  HWC_UNUSED(dstX);
+  HWC_UNUSED(dstY);
+  HWC_UNUSED(dstW);
+  HWC_UNUSED(dstH);
+  ALOGE("Panel fitter support missing");
+  return BAD_VALUE;
 #endif
 }
 
@@ -1139,83 +1135,88 @@ int Drm::setZOrder( uint32_t crtc_id, uint32_t zorder )
 #else
     HWC_UNUSED(crtc_id);
     HWC_UNUSED(zorder);
-    ALOGE( "Plane ZOrder support missing" );
+    ALOGE("Plane ZOrder support missing");
     return ~SUCCESS;
-#endif // VPG_DRM_HAVE_ZORDER_API
+#endif  // VPG_DRM_HAVE_ZORDER_API
 }
 
-int Drm::setPlane( uint32_t plane_id, uint32_t crtc_id, uint32_t fb, uint32_t flags,
-              uint32_t crtc_x, uint32_t crtc_y, uint32_t crtc_w, uint32_t crtc_h,
-              uint32_t src_x, uint32_t src_y, uint32_t src_w, uint32_t src_h, void *user_data )
-{
-    ATRACE_CALL_IF(DRM_CALL_TRACE);
-    ATRACE_INT_IF(DRM_CALL_TRACE, String8::format("HWC:D%d P%d", crtc_id, plane_id).string(), fb);
+int Drm::setPlane(uint32_t plane_id, uint32_t crtc_id, uint32_t fb,
+                  uint32_t flags, uint32_t crtc_x, uint32_t crtc_y,
+                  uint32_t crtc_w, uint32_t crtc_h, uint32_t src_x,
+                  uint32_t src_y, uint32_t src_w, uint32_t src_h,
+                  void* user_data) {
+  ATRACE_CALL_IF(DRM_CALL_TRACE);
+  ATRACE_INT_IF(DRM_CALL_TRACE,
+                HWCString::format("HWC:D%d P%d", crtc_id, plane_id).string(),
+                fb);
 
-    ALOG_ASSERT( !(flags & DRM_MODE_PAGE_FLIP_EVENT) || (VPG_DRM_HAVE_MAIN_PLANE_DISABLE), "VPG_DRM_HAVE_MAIN_PLANE_DISABLE not enabled" );
+  ALOG_ASSERT(
+      !(flags & DRM_MODE_PAGE_FLIP_EVENT) || (VPG_DRM_HAVE_MAIN_PLANE_DISABLE),
+      "VPG_DRM_HAVE_MAIN_PLANE_DISABLE not enabled");
 
-    Log::alogd( DRM_STATE_DEBUG,
-              "drmModeSetPlane( plane_id %u, crtc_id %u, fb %u, flags %u, "
-              "x %u, y %u, w %u, h %u, sx %.1f, sy %.1f, sw %.1f, sh %.1f, ud %p )",
-              plane_id, crtc_id, fb, flags,
-              crtc_x, crtc_y, crtc_w, crtc_h,
-              src_x / 65536.0f, src_y / 65536.0f, src_w / 65536.0f, src_h / 65536.0f, user_data );
-    int ret= drmModeSetPlane( mDrmFd,
-                    plane_id, crtc_id, fb, flags,
-                    crtc_x, crtc_y, crtc_w, crtc_h,
-                    src_x, src_y, src_w, src_h
+  Log::alogd(
+      DRM_STATE_DEBUG,
+      "drmModeSetPlane( plane_id %u, crtc_id %u, fb %u, flags %u, "
+      "x %u, y %u, w %u, h %u, sx %.1f, sy %.1f, sw %.1f, sh %.1f, ud %p )",
+      plane_id, crtc_id, fb, flags, crtc_x, crtc_y, crtc_w, crtc_h,
+      src_x / 65536.0f, src_y / 65536.0f, src_w / 65536.0f, src_h / 65536.0f,
+      user_data);
+  int ret = drmModeSetPlane(mDrmFd, plane_id, crtc_id, fb, flags, crtc_x,
+                            crtc_y, crtc_w, crtc_h, src_x, src_y, src_w, src_h
 #if defined(DRM_PRIMARY_DISABLE)
-                    , user_data
+                            ,
+                            user_data
 #endif
-                    );
+                            );
 
-    Log::aloge( ret != SUCCESS,
-              "Failed to set plane plane_id %u, crtc_id %u, fb %u, flags %u, "
-              "x %u, y %u, w %u, h %u, sx %u, sy %u, sw %u, sh %u, ud %p  ret %d/%s",
-              plane_id, crtc_id, fb, flags,
-              crtc_x, crtc_y, crtc_w, crtc_h,
-              src_x, src_y, src_w, src_h, user_data,
-              ret, strerror(errno) );
-    return ret;
+  Log::aloge(
+      ret != SUCCESS,
+      "Failed to set plane plane_id %u, crtc_id %u, fb %u, flags %u, "
+      "x %u, y %u, w %u, h %u, sx %u, sy %u, sw %u, sh %u, ud %p  ret %d/%s",
+      plane_id, crtc_id, fb, flags, crtc_x, crtc_y, crtc_w, crtc_h, src_x,
+      src_y, src_w, src_h, user_data, ret, strerror(errno));
+  return ret;
 }
 
-int Drm::pageFlip( uint32_t crtc_id, uint32_t fb, uint32_t flags, void* user_data )
-{
-    ATRACE_CALL_IF(DRM_CALL_TRACE);
-    Log::alogd( DRM_STATE_DEBUG,
-              "drmModePageFlip( crtc_id %u, fb %u, flags %u, user_data %p )",
-              crtc_id, fb, flags, user_data );
-    int ret;
-    {
-            ret = drmModePageFlip( mDrmFd, crtc_id, fb, flags, user_data );
-    }
-    Log::aloge( ret != SUCCESS,
-              "Failed to page flip crtc_id %u, fb %u, flags %u, user_data %p  ret %d/%s",
-              crtc_id, fb, flags, user_data,
-              ret, strerror(errno) );
+int Drm::pageFlip(uint32_t crtc_id, uint32_t fb, uint32_t flags,
+                  void* user_data) {
+  ATRACE_CALL_IF(DRM_CALL_TRACE);
+  Log::alogd(DRM_STATE_DEBUG,
+             "drmModePageFlip( crtc_id %u, fb %u, flags %u, user_data %p )",
+             crtc_id, fb, flags, user_data);
+  int ret;
+  { ret = drmModePageFlip(mDrmFd, crtc_id, fb, flags, user_data); }
+  Log::aloge(ret != SUCCESS,
+             "Failed to page flip crtc_id %u, fb %u, flags %u, user_data %p  "
+             "ret %d/%s",
+             crtc_id, fb, flags, user_data, ret, strerror(errno));
 
-    return ret;
+  return ret;
 }
 
-int Drm::screenCtl( uint32_t crtc_id, uint32_t enable )
-{
-    ATRACE_CALL_IF(DRM_CALL_TRACE);
+int Drm::screenCtl(uint32_t crtc_id, uint32_t enable) {
+  ATRACE_CALL_IF(DRM_CALL_TRACE);
 #if VPG_DRM_HAVE_SCREEN_CTL
-    struct drm_i915_disp_screen_control screen_cntrl;
-    screen_cntrl.crtc_id = crtc_id;
-    screen_cntrl.on_off_cntrl = enable;
-    Log::alogd( DRM_STATE_DEBUG, "drmIoctl( DRM_IOCTL_I915_DISP_SCREEN_CONTROL[ crtc_id %u, on_off_cntrl %d ] )",
-        screen_cntrl.crtc_id, screen_cntrl.on_off_cntrl);
-    int ret = drmIoctl( mDrmFd, DRM_IOCTL_I915_DISP_SCREEN_CONTROL, &screen_cntrl );
-    // NOTE:
-    //  Reduced ALOGE to ALOGD due to expected failures on builds where libdrm defines
-    //  DRM_IOCTL_I915_DISP_SCREEN_CONTROL but the kernel does not implement it.
-    ALOGD_IF( DRM_STATE_DEBUG && ret != SUCCESS, "Failed to set screen crtc_id %u, enable %d  ret %d/%s",
-        crtc_id, enable, ret, strerror(errno) );
-    return ret;
+  struct drm_i915_disp_screen_control screen_cntrl;
+  screen_cntrl.crtc_id = crtc_id;
+  screen_cntrl.on_off_cntrl = enable;
+  Log::alogd(DRM_STATE_DEBUG,
+             "drmIoctl( DRM_IOCTL_I915_DISP_SCREEN_CONTROL[ crtc_id %u, "
+             "on_off_cntrl %d ] )",
+             screen_cntrl.crtc_id, screen_cntrl.on_off_cntrl);
+  int ret = drmIoctl(mDrmFd, DRM_IOCTL_I915_DISP_SCREEN_CONTROL, &screen_cntrl);
+  // NOTE:
+  //  Reduced ALOGE to ALOGD due to expected failures on builds where libdrm
+  //  defines
+  //  DRM_IOCTL_I915_DISP_SCREEN_CONTROL but the kernel does not implement it.
+  ALOGD_IF(DRM_STATE_DEBUG && ret != SUCCESS,
+           "Failed to set screen crtc_id %u, enable %d  ret %d/%s", crtc_id,
+           enable, ret, strerror(errno));
+  return ret;
 #else
-    HWC_UNUSED(crtc_id);
-    HWC_UNUSED(enable);
-    return -ENOSYS;
+  HWC_UNUSED(crtc_id);
+  HWC_UNUSED(enable);
+  return -ENOSYS;
 #endif
 }
 
@@ -1773,136 +1774,143 @@ const char* Drm::getObjectTypeString( uint32_t objType )
     return "<?>";
 }
 
-String8 Drm::modeInfoToString( const drmModeModeInfo& m )
-{
-    String8 s;
-    s = String8::format( "clock %u h[disp %u syncstart %u syncend %u total %u skew %u] "
-                                  "v[disp %u syncstart %u syncend %u total %u scan %u] "
-                                  " vrefresh %u flags 0x%x type %u name{%s}",
-            m.clock,
-            m.hdisplay, m.hsync_start, m.hsync_end, m.htotal, m.hskew,
-            m.vdisplay, m.vsync_start, m.vsync_end, m.vtotal, m.vscan,
-            m.vrefresh,
-            m.flags,
-            m.type,
-            m.name );
-    return s;
+HWCString Drm::modeInfoToString(const drmModeModeInfo& m) {
+  HWCString s;
+  s = HWCString::format(
+      "clock %u h[disp %u syncstart %u syncend %u total %u skew %u] "
+      "v[disp %u syncstart %u syncend %u total %u scan %u] "
+      " vrefresh %u flags 0x%x type %u name{%s}",
+      m.clock, m.hdisplay, m.hsync_start, m.hsync_end, m.htotal, m.hskew,
+      m.vdisplay, m.vsync_start, m.vsync_end, m.vtotal, m.vscan, m.vrefresh,
+      m.flags, m.type, m.name);
+  return s;
 }
 
-bool Drm::modeInfoCompare( const drmModeModeInfo& a, const drmModeModeInfo& b )
-{
-    return ( ( a.clock       == b.clock )
-          && ( a.hdisplay    == b.hdisplay )
-          && ( a.hsync_start == b.hsync_start )
-          && ( a.hsync_end   == b.hsync_end )
-          && ( a.htotal      == b.htotal )
-          && ( a.hskew       == b.hskew )
-          && ( a.vdisplay    == b.vdisplay )
-          && ( a.vsync_start == b.vsync_start )
-          && ( a.vsync_end   == b.vsync_end )
-          && ( a.vscan       == b.vscan )
-          && ( a.vrefresh    == b.vrefresh )
-          && ( a.flags       == b.flags )
-          && ( a.type        == b.type )
-          && !strncmp( a.name, b.name, DRM_DISPLAY_MODE_LEN ) );
+bool Drm::modeInfoCompare(const drmModeModeInfo& a, const drmModeModeInfo& b) {
+  return ((a.clock == b.clock) && (a.hdisplay == b.hdisplay) &&
+          (a.hsync_start == b.hsync_start) && (a.hsync_end == b.hsync_end) &&
+          (a.htotal == b.htotal) && (a.hskew == b.hskew) &&
+          (a.vdisplay == b.vdisplay) && (a.vsync_start == b.vsync_start) &&
+          (a.vsync_end == b.vsync_end) && (a.vscan == b.vscan) &&
+          (a.vrefresh == b.vrefresh) && (a.flags == b.flags) &&
+          (a.type == b.type) && !strncmp(a.name, b.name, DRM_DISPLAY_MODE_LEN));
 }
 
 #if VPG_DRM_HAVE_ATOMIC_SETDISPLAY
 
-String8 Drm::drmDisplayToString( const struct drm_mode_set_display& display )
-{
-    return drmDisplayPipeToString( display ) + "\n" + drmDisplayPlaneToString( display );
+HWCString Drm::drmDisplayToString(const struct drm_mode_set_display& display) {
+  return drmDisplayPipeToString(display) + "\n" +
+         drmDisplayPlaneToString(display);
 }
 
-String8 Drm::drmDisplayPipeToString( const struct drm_mode_set_display& display )
-{
-    return String8::format( "CRTC:%u UPDATE[0x%04x%s%s%s%s%s%s%s%s%s%s] STATE{Z:%u, PFIT:%u/%s S:%ux%u D:%d,%d %ux%u PLANES:%u}",
-            display.crtc_id, display.update_flag,
-            display.update_flag & DRM_MODE_SET_DISPLAY_UPDATE_ZORDER       ? " ZORDER" : "",
-            display.update_flag & DRM_MODE_SET_DISPLAY_UPDATE_PANEL_FITTER ? " PANELFITTER" : "",
-            display.update_flag & DRM_MODE_SET_DISPLAY_UPDATE_PLANE(0)     ? " PLANE0" : "",
-            display.update_flag & DRM_MODE_SET_DISPLAY_UPDATE_PLANE(1)     ? " PLANE1" : "",
-            display.update_flag & DRM_MODE_SET_DISPLAY_UPDATE_PLANE(2)     ? " PLANE2" : "",
-            display.update_flag & DRM_MODE_SET_DISPLAY_UPDATE_PLANE(3)     ? " PLANE3" : "",
-            display.update_flag & DRM_MODE_SET_DISPLAY_UPDATE_PLANE(4)     ? " PLANE4" : "",
-            display.update_flag & DRM_MODE_SET_DISPLAY_UPDATE_PLANE(5)     ? " PLANE5" : "",
-            display.update_flag & DRM_MODE_SET_DISPLAY_UPDATE_PLANE(6)     ? " PLANE6" : "",
-            display.update_flag & DRM_MODE_SET_DISPLAY_UPDATE_PLANE(7)     ? " PLANE7" : "",
-            display.zorder,
-            display.panel_fitter.mode,
+HWCString Drm::drmDisplayPipeToString(
+    const struct drm_mode_set_display& display) {
+  return HWCString::format(
+      "CRTC:%u UPDATE[0x%04x%s%s%s%s%s%s%s%s%s%s] STATE{Z:%u, PFIT:%u/%s "
+      "S:%ux%u D:%d,%d %ux%u PLANES:%u}",
+      display.crtc_id, display.update_flag,
+      display.update_flag & DRM_MODE_SET_DISPLAY_UPDATE_ZORDER ? " ZORDER" : "",
+      display.update_flag & DRM_MODE_SET_DISPLAY_UPDATE_PANEL_FITTER
+          ? " PANELFITTER"
+          : "",
+      display.update_flag & DRM_MODE_SET_DISPLAY_UPDATE_PLANE(0) ? " PLANE0"
+                                                                 : "",
+      display.update_flag & DRM_MODE_SET_DISPLAY_UPDATE_PLANE(1) ? " PLANE1"
+                                                                 : "",
+      display.update_flag & DRM_MODE_SET_DISPLAY_UPDATE_PLANE(2) ? " PLANE2"
+                                                                 : "",
+      display.update_flag & DRM_MODE_SET_DISPLAY_UPDATE_PLANE(3) ? " PLANE3"
+                                                                 : "",
+      display.update_flag & DRM_MODE_SET_DISPLAY_UPDATE_PLANE(4) ? " PLANE4"
+                                                                 : "",
+      display.update_flag & DRM_MODE_SET_DISPLAY_UPDATE_PLANE(5) ? " PLANE5"
+                                                                 : "",
+      display.update_flag & DRM_MODE_SET_DISPLAY_UPDATE_PLANE(6) ? " PLANE6"
+                                                                 : "",
+      display.update_flag & DRM_MODE_SET_DISPLAY_UPDATE_PLANE(7) ? " PLANE7"
+                                                                 : "",
+      display.zorder, display.panel_fitter.mode,
 #if VPG_DRM_HAVE_PANEL_FITTER
-            display.panel_fitter.mode == DRM_PFIT_OFF    ? "OFF" :
-            display.panel_fitter.mode == DRM_AUTOSCALE   ? "AUTO" :
+      display.panel_fitter.mode == DRM_PFIT_OFF
+          ? "OFF"
+          : display.panel_fitter.mode == DRM_AUTOSCALE
+                ? "AUTO"
+                :
 #if VPG_DRM_HAVE_PANEL_FITTER_MANUAL
-            display.panel_fitter.mode == DRM_PFIT_MANUAL ? "MANUAL" :
+                display.panel_fitter.mode == DRM_PFIT_MANUAL
+                    ? "MANUAL"
+                    :
 #endif
-            display.panel_fitter.mode == DRM_PILLARBOX     ? "PILLARBOX" :
-            display.panel_fitter.mode == DRM_LETTERBOX     ? "LETTERBOX" :
+                    display.panel_fitter.mode == DRM_PILLARBOX
+                        ? "PILLARBOX"
+                        : display.panel_fitter.mode == DRM_LETTERBOX
+                              ? "LETTERBOX"
+                              :
 #endif
-            "<?>",
-            display.panel_fitter.src_w,
-            display.panel_fitter.src_h,
-            display.panel_fitter.dst_x,
-            display.panel_fitter.dst_y,
-            display.panel_fitter.dst_w,
-            display.panel_fitter.dst_h,
-            display.num_planes );
+                              "<?>",
+      display.panel_fitter.src_w, display.panel_fitter.src_h,
+      display.panel_fitter.dst_x, display.panel_fitter.dst_y,
+      display.panel_fitter.dst_w, display.panel_fitter.dst_h,
+      display.num_planes);
 }
 
-String8 Drm::drmDisplayPlaneToString( const struct drm_mode_set_display& display, int32_t plane )
-{
-    String8 str;
-    uint32_t planes = 0;
+HWCString Drm::drmDisplayPlaneToString(
+    const struct drm_mode_set_display& display, int32_t plane) {
+  HWCString str;
+  uint32_t planes = 0;
 
-    for ( uint32_t p = 0; p < display.num_planes; ++p )
-    {
-        if ( ( plane != -1 ) && ( (uint32_t)plane != p ) )
-            continue;
+  for (uint32_t p = 0; p < display.num_planes; ++p) {
+    if ((plane != -1) && ((uint32_t)plane != p))
+      continue;
 
-        String8 idStr = String8::format(
-            "%5s %02u",
-            display.plane[p].obj_type == DRM_MODE_OBJECT_PLANE ? "PLANE" :
-            display.plane[p].obj_type == DRM_MODE_OBJECT_CRTC  ? "CRTC"  : "<?>",
-            display.plane[p].obj_id );
+    HWCString idStr = HWCString::format(
+        "%5s %02u",
+        display.plane[p].obj_type == DRM_MODE_OBJECT_PLANE
+            ? "PLANE"
+            : display.plane[p].obj_type == DRM_MODE_OBJECT_CRTC ? "CRTC"
+                                                                : "<?>",
+        display.plane[p].obj_id);
 
-        String8 updateFlagStr = String8::format(
-            "0x%04x:%s%s%s%s",
-            display.plane[p].update_flag,
-            display.plane[p].update_flag & DRM_MODE_SET_DISPLAY_PLANE_UPDATE_PRESENT   ? " FLP"  : "",
-            display.plane[p].update_flag & DRM_MODE_SET_DISPLAY_PLANE_UPDATE_RRB2      ? " RRB2" : "",
-            display.plane[p].update_flag & DRM_MODE_SET_DISPLAY_PLANE_UPDATE_TRANSFORM ? " TX"   : "",
-            display.plane[p].update_flag & DRM_MODE_SET_DISPLAY_PLANE_UPDATE_ALPHA     ? " BL"   : "" );
+    HWCString updateFlagStr = HWCString::format(
+        "0x%04x:%s%s%s%s", display.plane[p].update_flag,
+        display.plane[p].update_flag & DRM_MODE_SET_DISPLAY_PLANE_UPDATE_PRESENT
+            ? " FLP"
+            : "",
+        display.plane[p].update_flag & DRM_MODE_SET_DISPLAY_PLANE_UPDATE_RRB2
+            ? " RRB2"
+            : "",
+        display.plane[p].update_flag &
+                DRM_MODE_SET_DISPLAY_PLANE_UPDATE_TRANSFORM
+            ? " TX"
+            : "",
+        display.plane[p].update_flag & DRM_MODE_SET_DISPLAY_PLANE_UPDATE_ALPHA
+            ? " BL"
+            : "");
 
-        String8 stateStr = String8::format(
-            "FB:%3u, F:0x%04x, S:%7.2f,%7.2f %7.2fx%7.2f -> D:%4u,%4u %4ux%4u UD:0x%-8llx, RRB2:%u, TX:%u, BL:%d",
-            display.plane[p].fb_id,
-            display.plane[p].flags,
-            (1.0f/65536.0f) * display.plane[p].src_x,
-            (1.0f/65536.0f) * display.plane[p].src_y,
-            (1.0f/65536.0f) * display.plane[p].src_w,
-            (1.0f/65536.0f) * display.plane[p].src_h,
-            display.plane[p].crtc_x,
-            display.plane[p].crtc_y,
-            display.plane[p].crtc_w,
-            display.plane[p].crtc_h,
-            display.plane[p].user_data,
-            display.plane[p].rrb2_enable,
-            display.plane[p].transform,
-            display.plane[p].alpha );
+    HWCString stateStr = HWCString::format(
+        "FB:%3u, F:0x%04x, S:%7.2f,%7.2f %7.2fx%7.2f -> D:%4u,%4u %4ux%4u "
+        "UD:0x%-8llx, RRB2:%u, TX:%u, BL:%d",
+        display.plane[p].fb_id, display.plane[p].flags,
+        (1.0f / 65536.0f) * display.plane[p].src_x,
+        (1.0f / 65536.0f) * display.plane[p].src_y,
+        (1.0f / 65536.0f) * display.plane[p].src_w,
+        (1.0f / 65536.0f) * display.plane[p].src_h, display.plane[p].crtc_x,
+        display.plane[p].crtc_y, display.plane[p].crtc_w,
+        display.plane[p].crtc_h, display.plane[p].user_data,
+        display.plane[p].rrb2_enable, display.plane[p].transform,
+        display.plane[p].alpha);
 
-        str += String8::format(
-            "%s%s UPDATE[%-16s] STATE{%s}",
-            planes ? "\n" : "",
-            // Id.
-            idStr.string(),
-            // Dirty bits.
-            updateFlagStr.string(),
-            // Status.
-            stateStr.string() );
+    str += HWCString::format("%s%s UPDATE[%-16s] STATE{%s}", planes ? "\n" : "",
+                             // Id.
+                             idStr.string(),
+                             // Dirty bits.
+                             updateFlagStr.string(),
+                             // Status.
+                             stateStr.string());
 
-        ++planes;
-    }
-    return str;
+    ++planes;
+  }
+  return str;
 }
 
 #endif

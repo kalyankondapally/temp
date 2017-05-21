@@ -20,12 +20,15 @@
 #include <stdio.h>
 #include <stddef.h>
 #include <gbm.h>
+#include <assert.h>
 
 #include <cstring>
 #include <algorithm>
 #include <cstddef>
 
 #include <libsync.h>
+
+#include "string8.h"
 
 struct gbm_handle {
 #ifdef USE_MINIGBM
@@ -37,7 +40,20 @@ struct gbm_handle {
   uint32_t total_planes = 0;
 };
 
-typedef struct gbm_handle* HWCNativeHandle;
+typedef struct gbm_handle *HWCNativeHandle;
+typedef hwcomposer::String8 HWCString;
+
+namespace hwcomposer {
+int property_get(const char *key, char *value, const char *default_value);
+
+int property_set(const char *key, const char *value);
+
+int property_list(void (*propfn)(const char *key, const char *value,
+                                 void *cookie),
+                  void *cookie);
+}
+
+#define PROPERTY_VALUE_MAX 92
 
 #ifdef _cplusplus
 extern "C" {
@@ -48,7 +64,38 @@ extern "C" {
 #define ITRACE(fmt, ...) fprintf(stderr, "\n" fmt, ##__VA_ARGS__)
 #define WTRACE(fmt, ...) fprintf(stderr, "%s: \n" fmt, __func__, ##__VA_ARGS__)
 #define ETRACE(fmt, ...) fprintf(stderr, "%s: \n" fmt, __func__, ##__VA_ARGS__)
+#define ETRACEIF(fmt, ...) \
+  fprintf(stderr, "%s: \n" fmt, __func__, ##__VA_ARGS__)
+#define ITRACEIF(fmt, ...) fprintf(stderr, "\n" fmt, ##__VA_ARGS__)
+#define DTRACEIF(fmt, ...) \
+  fprintf(stderr, "%s: \n" fmt, __func__, ##__VA_ARGS__)
+#define VTRACEIF(fmt, ...) \
+  fprintf(stderr, "%s: \n" fmt, __func__, ##__VA_ARGS__)
+#define HWCASSERT(fmt, ...) ((void)0)
 #define STRACE() ((void)0)
+
+// TODO: Provide proper support.
+#define ATRACE_CALL_IF(enable) ((void)0)
+#define ATRACE_NAME_IF(enable, name) ((void)0)
+#define ATRACE_INT_IF(enable, name, value) ((void)0)
+#define ATRACE_EVENT_IF(enable, name) ((void)0)
+
+#define CONDITION(cond) (__builtin_expect((cond) != 0, 0))
+
+#ifndef LOG_ALWAYS_FATAL_IF
+#define LOG_ALWAYS_FATAL_IF(cond, ...)                                  \
+  ((CONDITION(cond)) ? ((void)HWCASSERT(#cond, LOG_TAG, ##__VA_ARGS__)) \
+                     : (void)0)
+#endif
+
+#ifdef __cplusplus
+#define CC_LIKELY(exp) (__builtin_expect(!!(exp), true))
+#define CC_UNLIKELY(exp) (__builtin_expect(!!(exp), false))
+#else
+#define CC_LIKELY(exp) (__builtin_expect(!!(exp), 1))
+#define CC_UNLIKELY(exp) (__builtin_expect(!!(exp), 0))
+#endif
+
 // _cplusplus
 #ifdef _cplusplus
 }
