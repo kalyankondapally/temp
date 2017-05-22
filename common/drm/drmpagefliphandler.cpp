@@ -15,8 +15,10 @@
 */
 
 #include "drmpagefliphandler.h"
-#include "drm.h"
+#include "drm_internal.h"
+#ifdef uncomment
 #include "drmdisplay.h"
+#endif
 #include "displaycaps.h"
 #include "log.h"
 #include "drmeventthread.h"
@@ -33,7 +35,11 @@
 #define DRM_PFH_NAME "DrmPageFlip"
 
 #define DRMDISPLAY_ID_STR               "DrmDisplay %u DrmConnector %u [Crtc %u]"
+#ifdef uncomment
 #define DRMDISPLAY_ID_PARAMS            mDisplay.getDrmDisplayID(), mDisplay.getDrmConnectorID(), mDisplay.getDrmCrtcID()
+#else
+#define DRMDISPLAY_ID_PARAMS 0
+#endif
 
 namespace hwcomposer {
 
@@ -48,9 +54,11 @@ DrmPageFlipHandler::DrmPageFlipHandler( DrmDisplay& display ) :
     mbInit( false ),
     mNumPlanes( 0 ),
     mMainPlaneIndex( -1 ),
-    mLastPageFlipTime( 0ULL ),
+    mLastPageFlipTime( 0ULL )
+#ifdef uncomment
     mpLastFlippedFrame( NULL ),
     mpCurrentFrame( NULL )
+#endif
 {
 }
 
@@ -61,11 +69,13 @@ DrmPageFlipHandler::~DrmPageFlipHandler( )
 void DrmPageFlipHandler::startupDisplay( void )
 {
     // Initialise the display's retirement timeline.
+#ifdef uncomment
     String8 name = String8::format( "HWC.DRM%d", mDisplay.getDrmDisplayID() );
     if ( !mTimeline.init( name ) )
     {
 	ETRACE( "Failed to create sync timeline for %s", name.string() );
     }
+#endif
 }
 
 void DrmPageFlipHandler::init()
@@ -78,7 +88,7 @@ void DrmPageFlipHandler::init()
     {
         return;
     }
-
+#ifdef uncomment
     const DisplayCaps& genCaps = mDisplay.getDisplayCaps( );
     const DrmDisplayCaps& drmCaps = mDisplay.getDrmDisplayCaps( );
     mNumPlanes = genCaps.getNumPlanes( );
@@ -92,7 +102,7 @@ void DrmPageFlipHandler::init()
             break;
         }
     }
-
+#endif
     delete mpImpl;
     mpImpl = NULL;
 
@@ -131,7 +141,7 @@ void DrmPageFlipHandler::uninit( void )
     DTRACEIF( DRM_PAGEFLIP_DEBUG, DRM_PFH_NAME " " DRMDISPLAY_ID_STR " Uninitialising", DRMDISPLAY_ID_PARAMS );
     ScopedSpinLock _l(mLock);
 
-    INTEL_UFO_HWC_ASSERT_MUTEX_HELD( mLockPageFlip );
+    HWC_ASSERT_LOCK_NOT_HELD( mLock );
     if ( !mbInit )
         return;
 
@@ -185,13 +195,15 @@ bool DrmPageFlipHandler::readyForFlip( void )
     ScopedSpinLock _l(mLock);
     if ( isOutstandingFlipWork( ) )
     {
+#ifdef uncomment
         nsecs_t now = systemTime(SYSTEM_TIME_MONOTONIC);
         uint32_t ela = (uint32_t)int64_t( now - mLastPageFlipTime );
         if ( ela > mTimeoutFlip )
         {
-	    Log::ETRACE( true, "Drm " DRMDISPLAY_ID_STR " flip completion timeout", DRMDISPLAY_ID_PARAMS );
+	    Log::aloge( true, "Drm " DRMDISPLAY_ID_STR " flip completion timeout", DRMDISPLAY_ID_PARAMS );
             completeFlip( );
         }
+#endif
     }
     return !isOutstandingFlipWork( );
 }
@@ -311,7 +323,7 @@ void DrmPageFlipHandler::retire( DisplayQueue::Frame* pNewFrame )
 
 void DrmPageFlipHandler::doRetire( DisplayQueue::Frame* pNewFrame )
 {
-    INTEL_UFO_HWC_ASSERT_MUTEX_HELD( mLockPageFlip );
+    HWC_ASSERT_LOCK_NOT_HELD( mLock );
     HWCASSERT( pNewFrame );
     const uint32_t releaseTo = pNewFrame->getFrameId().getTimelineIndex();
     Log::alogd( DRM_PAGEFLIP_DEBUG, " Drm " DRMDISPLAY_ID_STR " advancing immediately for skipped frame [timeline:%u]", DRMDISPLAY_ID_PARAMS, releaseTo );
@@ -326,13 +338,13 @@ void DrmPageFlipHandler::pageFlipEvent( void )
 
     if ( !mbInit )
     {
-	Log::ETRACE( true, "Drm " DRMDISPLAY_ID_STR " Unexpected flip event - not initialised", DRMDISPLAY_ID_PARAMS );
+	Log::aloge( true, "Drm " DRMDISPLAY_ID_STR " Unexpected flip event - not initialised", DRMDISPLAY_ID_PARAMS );
         return;
     }
 
     if ( !isOutstandingFlipWork( ) )
     {
-	Log::ETRACE( true, "Drm " DRMDISPLAY_ID_STR " Unexpected flip event - no outstanding flip", DRMDISPLAY_ID_PARAMS );
+	Log::aloge( true, "Drm " DRMDISPLAY_ID_STR " Unexpected flip event - no outstanding flip", DRMDISPLAY_ID_PARAMS );
         return;
     }
 
@@ -351,7 +363,8 @@ void DrmPageFlipHandler::sync( void )
 
 void DrmPageFlipHandler::doSync( void )
 {
-    INTEL_UFO_HWC_ASSERT_MUTEX_HELD( mLockPageFlip );
+#ifdef uncomment
+    HWC_ASSERT_LOCK_NOT_HELD( mLock );
     DTRACEIF( DRM_PAGEFLIP_DEBUG, DRM_PFH_NAME " " DRMDISPLAY_ID_STR " Sync", DRMDISPLAY_ID_PARAMS );
 
     if ( isOutstandingFlipWork( ) )
@@ -365,17 +378,18 @@ void DrmPageFlipHandler::doSync( void )
         {
             if ( isOutstandingFlipWork( ) )
             {
-		Log::ETRACE( true, "Drm " DRMDISPLAY_ID_STR " Forcing flip completion for frame %s",
+		Log::aloge( true, "Drm " DRMDISPLAY_ID_STR " Forcing flip completion for frame %s",
                     DRMDISPLAY_ID_PARAMS, mpLastFlippedFrame->getFrameId().dump().string() );
                 completeFlip( );
             }
         }
     }
+#endif
 }
 
 bool DrmPageFlipHandler::waitForFlipCompletion( void )
 {
-    INTEL_UFO_HWC_ASSERT_MUTEX_HELD( mLockPageFlip );
+    HWC_ASSERT_LOCK_NOT_HELD( mLock );
     DTRACEIF( DRM_PAGEFLIP_DEBUG, DRM_PFH_NAME " " DRMDISPLAY_ID_STR " Wait for previous flip", DRMDISPLAY_ID_PARAMS );
 #ifdef uncomment
     // Keep spinning until flip event has been received and processed.
@@ -384,7 +398,7 @@ bool DrmPageFlipHandler::waitForFlipCompletion( void )
         status_t err = mConditionPageFlipComplete.waitRelative( mLockPageFlip, ms2ns( mTimeoutSyncMsec ) );
         if ( err == TIMED_OUT )
         {
-	    Log::ETRACE( true, "Drm " DRMDISPLAY_ID_STR " wait flip completion timed out [%ums].", DRMDISPLAY_ID_PARAMS, mTimeoutSyncMsec );
+	    Log::aloge( true, "Drm " DRMDISPLAY_ID_STR " wait flip completion timed out [%ums].", DRMDISPLAY_ID_PARAMS, mTimeoutSyncMsec );
             return false;
         }
     }
@@ -397,10 +411,10 @@ bool DrmPageFlipHandler::waitForFlipCompletion( void )
 
     return true;
 }
-
+#ifdef uncomment
 void DrmPageFlipHandler::retirePreviousFrames( DisplayQueue::Frame* pNewFrame )
 {
-    INTEL_UFO_HWC_ASSERT_MUTEX_HELD( mLockPageFlip );
+    HWC_ASSERT_LOCK_NOT_HELD( mLock );
     HWCASSERT( pNewFrame );
     // A frame with a valid frameId will be a regular frame.
     // A frame without a valid frameId will be an inserted frame (eg. blanking frame).
@@ -429,10 +443,11 @@ void DrmPageFlipHandler::retirePreviousFrames( DisplayQueue::Frame* pNewFrame )
         }
     }
 }
-
+#endif
 void DrmPageFlipHandler::completeFlip( void )
 {
-    INTEL_UFO_HWC_ASSERT_MUTEX_HELD( mLockPageFlip );
+#ifdef uncomment
+    HWC_ASSERT_LOCK_NOT_HELD( mLock );
     DTRACEIF( DRM_PAGEFLIP_DEBUG,
               DRM_PFH_NAME " " DRMDISPLAY_ID_STR " Complete flip : Entry %s",
               DRMDISPLAY_ID_PARAMS, getStatusString( ).string( ) );
@@ -479,17 +494,22 @@ void DrmPageFlipHandler::completeFlip( void )
     DTRACEIF( DRM_PAGEFLIP_DEBUG,
               DRM_PFH_NAME " " DRMDISPLAY_ID_STR " Complete flip : Exit %s",
               DRMDISPLAY_ID_PARAMS, getStatusString( ).string( ) );
+#endif
 }
 
 String8 DrmPageFlipHandler::getStatusString( void )
 {
-    INTEL_UFO_HWC_ASSERT_MUTEX_HELD( mLockPageFlip );
+#ifdef uncomment
+    HWC_ASSERT_LOCK_NOT_HELD( mLock );
     String8 str = String8::format(
         "Timeline:%u/%u Current:%s LastFlip:%s",
         mTimeline.getCurrentTime( ), mTimeline.getFutureTime( ),
         mpCurrentFrame ? mpCurrentFrame->getFrameId().dump().string() : "N/A",
         mpLastFlippedFrame ? mpLastFlippedFrame->getFrameId().dump().string() : "N/A" );
     return str;
+#else
+    return String8();
+ #endif
 }
 
 }; // namespace hwcomposer

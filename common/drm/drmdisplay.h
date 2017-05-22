@@ -17,7 +17,7 @@
 #ifndef COMMON_DRM_DRMDISPLAY_H
 #define COMMON_DRM_DRMDISPLAY_H
 
-#include "drm.h"
+#include "drm_internal.h"
 #include "physicaldisplay.h"
 #include "drmpagefliphandler.h"
 #include "drmdisplaycaps.h"

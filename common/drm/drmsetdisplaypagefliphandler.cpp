@@ -15,7 +15,7 @@
 */
 #include "Common.h"
 #include "DrmSetDisplayPageFlipHandler.h"
-#include "Drm.h"
+#include "drm_internal.h"
 #include "DrmDisplay.h"
 #include "DisplayCaps.h"
 #include "Utils.h"

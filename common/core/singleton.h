@@ -18,6 +18,7 @@
 #define COMMON_CORE_SINGLETON_H_
 
 #include "base.h"
+#include "hwcdefs_internal.h"
 
 namespace hwcomposer {
 

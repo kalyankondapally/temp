@@ -15,13 +15,17 @@
 */
 
 #include "drmnuclearpagefliphandler.h"
-#include "drm.h"
+#include "drm_internal.h"
 #ifdef uncomment
 #include "drmdisplay.h"
 #endif
 #include "displaycaps.h"
 #include "log.h"
 #include "hwcutils.h"
+
+#include <unistd.h>
+#include <xf86drm.h>
+#include <xf86drmMode.h>
 
 #if HWC_USE_ATOMIC_NUCLEAR
 
@@ -315,7 +319,7 @@ String8 DrmNuclearHelper::dump(const Properties& props) const
     const uint32_t* pPropsCounts  = props.getPropCounts();
     const uint32_t* pProps        = props.getProps();
     const uint64_t* pValues       = props.getValues();
-
+#ifdef uncomment
     for (uint32_t o = 0; o < props.getNumObjs(); o++)
     {
         String8 str;
@@ -340,12 +344,12 @@ String8 DrmNuclearHelper::dump(const Properties& props) const
             else if ((mPropCrtcActive != Drm::INVALID_PROPERTY) && (pProps[p] == mPropCrtcActive )) { str.appendFormat("ACTIVE:%" PRIx64 " "      , pValues[p]); }
             else                                                                                    { str.appendFormat("UNKNOWN:%" PRIx64 " "     , pValues[p]); }
         }
-#ifdef uncomment
         output.appendFormat("%s:%-2d %s\n", mDisplay.getName(), pObjs[o], str.string());
-#endif
+
         pProps += pPropsCounts[o];
         pValues += pPropsCounts[o];
     }
+#endif
     return output;
 }
 #ifdef uncomment

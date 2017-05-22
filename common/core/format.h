@@ -574,6 +574,7 @@ enum {
     HWC_PIXEL_FORMAT_YUV420PackedSemiPlanar_Tiled_INTEL = 0x7FA00F00,
 };
 
+#ifdef uncomment
 // Utility function - returns human-readable string from a HAL format number.
 const char* getHALFormatString( int32_t halFormat );
 const char* getHALFormatShortString( int32_t halFormat );
@@ -583,6 +584,7 @@ const char* getDRMFormatString( int32_t drmFormat );
 const char* getTilingFormatString( ETilingFormat halFormat );
 // Utility function - returns human-readable string from a Dataspace number.
 HWCString getDataSpaceString( DataSpace dataspace );
+#endif
 
 
 } // namespace hwcomposer

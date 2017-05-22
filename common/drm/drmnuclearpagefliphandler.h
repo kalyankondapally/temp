@@ -20,7 +20,7 @@
 
 #include "drmpagefliphandler.h"
 #include "timeline.h"
-#include "drm.h"
+#include "drm_internal.h"
 
 #if HWC_USE_ATOMIC_NUCLEAR
 

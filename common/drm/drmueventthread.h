@@ -17,7 +17,7 @@
 #ifndef COMMON_DRM_DRMUEVENTTHREAD_H
 #define COMMON_DRM_DRMUEVENTTHREAD_H
 
-#include "drm.h"
+#include "drm_internal.h"
 #include "hwcthread.h"
 
 namespace hwcomposer {

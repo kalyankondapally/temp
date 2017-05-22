@@ -15,6 +15,8 @@
 */
 
 #include "displaycaps.h"
+
+#include <drm_fourcc.h>
 //#include "Layer.h"
 #include "log.h"
 
@@ -56,27 +58,27 @@ DisplayCaps::PlaneCaps::~PlaneCaps( )
 void DisplayCaps::PlaneCaps::setTransforms( uint32_t numTransforms, const ETransform* pTransforms )
 {
     mTransformLUT.clear( );
-    ALOG_ASSERT( ( ( numTransforms == 0 ) && ( pTransforms == NULL ) )
+    HWCASSERT( ( ( numTransforms == 0 ) && ( pTransforms == NULL ) )
               || ( ( numTransforms != 0 ) && ( pTransforms != NULL ) ) );
     for ( uint32_t t = 0; t < numTransforms; ++t )
     {
-        mTransformLUT.push( pTransforms[t] );
+	mTransformLUT.emplace_back( pTransforms[t] );
     }
 }
 
 void DisplayCaps::PlaneCaps::setDisplayFormats( uint32_t numDisplayFormats, const int32_t* pDisplayFormats )
 {
     mDisplayFormatLUT.clear( );
-    ALOG_ASSERT( ( ( numDisplayFormats == 0 ) && ( pDisplayFormats == NULL ) )
+    HWCASSERT( ( ( numDisplayFormats == 0 ) && ( pDisplayFormats == NULL ) )
               || ( ( numDisplayFormats != 0 ) && ( pDisplayFormats != NULL ) ) );
     for ( uint32_t f = 0; f < numDisplayFormats; ++f )
     {
-        mDisplayFormatLUT.push( pDisplayFormats[f] );
+	mDisplayFormatLUT.emplace_back( pDisplayFormats[f] );
     }
     updateCSCFormats();
 }
 
-void DisplayCaps::PlaneCaps::setDisplayFormats( const Vector<int32_t>& formats )
+void DisplayCaps::PlaneCaps::setDisplayFormats( const std::vector<int32_t>& formats )
 {
     mDisplayFormatLUT = formats;
     updateCSCFormats();
@@ -87,8 +89,8 @@ bool DisplayCaps::PlaneCaps::isTransformSupported( ETransform transform ) const
     uint32_t numTransforms = mTransformLUT.size( );
     if ( numTransforms )
     {
-        const ETransform* pTransforms = mTransformLUT.array( );
-        ALOG_ASSERT( pTransforms );
+	const ETransform* pTransforms = mTransformLUT.data( );
+	HWCASSERT( pTransforms );
         for ( uint32_t t = 0; t < numTransforms; ++t )
         {
             if ( pTransforms[t] == transform )
@@ -105,8 +107,8 @@ bool DisplayCaps::PlaneCaps::isDisplayFormatSupported( int32_t displayFormat ) c
     uint32_t numDisplayFormats = mDisplayFormatLUT.size( );
     if ( numDisplayFormats )
     {
-        const int32_t* pDisplayFormats = mDisplayFormatLUT.array( );
-        ALOG_ASSERT( pDisplayFormats );
+	const int32_t* pDisplayFormats = mDisplayFormatLUT.data( );
+	HWCASSERT( pDisplayFormats );
         for ( uint32_t f = 0; f < numDisplayFormats; ++f )
         {
             if ( pDisplayFormats[f] == displayFormat )
@@ -224,8 +226,8 @@ String8 DisplayCaps::PlaneCaps::transformLUTString( void ) const
     uint32_t numTransforms = mTransformLUT.size( );
     if ( numTransforms )
     {
-        const ETransform* pTransforms = mTransformLUT.array( );
-        ALOG_ASSERT( pTransforms );
+	const ETransform* pTransforms = mTransformLUT.data( );
+	HWCASSERT( pTransforms );
         for ( uint32_t t = 0; t < numTransforms; ++t )
         {
             if ( t )
@@ -261,14 +263,16 @@ String8 DisplayCaps::PlaneCaps::displayFormatLUTString( void ) const
     uint32_t numDisplayFormats = mDisplayFormatLUT.size( );
     if ( numDisplayFormats )
     {
-        const int32_t* pDisplayFormats = mDisplayFormatLUT.array( );
-        ALOG_ASSERT( pDisplayFormats );
+	const int32_t* pDisplayFormats = mDisplayFormatLUT.data( );
+	HWCASSERT( pDisplayFormats );
 
         for ( uint32_t f = 0; f < numDisplayFormats; ++f )
         {
             if ( f )
                 str += "|";
+#ifdef uncomment
             str += getHALFormatString( pDisplayFormats[ f ] );
+#endif
         }
     }
     str += "  Tiling:";
@@ -290,10 +294,12 @@ String8 DisplayCaps::PlaneCaps::displayFormatLUTString( void ) const
 String8 DisplayCaps::PlaneCaps::cscFormatLUTString( void ) const
 {
     String8 output;
+ #ifdef uncomment
     output.appendFormat("RGBX:%s ",  getHALFormatString( mCSCFormat[ CSC_CLASS_RGBX ] ) );
     output.appendFormat("RGBA:%s ",  getHALFormatString( mCSCFormat[ CSC_CLASS_RGBA ] ) );
     output.appendFormat("YUY8:%s ",  getHALFormatString( mCSCFormat[ CSC_CLASS_YUV8 ] ) );
     output.appendFormat("YUY16:%s ", getHALFormatString( mCSCFormat[ CSC_CLASS_YUV16 ] ) );
+#endif
     return output;
 }
 
@@ -302,7 +308,7 @@ bool DisplayCaps::PlaneCaps::isSupported( const Layer& ly ) const
 {
     if ( !isTilingFormatSupported( ly.getBufferTilingFormat() ) )
     {
-        ALOGD_IF( PLANEALLOC_CAPS_DEBUG, "PlaneCaps::isSupported() : Invalid tile(%s)", getTilingFormatString(ly.getBufferTilingFormat()) );
+	DTRACEIF( PLANEALLOC_CAPS_DEBUG, "PlaneCaps::isSupported() : Invalid tile(%s)", getTilingFormatString(ly.getBufferTilingFormat()) );
         return false;
     }
     return true;
@@ -381,7 +387,7 @@ void DisplayCaps::updateZOrderMasks( void )
 {
     // For each overlay, establish which overlays can precede it and which overlays can follow it in Z order.
     // Do this by parsing the mpZOrderLUT.
-    ALOG_ASSERT( mpPlaneCaps.size( ) <= MAX_OVERLAYS );
+    HWCASSERT( mpPlaneCaps.size( ) <= MAX_OVERLAYS );
 
     uint32_t preMaskDefault = 0;
     uint32_t postMaskDefault = (1 << mpPlaneCaps.size( ))-1;
@@ -396,7 +402,7 @@ void DisplayCaps::updateZOrderMasks( void )
         for (uint32_t le = 0; le < mZOrderLUT.size(); le++)
         {
             const char* pchOv = strchr( mZOrderLUT[le].getHWCZOrder( ), ovchar );
-            ALOGD_IF( !pchOv, "%s Missing overlay char [%c] in ZOrderLUT entry %u [==%s]", __FUNCTION__, ovchar, le, mZOrderLUT[le].getHWCZOrder( ) );
+	    DTRACEIF( !pchOv, "%s Missing overlay char [%c] in ZOrderLUT entry %u [==%s]", __FUNCTION__, ovchar, le, mZOrderLUT[le].getHWCZOrder( ) );
             if ( pchOv )
             {
                 const char* pchTmp;
@@ -497,6 +503,7 @@ String8 DisplayCaps::displayCapsString( void ) const
 
 void DisplayCaps::dump( void ) const
 {
+#ifdef uncomment
     LOG_DISPLAY_CAPS( ( "HWC Display %s Capabilities", mName ) );
     LOG_DISPLAY_CAPS( ( " Caps                         : %s", displayCapsString( ).string( ) ) );
     LOG_DISPLAY_CAPS( ( " ZOrders                      : %s", zOrdersString( ).string( ) ) );
@@ -513,6 +520,7 @@ void DisplayCaps::dump( void ) const
         LOG_DISPLAY_CAPS( ( "  Formats    : %s", planeDisplayFormatLUTString( p ).string( ) ) );
         LOG_DISPLAY_CAPS( ( "  CSC        : %s", planeCscFormatLUTString( p ).string( ) ) );
     }
+#endif
 }
 
 }; // namespace hwcomposer

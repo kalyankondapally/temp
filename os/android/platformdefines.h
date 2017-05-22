@@ -38,6 +38,8 @@
 #include <utils/String8.h>
 #include <utils/Timers.h>
 
+#include "hwcdefs_internal.h"
+
 #ifdef _cplusplus
 extern "C" {
 #endif

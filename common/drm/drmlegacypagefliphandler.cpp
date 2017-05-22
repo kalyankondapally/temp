@@ -15,7 +15,7 @@
 */
 
 #include "drmlegacypagefliphandler.h"
-#include "drm.h"
+#include "drm_internal.h"
 #ifdef uncomment
 #include "drmdisplay.h"
 #endif

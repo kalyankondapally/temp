@@ -66,6 +66,9 @@ class GpuDevice {
   // Force a geometry change on the next onPrepare and redraw.
   void ForceGeometryChangeAndRedraw() { }
 
+  // Force a geometry change on the next onPrepare.
+  void forceGeometryChange() { }
+
   void forceRedraw( ) { }
 
   // This will force a fresh redraw and wait for it to complete.

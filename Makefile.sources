@@ -11,6 +11,7 @@ common_SOURCES =              \
     common/core/overlaylayer.cpp \
     common/core/timeline.cpp \
     common/display/display.cpp \
+    common/display/displaycaps.cpp \
     common/display/displayqueue.cpp \
     common/display/displayplane.cpp \
     common/display/displayplanemanager.cpp \
@@ -28,7 +29,6 @@ common_SOURCES =              \
     common/utils/disjoint_layers.cpp \
     common/utils/option.cpp \
     common/utils/optionmanager.cpp \
-    common/utils/persistentregistry.cpp \
     common/utils/log/log.cpp \
     os/linux/gbmbufferhandler.cpp \
     os/linux/platformdefines.cpp \

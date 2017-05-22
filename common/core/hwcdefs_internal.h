@@ -121,5 +121,15 @@ enum {
   FDS_NOT_ALLOWED = 0x80000007,
 };
 
+#ifdef __cplusplus
+#define CC_LIKELY(exp) (__builtin_expect(!!(exp), true))
+#define CC_UNLIKELY(exp) (__builtin_expect(!!(exp), false))
+#else
+#define CC_LIKELY(exp) (__builtin_expect(!!(exp), 1))
+#define CC_UNLIKELY(exp) (__builtin_expect(!!(exp), 0))
+#endif
+
+#define CONDITION(cond) (__builtin_expect((cond) != 0, 0))
+
 }  // namespace hwcomposer
 #endif  // PUBLIC_HWCDEFS_H_

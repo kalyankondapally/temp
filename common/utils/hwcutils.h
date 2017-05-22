@@ -39,7 +39,6 @@ inline HWCString dumpDisplayType(EDisplayType eDT) {
 };
 
 // Helper functions.
-#ifdef uncomment
 /**
  */
 template <typename T>
@@ -60,7 +59,7 @@ inline T alignTo(T value, T align) {
   HWCASSERT(align > 1 && !(align & (align - 1)));
   return (value + (align - 1)) & ~(align - 1);
 }
-#endif
+
 inline float fixed16ToFloat(int v)
 {
     return float(v) / 65536.0f;

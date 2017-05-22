@@ -20,7 +20,7 @@
 
 #include "DrmPageFlipHandler.h"
 #include "Timeline.h"
-#include "Drm.h"
+#include "drm_internal.h"
 
 #if VPG_DRM_HAVE_ATOMIC_SETDISPLAY
 

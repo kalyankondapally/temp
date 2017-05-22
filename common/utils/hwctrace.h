@@ -221,12 +221,6 @@ class TraceFunc {
 #define HWC_ASSERT_LOCK_NOT_HELD3( mDisplayTimingsLock ) ((void)0);
 #endif
 
-// Utility function - returns human-readable string from a HAL format number.
-const char* getHALFormatString(int32_t halFormat);
-const char* getHALFormatShortString(int32_t halFormat);
-// Utility function - returns human-readable string from a DRM format number.
-const char* getDRMFormatString(int32_t drmFormat);
-
 #define BUFFER_MANAGER_DEBUG            0 // Debug from buffer manager.
 #define BUFFERQUEUE_DEBUG               0 // Debug from the BufferQueue class
 #define COMPOSITION_DEBUG               0 // Debug related to the Hardware classes

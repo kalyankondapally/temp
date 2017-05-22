@@ -16,20 +16,20 @@
 
 // #define LOG_TAG "ivpg-hwc.hotplug"
 
-#include "Hwc.h"
-#include "DrmUEventThread.h"
-#include "Drm.h"
-#include "DrmDisplay.h"
-#include "AbstractPlatform.h"
-#include "HwcService.h"
+#include "drmueventthread.h"
+#include "drm_internal.h"
+#ifdef uncomment
+#include "drmdisplay.h"
+#endif
+
+#include "gpudevice.h"
+#include "hwctrace.h"
 
 #include <sys/socket.h>
 #include <linux/netlink.h>
 #include <poll.h>
 
-namespace intel {
-namespace ufo {
-namespace hwc {
+namespace hwcomposer {
 
 #if !defined(DRM_MODE_CONNECTOR_DSI)
 // Currently needed for GMIN builds where libdrm doesnt define this
@@ -122,10 +122,9 @@ void DrmUEventThread::HandleRoutine()
         else
         {
 	    ETRACE("error recv from uevent socket, %zd, exiting hotplug thread", mUeventMsgSize);
-            return false;
+	    return;
         }
     }
-    return true;
 }
 
 
@@ -249,8 +248,10 @@ status_t DrmUEventThread::onUEvent( void )
         case Drm::UEvent::HOTPLUG_IMMINENT:
             {
             int64_t p;
+#ifdef uncomment
             HwcService& hwcService = HwcService::getInstance();
             hwcService.notify(HwcService::ePavpDisableAllEncryptedSessions, 0, &p);
+#endif
             }
             break;
         default:
@@ -260,6 +261,4 @@ status_t DrmUEventThread::onUEvent( void )
     return OK;
 }
 
-}; // namespace hwc
-}; // namespace ufo
-}; // namespace intel
+}; // namespace hwcomposer

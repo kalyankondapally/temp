@@ -29,6 +29,7 @@
 #include <libsync.h>
 
 #include "string8.h"
+#include "hwcdefs_internal.h"
 
 struct gbm_handle {
 #ifdef USE_MINIGBM
@@ -81,20 +82,10 @@ extern "C" {
 #define ATRACE_INT_IF(enable, name, value) ((void)0)
 #define ATRACE_EVENT_IF(enable, name) ((void)0)
 
-#define CONDITION(cond) (__builtin_expect((cond) != 0, 0))
-
 #ifndef LOG_ALWAYS_FATAL_IF
 #define LOG_ALWAYS_FATAL_IF(cond, ...)                                  \
   ((CONDITION(cond)) ? ((void)HWCASSERT(#cond, LOG_TAG, ##__VA_ARGS__)) \
                      : (void)0)
-#endif
-
-#ifdef __cplusplus
-#define CC_LIKELY(exp) (__builtin_expect(!!(exp), true))
-#define CC_UNLIKELY(exp) (__builtin_expect(!!(exp), false))
-#else
-#define CC_LIKELY(exp) (__builtin_expect(!!(exp), 1))
-#define CC_UNLIKELY(exp) (__builtin_expect(!!(exp), 0))
 #endif
 
 // _cplusplus

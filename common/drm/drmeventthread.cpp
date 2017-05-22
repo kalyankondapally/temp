@@ -18,7 +18,7 @@
 #ifdef uncomment
 #include "drmdisplay.h"
 #endif
-#include "drm.h"
+#include "drm_internal.h"
 #include "log.h"
 #include "hwctrace.h"
 

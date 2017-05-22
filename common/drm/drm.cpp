@@ -14,7 +14,7 @@
 // limitations under the License.
 */
 
-#include "drm.h"
+#include "drm_internal.h"
 
 #include <inttypes.h>
 #include <fcntl.h>

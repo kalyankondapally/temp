@@ -14,11 +14,15 @@
 // limitations under the License.
 */
 
-#include "drm.h"
+#include "drm_internal.h"
 #include "drmdisplaycaps.h"
 #include "drmutils.h"
 #include "log.h"
 #include "displaystate.h"
+
+#include <unistd.h>
+#include <xf86drm.h>
+#include <xf86drmMode.h>
 
 namespace hwcomposer {
 

@@ -19,7 +19,7 @@
 #define COMMON_DRM_PAGEFLIPHANDLER_H
 
 #include "base.h"
-#include "drm.h"
+#include "drm_internal.h"
 #include "hwcutils.h"
 #include "displayqueue.h"
 #include "timeline.h"
@@ -114,6 +114,8 @@ protected:
     // Retire the next frame (instead of flipping it).
     // This will advance timeline to release all work up to and including this frame.
     void doRetire( DisplayQueue::Frame* pNewFrame );
+#else
+	bool isOutstandingFlipWork( void ) { return false; }
 #endif
     // Waits for last flip to complete - force completion if necessary.
     void doSync( void );
