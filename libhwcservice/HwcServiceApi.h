@@ -19,6 +19,8 @@
 
 #include <stdint.h>
 
+#include "hwcdefs_internal.h"
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -57,14 +59,6 @@ status_t HwcService_Display_SetOverscan(HWCSHANDLE hwcs, uint32_t display, int32
 // Get last set overscan.
 // Returns INVALID_OPERATION if overscan has not been set and xoverscan/yoverscan are untouched.
 status_t HwcService_Display_GetOverscan(HWCSHANDLE hwcs, uint32_t display, int32_t *xoverscan, int32_t *yoverscan);
-
-typedef enum _EHwcsScalingMode {
-    HWCS_SCALE_CENTRE  = 0,  // Present the content centred at 1:1 source resolution.
-    HWCS_SCALE_STRETCH,      // Do not preserve aspect ratio - scale to fill the display without cropping.
-    HWCS_SCALE_FIT,          // Preserve aspect ratio - scale to closest edge (may be letterboxed or pillarboxed).
-    HWCS_SCALE_FILL,         // Preserve aspect ratio - scale to fill the display (may crop the content).
-    HWCS_SCALE_MAX_ENUM      // End of enum.
-} EHwcsScalingMode;
 
 /// Set scaling to one of EScalingMode.
 // Returns OK if succesful.

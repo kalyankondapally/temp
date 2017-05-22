@@ -36,6 +36,7 @@
 #include <sw_sync.h>
 #include <sync/sync.h>
 #include <utils/String8.h>
+#include <utils/Timers.h>
 
 #ifdef _cplusplus
 extern "C" {
@@ -48,6 +49,7 @@ struct gralloc_handle {
 
 typedef struct gralloc_handle* HWCNativeHandle;
 typedef android::String8 HWCString;
+typedef android::status_t err_status_t;
 
 #define VTRACE(fmt, ...) ALOGV("%s: " fmt, __func__, ##__VA_ARGS__)
 #define DTRACE(fmt, ...) ALOGD("%s: " fmt, __func__, ##__VA_ARGS__)
@@ -58,6 +60,7 @@ typedef android::String8 HWCString;
 #define ITRACEIF(fmt, ...) ALOGI_IF(fmt, ##__VA_ARGS__)
 #define DTRACEIF(fmt, ...) ALOGD_IF("%s: " fmt, __func__, ##__VA_ARGS__)
 #define VTRACEIF(fmt, ...) ALOGV_IF("%s: " fmt, __func__, ##__VA_ARGS__)
+#define WTRACEIF(fmt, ...) ALOGW_IF("%s: " fmt, __func__, ##__VA_ARGS__)
 #define HWCASSERT(fmt, ...) \
   ALOG_ASSERT(stderr, "%s: \n" fmt, __func__, ##__VA_ARGS__)
 #define STRACE() ATRACE_CALL()

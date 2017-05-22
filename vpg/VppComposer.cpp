@@ -63,15 +63,15 @@ static bool isOutputFormatSupported(int32_t format)
 {
     switch(format)
     {
-        case HAL_PIXEL_FORMAT_NV12_Y_TILED_INTEL:
-        case HAL_PIXEL_FORMAT_YCbCr_422_I:
-        case HAL_PIXEL_FORMAT_RGBA_8888:
-        case HAL_PIXEL_FORMAT_BGRA_8888:
-        case HAL_PIXEL_FORMAT_RGBX_8888:
-        case HAL_PIXEL_FORMAT_RGB_565:
-        case HAL_PIXEL_FORMAT_YV12:
-        case HAL_PIXEL_FORMAT_A2R10G10B10_INTEL:
-        case HAL_PIXEL_FORMAT_A2B10G10R10_INTEL:
+	case HWC_PIXEL_FORMAT_NV12_Y_TILED_INTEL:
+	case DRM_FORMAT_YUYV:
+	case DRM_FORMAT_ABGR8888:
+	case DRM_FORMAT_ARGB8888:
+	case DRM_FORMAT_XBGR8888:
+	case DRM_FORMAT_RGB565:
+	case HWC_PIXEL_FORMAT_YV12:
+	case HWC_PIXEL_FORMAT_A2R10G10B10_INTEL:
+	case HWC_PIXEL_FORMAT_A2B10G10R10_INTEL:
             return true;
         default:
             return false;
@@ -87,28 +87,28 @@ static bool isInputFormatSupported(int32_t format)
 
     switch(format)
     {
-        case HAL_PIXEL_FORMAT_NV12_LINEAR_PACKED_INTEL:
-        case HAL_PIXEL_FORMAT_NV12_X_TILED_INTEL:
-        case HAL_PIXEL_FORMAT_NV12_Y_TILED_INTEL:
-        case HAL_PIXEL_FORMAT_NV12_LINEAR_INTEL:
-        case HAL_PIXEL_FORMAT_NV12_LINEAR_CAMERA_INTEL:
-        case HAL_PIXEL_FORMAT_YUV420PackedSemiPlanar_INTEL:
-        case HAL_PIXEL_FORMAT_YUV420PackedSemiPlanar_Tiled_INTEL:
-        case HAL_PIXEL_FORMAT_YCbCr_422_I:
-        case HAL_PIXEL_FORMAT_RGBA_8888:
-        case HAL_PIXEL_FORMAT_BGRA_8888:
-        case HAL_PIXEL_FORMAT_RGBX_8888:
-        case HAL_PIXEL_FORMAT_YCbCr_422_H_INTEL:
-        case HAL_PIXEL_FORMAT_RGB_565:
-        case HAL_PIXEL_FORMAT_YV12:
-        case HAL_PIXEL_FORMAT_GENERIC_8BIT_INTEL:
-        case HAL_PIXEL_FORMAT_YCbCr_420_H_INTEL:
-        case HAL_PIXEL_FORMAT_YCbCr_411_INTEL:
-        case HAL_PIXEL_FORMAT_YCbCr_422_V_INTEL:
-        case HAL_PIXEL_FORMAT_YCbCr_444_INTEL:
-        case HAL_PIXEL_FORMAT_P010_INTEL:
+	case HWC_PIXEL_FORMAT_NV12_LINEAR_PACKED_INTEL:
+	case HWC_PIXEL_FORMAT_NV12_X_TILED_INTEL:
+	case HWC_PIXEL_FORMAT_NV12_Y_TILED_INTEL:
+	case HWC_PIXEL_FORMAT_NV12_LINEAR_INTEL:
+	case HWC_PIXEL_FORMAT_NV12_LINEAR_CAMERA_INTEL:
+	case HWC_PIXEL_FORMAT_YUV420PackedSemiPlanar_INTEL:
+	case HWC_PIXEL_FORMAT_YUV420PackedSemiPlanar_Tiled_INTEL:
+	case DRM_FORMAT_YUYV:
+	case DRM_FORMAT_ABGR8888:
+	case DRM_FORMAT_ARGB8888:
+	case DRM_FORMAT_XBGR8888:
+	case HWC_PIXEL_FORMAT_YCbCr_422_H_INTEL:
+	case DRM_FORMAT_RGB565:
+	case HWC_PIXEL_FORMAT_YV12:
+	case HWC_PIXEL_FORMAT_GENERIC_8BIT_INTEL:
+	case HWC_PIXEL_FORMAT_YCbCr_420_H_INTEL:
+	case HWC_PIXEL_FORMAT_YCbCr_411_INTEL:
+	case HWC_PIXEL_FORMAT_YCbCr_422_V_INTEL:
+	case HWC_PIXEL_FORMAT_YCbCr_420_H_INTEL:
+	case HWC_PIXEL_FORMAT_P010_INTEL:
             return true;
-        case HAL_PIXEL_FORMAT_YCrCb_422_H_INTEL:
+	case HWC_PIXEL_FORMAT_YCrCb_422_H_INTEL:
         default:
             return false;
     }
@@ -401,7 +401,7 @@ void VppComposer::onCompose(const Content::LayerStack& source, const Layer& targ
     outputLayer.colorStandard = dataSpaceToVpStandard(target.getDataSpace().standard);
 #endif
 
-    if (target.getBufferFormat() == HAL_PIXEL_FORMAT_YCbCr_422_I)
+    if (target.getBufferFormat() == DRM_FORMAT_YUYV)
     {
         // YUY2 destinations are going to the sprite planes. Currently, these need to be full range.
         // TODO: We should ensure that the render target is correctly specified rather than hardcoding it here.

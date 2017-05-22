@@ -17,6 +17,7 @@
 #ifndef INTEL_UFO_HWC_PARTITIONEDCOMPOSER_H
 #define INTEL_UFO_HWC_PARTITIONEDCOMPOSER_H
 
+#include "base.h"
 #include "AbstractComposer.h"
 #include "Option.h"
 #include <ui/Region.h>

@@ -17,6 +17,7 @@
 #ifndef INTEL_UFO_HWC_OVERLAYMANAGER_H
 #define INTEL_UFO_HWC_OVERLAYMANAGER_H
 
+#include "base.h"
 #include "Common.h"
 #include "DisplayCaps.h"
 #include "DisplayState.h"

@@ -9,12 +9,15 @@ common_SOURCES =              \
     common/core/overlaybuffer.cpp \
     common/core/overlaybuffermanager.cpp \
     common/core/overlaylayer.cpp \
+    common/core/timeline.cpp \
     common/display/display.cpp \
     common/display/displayqueue.cpp \
     common/display/displayplane.cpp \
     common/display/displayplanemanager.cpp \
     common/display/headless.cpp \
     common/display/kmsfencehandler.cpp \
+    common/display/physicaldisplay.cpp \
+    common/display/softwarevsyncthread.cpp \
     common/display/vblankeventhandler.cpp \
     common/display/virtualdisplay.cpp \
     common/utils/drmscopedtypes.cpp \
@@ -25,6 +28,8 @@ common_SOURCES =              \
     common/utils/disjoint_layers.cpp \
     common/utils/option.cpp \
     common/utils/optionmanager.cpp \
+    common/utils/persistentregistry.cpp \
+    common/utils/log/log.cpp \
     os/linux/gbmbufferhandler.cpp \
     os/linux/platformdefines.cpp \
     os/linux/sharedbuffer.cpp \
@@ -48,3 +53,20 @@ vk_SOURCES =\
     common/compositor/vk/nativevkresource.cpp \
     common/compositor/vk/vkshim.cpp \
         $(NULL)
+
+drm_SOURCES =              \
+    common/drm/drm.cpp \
+    common/drm/drmdisplaycaps.cpp \
+    common/drm/drmeventthread.cpp \
+    common/drm/drmlegacypagefliphandler.cpp \
+    common/drm/drmnuclearpagefliphandler.cpp \
+    common/drm/drmpagefliphandler.cpp \
+    common/drm/drmueventthread.cpp \
+	$(NULL)
+
+drm_SOURCES2 =              \
+    common/drm/drmdisplaycaps.cpp \
+    common/drm/drmdisplay.cpp \
+	$(NULL)
+
+common_SOURCES += $(drm_SOURCES)

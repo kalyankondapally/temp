@@ -57,15 +57,15 @@ uint32_t getBPP( uint32_t bufferFormat )
     uint32_t bpp;
     switch (bufferFormat)
     {
-        case HAL_PIXEL_FORMAT_RGBA_8888:
-        case HAL_PIXEL_FORMAT_RGBX_8888:
-        case HAL_PIXEL_FORMAT_BGRA_8888:
+	case DRM_FORMAT_ABGR8888:
+	case DRM_FORMAT_XBGR8888:
+	case DRM_FORMAT_ARGB8888:
              bpp = 4;
              break;
-        case HAL_PIXEL_FORMAT_RGB_888:
+	case DRM_FORMAT_BGR888:
              bpp = 3;
              break;
-        case HAL_PIXEL_FORMAT_RGB_565:
+	case DRM_FORMAT_RGB565:
             bpp = 2;
             break;
         default:
@@ -112,7 +112,7 @@ int main(int argc, char** argv)
     // Argument parameters
     uint32_t usleepTime = 0;
     uint32_t burstFrames = 0;
-    uint32_t bufferFormat = HAL_PIXEL_FORMAT_NV12_Y_TILED_INTEL;
+    uint32_t bufferFormat = HWC_PIXEL_FORMAT_NV12_Y_TILED_INTEL;
     uint32_t bufferCount = 3;
     uint32_t layerDepth = 250000;       // In front of the status bars and virtual secondary display but behind the cursor plane
     uint32_t bufferWidth = 0;
@@ -319,10 +319,10 @@ int main(int argc, char** argv)
     // Apply some config changes/overrides to ensure it can work.
     if (bSingleBuffer)
     {
-        if (bufferFormat != HAL_PIXEL_FORMAT_RGBX_8888)
+	if (bufferFormat != DRM_FORMAT_XBGR8888)
         {
-            bufferFormat = HAL_PIXEL_FORMAT_RGBX_8888;
-            printf("Forced HAL_PIXEL_FORMAT_RGBX_8888 for single buffer mode\n");
+	    bufferFormat = DRM_FORMAT_XBGR8888;
+	    printf("Forced DRM_FORMAT_XBGR8888 for single buffer mode\n");
         }
         if ( syncvblank == 0 )
         {

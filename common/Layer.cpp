@@ -659,8 +659,8 @@ bool Layer::dumpContentToTGA(const String8& name) const
         switch ( getBufferFormat() )
         {
             // 32Bit Red first, Alpha/X last.
-            case HAL_PIXEL_FORMAT_RGBA_8888:
-            case HAL_PIXEL_FORMAT_RGBX_8888:
+	    case DRM_FORMAT_ABGR8888:
+	    case DRM_FORMAT_XBGR8888:
             {
                 const uint32_t nextLine = pitch - 4*width;
                 for ( uint32_t y = 0; y < height; ++y )
@@ -680,7 +680,7 @@ bool Layer::dumpContentToTGA(const String8& name) const
             break;
 
             // 32Bit Blue first, Alpha last.
-            case HAL_PIXEL_FORMAT_BGRA_8888:
+	    case DRM_FORMAT_ARGB8888:
             {
                 const uint32_t nextLine = pitch - 4*width;
                 for ( uint32_t y = 0; y < height; ++y )
@@ -700,7 +700,7 @@ bool Layer::dumpContentToTGA(const String8& name) const
             break;
 
             // 24Bit Blue last.
-            case HAL_PIXEL_FORMAT_RGB_888:
+	    case DRM_FORMAT_BGR888:
             {
                 const uint32_t nextLine = pitch - 3*width;
                 for ( uint32_t y = 0; y < height; ++y )
@@ -720,7 +720,7 @@ bool Layer::dumpContentToTGA(const String8& name) const
             break;
 
             // 16Bit RRRRR GGGGGG BBBBB.
-            case HAL_PIXEL_FORMAT_RGB_565:
+	    case DRM_FORMAT_RGB565:
             {
                 const uint32_t nextLine = pitch - 2*width;
                 for ( uint32_t y = 0; y < height; ++y )
@@ -741,7 +741,7 @@ bool Layer::dumpContentToTGA(const String8& name) const
             break;
 
             // 16Bit Planar YUV formats (420).
-            case HAL_PIXEL_FORMAT_NV12_Y_TILED_INTEL:
+	    case HWC_PIXEL_FORMAT_NV12_Y_TILED_INTEL:
             {
                 uint8_t* pY = pBufferPixels;
                 uint8_t* pUV = pBufferPixels + width * height;
@@ -776,7 +776,7 @@ bool Layer::dumpContentToTGA(const String8& name) const
             break;
 
             // 16Bit Packed YUV formats (422).
-            case HAL_PIXEL_FORMAT_YCbCr_422_I:
+	    case DRM_FORMAT_YUYV:
             {
                 uint8_t Y0, Y1, U, V;
                 Y0 = 0; U = 1; Y1 = 2; V = 3;

@@ -17,6 +17,8 @@
 #ifndef COMMON_CORE_SINGLETON_H_
 #define COMMON_CORE_SINGLETON_H_
 
+#include "base.h"
+
 namespace hwcomposer {
 
 template <typename TYPE>

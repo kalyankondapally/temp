@@ -17,6 +17,7 @@
 #ifndef INTEL_UFO_HWC_DISPLAYQUEUE_H
 #define INTEL_UFO_HWC_DISPLAYQUEUE_H
 
+#include "base.h"
 #include "Layer.h"
 #include "AbstractBufferManager.h"
 #include <utils/Thread.h>

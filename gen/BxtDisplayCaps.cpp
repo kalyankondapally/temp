@@ -204,7 +204,7 @@ bool BxtPlaneCaps::isSupported( const Layer& ly ) const
         }
 
         // 90/270 is not supported on 565
-        if (ly.getBufferFormat() == HAL_PIXEL_FORMAT_RGB_565)
+	if (ly.getBufferFormat() == DRM_FORMAT_RGB565)
         {
             ALOGD_IF( PLANEALLOC_CAPS_DEBUG, "BxtPlaneCaps::isSupported() : Invalid format(%s) for rotation(%d)", getHALFormatString(ly.getBufferFormat()), ly.getTransform());
             return false;
@@ -228,9 +228,9 @@ bool BxtPlaneCaps::isSupported( const Layer& ly ) const
         }
 
         // Compression is only supported on RGB8888
-        if ( (ly.getBufferFormat() != HAL_PIXEL_FORMAT_RGBA_8888)
-             && (ly.getBufferFormat() != HAL_PIXEL_FORMAT_RGBX_8888)
-             && (ly.getBufferFormat() != HAL_PIXEL_FORMAT_BGRA_8888) )
+	if ( (ly.getBufferFormat() != DRM_FORMAT_ABGR8888)
+	     && (ly.getBufferFormat() != DRM_FORMAT_XBGR8888)
+	     && (ly.getBufferFormat() != DRM_FORMAT_ARGB8888) )
         {
             ALOGD_IF( PLANEALLOC_CAPS_DEBUG, "BxtPlaneCaps::isSupported() : Invalid format(%s) for compression(%u)", getHALFormatString(ly.getBufferFormat()), ly.getBufferCompression());
             return false;
@@ -293,9 +293,9 @@ ECompressionType BxtPlaneCaps::getCompression( unsigned index, int32_t displayFo
     {
         switch (displayFormat)
         {
-            case HAL_PIXEL_FORMAT_RGBA_8888:
-            case HAL_PIXEL_FORMAT_BGRA_8888:
-            case HAL_PIXEL_FORMAT_RGBX_8888:
+	    case DRM_FORMAT_ABGR8888:
+	    case DRM_FORMAT_ARGB8888:
+	    case DRM_FORMAT_XBGR8888:
                 return ECompressionType::GL_RC;
             default:
                 break;
@@ -412,7 +412,7 @@ uint32_t BxtDisplayCaps::calculateMinimumYTileScanlines( const bool bTransposed,
     {
         if ( ( bpp == 1 ) || isNV12( format ) )
             return 16;
-        else if ( ( bpp == 2 ) || ( format == HAL_PIXEL_FORMAT_YCbCr_422_I ) )
+	else if ( ( bpp == 2 ) || ( format == DRM_FORMAT_YUYV ) )
             return 8;
         else if ( bpp == 8 )
         {

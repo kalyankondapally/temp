@@ -27,38 +27,38 @@ namespace hwc {
 // Return true if buffer format can be used for direct driving the encoder (WiDi)
 inline bool isEncoderReadyVideo(int format)
 {
-    return format == HAL_PIXEL_FORMAT_NV12_Y_TILED_INTEL
-        || format == HAL_PIXEL_FORMAT_YUV420PackedSemiPlanar_Tiled_INTEL;
+    return format == HWC_PIXEL_FORMAT_NV12_Y_TILED_INTEL
+	|| format == HWC_PIXEL_FORMAT_YUV420PackedSemiPlanar_Tiled_INTEL;
 }
 
 inline bool isVideo(int format)
 {
-    return format == HAL_PIXEL_FORMAT_NV12_X_TILED_INTEL
-        || format == HAL_PIXEL_FORMAT_NV12_Y_TILED_INTEL
-        || format == HAL_PIXEL_FORMAT_NV12_LINEAR_INTEL
-        || format == HAL_PIXEL_FORMAT_NV12_LINEAR_CAMERA_INTEL
-        || format == HAL_PIXEL_FORMAT_NV12_LINEAR_PACKED_INTEL
-        || format == HAL_PIXEL_FORMAT_YUV420PackedSemiPlanar_INTEL
-        || format == HAL_PIXEL_FORMAT_YUV420PackedSemiPlanar_Tiled_INTEL
-        || format == HAL_PIXEL_FORMAT_P010_INTEL
-        || format == HAL_PIXEL_FORMAT_YCbCr_422_I
-        || format == HAL_PIXEL_FORMAT_YV12;
+    return format == HWC_PIXEL_FORMAT_NV12_X_TILED_INTEL
+	|| format == HWC_PIXEL_FORMAT_NV12_Y_TILED_INTEL
+	|| format == HWC_PIXEL_FORMAT_NV12_LINEAR_INTEL
+	|| format == HWC_PIXEL_FORMAT_NV12_LINEAR_CAMERA_INTEL
+	|| format == HWC_PIXEL_FORMAT_NV12_LINEAR_PACKED_INTEL
+	|| format == HWC_PIXEL_FORMAT_YUV420PackedSemiPlanar_INTEL
+	|| format == HWC_PIXEL_FORMAT_YUV420PackedSemiPlanar_Tiled_INTEL
+	|| format == HWC_PIXEL_FORMAT_P010_INTEL
+	|| format == DRM_FORMAT_YUYV
+	|| format == HWC_PIXEL_FORMAT_YV12;
 }
 
 inline bool isNV12(int format)
 {
-    return format == HAL_PIXEL_FORMAT_NV12_X_TILED_INTEL
-        || format == HAL_PIXEL_FORMAT_NV12_Y_TILED_INTEL
-        || format == HAL_PIXEL_FORMAT_NV12_LINEAR_INTEL
-        || format == HAL_PIXEL_FORMAT_NV12_LINEAR_CAMERA_INTEL
-        || format == HAL_PIXEL_FORMAT_NV12_LINEAR_PACKED_INTEL
-        || format == HAL_PIXEL_FORMAT_YUV420PackedSemiPlanar_INTEL
-        || format == HAL_PIXEL_FORMAT_YUV420PackedSemiPlanar_Tiled_INTEL;
+    return format == HWC_PIXEL_FORMAT_NV12_X_TILED_INTEL
+	|| format == HWC_PIXEL_FORMAT_NV12_Y_TILED_INTEL
+	|| format == HWC_PIXEL_FORMAT_NV12_LINEAR_INTEL
+	|| format == HWC_PIXEL_FORMAT_NV12_LINEAR_CAMERA_INTEL
+	|| format == HWC_PIXEL_FORMAT_NV12_LINEAR_PACKED_INTEL
+	|| format == HWC_PIXEL_FORMAT_YUV420PackedSemiPlanar_INTEL
+	|| format == HWC_PIXEL_FORMAT_YUV420PackedSemiPlanar_Tiled_INTEL;
 }
 
 inline bool isYUV422(int format)
 {
-    return format == HAL_PIXEL_FORMAT_YCbCr_422_I;
+    return format == DRM_FORMAT_YUYV;
 }
 
 inline bool isYUV420Planar(int format)
@@ -69,21 +69,21 @@ inline bool isYUV420Planar(int format)
 
 inline bool mustBeYTiled(int format)
 {
-    return ( format == HAL_PIXEL_FORMAT_NV12_Y_TILED_INTEL )
-        || ( format == HAL_PIXEL_FORMAT_YUV420PackedSemiPlanar_Tiled_INTEL );
+    return ( format == HWC_PIXEL_FORMAT_NV12_Y_TILED_INTEL )
+	|| ( format == HWC_PIXEL_FORMAT_YUV420PackedSemiPlanar_Tiled_INTEL );
 }
 
 inline bool mustBeXTiled(int format)
 {
-    return ( format == HAL_PIXEL_FORMAT_NV12_X_TILED_INTEL );
+    return ( format == HWC_PIXEL_FORMAT_NV12_X_TILED_INTEL );
 }
 
 inline bool mustBeLinear(int format)
 {
-    return ( format == HAL_PIXEL_FORMAT_NV12_LINEAR_INTEL )
-        || ( format == HAL_PIXEL_FORMAT_NV12_LINEAR_CAMERA_INTEL )
-        || ( format == HAL_PIXEL_FORMAT_NV12_LINEAR_PACKED_INTEL )
-        || ( format == HAL_PIXEL_FORMAT_YUV420PackedSemiPlanar_INTEL );
+    return ( format == HWC_PIXEL_FORMAT_NV12_LINEAR_INTEL )
+	|| ( format == HWC_PIXEL_FORMAT_NV12_LINEAR_CAMERA_INTEL )
+	|| ( format == HWC_PIXEL_FORMAT_NV12_LINEAR_PACKED_INTEL )
+	|| ( format == HWC_PIXEL_FORMAT_YUV420PackedSemiPlanar_INTEL );
 }
 
 inline ETilingFormat formatToTiling( int format )
@@ -112,31 +112,31 @@ inline bool isYTile( ETilingFormat eTileFormat )
 
 inline bool isPacked(int format)
 {
-    return format == HAL_PIXEL_FORMAT_RGBA_8888
-        || format == HAL_PIXEL_FORMAT_RGBX_8888
-        || format == HAL_PIXEL_FORMAT_RGB_888
-        || format == HAL_PIXEL_FORMAT_RGB_565
-        || format == HAL_PIXEL_FORMAT_BGRA_8888
-        || format == HAL_PIXEL_FORMAT_YCbCr_422_I
-        || format == HAL_PIXEL_FORMAT_A2R10G10B10_INTEL
-        || format == HAL_PIXEL_FORMAT_A2B10G10R10_INTEL
-        || format == HAL_PIXEL_FORMAT_P010_INTEL;
+    return format == DRM_FORMAT_ABGR8888
+	|| format == DRM_FORMAT_XBGR8888
+	|| format == DRM_FORMAT_BGR888
+	|| format == DRM_FORMAT_RGB565
+	|| format == DRM_FORMAT_ARGB8888
+	|| format == DRM_FORMAT_YUYV
+	|| format == HWC_PIXEL_FORMAT_A2R10G10B10_INTEL
+	|| format == HWC_PIXEL_FORMAT_A2B10G10R10_INTEL
+	|| format == HWC_PIXEL_FORMAT_P010_INTEL;
 }
 
 inline bool isAlpha(int format)
 {
-    return format == HAL_PIXEL_FORMAT_RGBA_8888
-        || format == HAL_PIXEL_FORMAT_BGRA_8888
-        || format == HAL_PIXEL_FORMAT_A2R10G10B10_INTEL
-        || format == HAL_PIXEL_FORMAT_A2B10G10R10_INTEL;
+    return format == DRM_FORMAT_ABGR8888
+	|| format == DRM_FORMAT_ARGB8888
+	|| format == HWC_PIXEL_FORMAT_A2R10G10B10_INTEL
+	|| format == HWC_PIXEL_FORMAT_A2B10G10R10_INTEL;
 }
 
 inline int equivalentFormatWithAlpha(int format)
 {
     switch ( format )
     {
-    case HAL_PIXEL_FORMAT_RGBX_8888:
-        return HAL_PIXEL_FORMAT_RGBA_8888;
+    case DRM_FORMAT_XBGR8888:
+	return DRM_FORMAT_ABGR8888;
     default:
         break;
     }
@@ -146,39 +146,35 @@ inline int equivalentFormatWithAlpha(int format)
 inline int bitsPerPixelForFormat(int format)
 {
     switch (format) {
-    case HAL_PIXEL_FORMAT_BGRA_8888:
-    case HAL_PIXEL_FORMAT_RGBA_8888:
-    case HAL_PIXEL_FORMAT_RGBX_8888:
-    case HAL_PIXEL_FORMAT_A2R10G10B10_INTEL:
-    case HAL_PIXEL_FORMAT_A2B10G10R10_INTEL:
-    case HAL_PIXEL_FORMAT_P010_INTEL:
+    case DRM_FORMAT_ARGB8888:
+    case DRM_FORMAT_ABGR8888:
+    case DRM_FORMAT_XBGR8888:
+    case HWC_PIXEL_FORMAT_A2R10G10B10_INTEL:
+    case HWC_PIXEL_FORMAT_A2B10G10R10_INTEL:
+    case HWC_PIXEL_FORMAT_P010_INTEL:
         return 32;
-    case HAL_PIXEL_FORMAT_RGB_888:
-    case HAL_PIXEL_FORMAT_YCbCr_444_INTEL:
+    case DRM_FORMAT_BGR888:
+    case HWC_PIXEL_FORMAT_YCbCr_444_INTEL:
         return 24;
-    case HAL_PIXEL_FORMAT_RGB_565:
-    case HAL_PIXEL_FORMAT_YCrCb_422_H_INTEL: /* YV16 */
-    case HAL_PIXEL_FORMAT_YCbCr_422_H_INTEL: /* YU16 */
-    case HAL_PIXEL_FORMAT_YCbCr_422_V_INTEL:
-    case HAL_PIXEL_FORMAT_YCbCr_422_I:  /* deprecated */
-    case HAL_PIXEL_FORMAT_YCbCr_422_SP: /* deprecated */
-    case HAL_PIXEL_FORMAT_Y16:
+    case DRM_FORMAT_RGB565:
+    case HWC_PIXEL_FORMAT_YCrCb_422_H_INTEL: /* YV16 */
+    case HWC_PIXEL_FORMAT_YCbCr_422_H_INTEL: /* YU16 */
+    case HWC_PIXEL_FORMAT_YCbCr_422_V_INTEL:
+    case DRM_FORMAT_YUYV:  /* deprecated */
         return 16;
-    case HAL_PIXEL_FORMAT_NV12_X_TILED_INTEL:
-    case HAL_PIXEL_FORMAT_NV12_Y_TILED_INTEL:
-    case HAL_PIXEL_FORMAT_NV12_LINEAR_INTEL:
-    case HAL_PIXEL_FORMAT_NV12_LINEAR_CAMERA_INTEL:
-    case HAL_PIXEL_FORMAT_NV12_LINEAR_PACKED_INTEL:
-    case HAL_PIXEL_FORMAT_YUV420PackedSemiPlanar_INTEL: /* deprecated */
-    case HAL_PIXEL_FORMAT_YUV420PackedSemiPlanar_Tiled_INTEL: /* deprecated */
-    case HAL_PIXEL_FORMAT_YV12:
-    case HAL_PIXEL_FORMAT_YCbCr_411_INTEL:
-    case HAL_PIXEL_FORMAT_YCbCr_420_H_INTEL:
-    case HAL_PIXEL_FORMAT_YCrCb_420_SP: /* deprecated */
-    case HAL_PIXEL_FORMAT_YCbCr_420_888:
+    case HWC_PIXEL_FORMAT_NV12_X_TILED_INTEL:
+    case HWC_PIXEL_FORMAT_NV12_Y_TILED_INTEL:
+    case HWC_PIXEL_FORMAT_NV12_LINEAR_INTEL:
+    case HWC_PIXEL_FORMAT_NV12_LINEAR_CAMERA_INTEL:
+    case HWC_PIXEL_FORMAT_NV12_LINEAR_PACKED_INTEL:
+    case HWC_PIXEL_FORMAT_YUV420PackedSemiPlanar_INTEL: /* deprecated */
+    case HWC_PIXEL_FORMAT_YUV420PackedSemiPlanar_Tiled_INTEL: /* deprecated */
+    case HWC_PIXEL_FORMAT_YV12:
+    case HWC_PIXEL_FORMAT_YCbCr_411_INTEL:
+    case HWC_PIXEL_FORMAT_YCbCr_420_H_INTEL:
         return 12;
-    case HAL_PIXEL_FORMAT_GENERIC_8BIT_INTEL:
-    case HAL_PIXEL_FORMAT_Y8:
+    case HWC_PIXEL_FORMAT_GENERIC_8BIT_INTEL:
+   // case HAL_PIXEL_FORMAT_Y8:
         return 8;
 
     default:

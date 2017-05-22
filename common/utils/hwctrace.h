@@ -210,17 +210,78 @@ class TraceFunc {
 #define DUMP_CURRENT_COMPOSITION_PLANES() ((void)0)
 #endif
 
+
+#ifdef HWC_DEVELOPER_BUILD
+#define HWC_ASSERT_LOCK_NOT_HELD(mLock) HWCASSERT(!mLock.islocked());
+#define HWC_ASSERT_LOCK_NOT_HELD2( mTimingLock ) HWCASSERT(!mTimingLock.islocked());
+#define HWC_ASSERT_LOCK_NOT_HELD3( mDisplayTimingsLock ) HWCASSERT(!mDisplayTimingsLock.islocked());
+#else
+#define HWC_ASSERT_LOCK_NOT_HELD(mLock) ((void)0)
+#define HWC_ASSERT_LOCK_NOT_HELD2( mTimingLock ) ((void)0);
+#define HWC_ASSERT_LOCK_NOT_HELD3( mDisplayTimingsLock ) ((void)0);
+#endif
+
 // Utility function - returns human-readable string from a HAL format number.
 const char* getHALFormatString(int32_t halFormat);
 const char* getHALFormatShortString(int32_t halFormat);
 // Utility function - returns human-readable string from a DRM format number.
 const char* getDRMFormatString(int32_t drmFormat);
 
-#ifdef HWC_DEVELOPER_BUILD
-#define HWC_ASSERT_LOCK_NOT_HELD(mLock) assert(!mLock.islocked());
-#else
-#define HWC_ASSERT_LOCK_NOT_HELD(mLock) ((void)0)
-#endif
+#define BUFFER_MANAGER_DEBUG            0 // Debug from buffer manager.
+#define BUFFERQUEUE_DEBUG               0 // Debug from the BufferQueue class
+#define COMPOSITION_DEBUG               0 // Debug related to the Hardware classes
+#define COMPOSER_DEBUG                  0 // Debug from the GPU composer subsystems
+#define CONTENT_DEBUG                   0 // Debug related to the Content classes
+#define DISPLAY_QUEUE_DEBUG             0 // Debug from display queue.
+#define DRM_DEBUG                       0 // Debug from DRM (general).
+#define DRM_DISPLAY_DEBUG               0 // Debug from DRM display.
+#define DRM_STATE_DEBUG                 0 // Debug from DRM state update.
+#define DRM_SUSPEND_DEBUG               0 // Debug from DRM suspend/resume.
+#define DRM_BLANKING_DEBUG              0 // Debug from DRM blanking.
+#define DRM_PAGEFLIP_DEBUG              0 // Debug from DRM pageflip handler.
+#define ESD_DEBUG                       0 // Debug from DRM ESD processing.
+#define FILTER_DEBUG                    0 // Debugging from filters
+#define GLOBAL_SCALING_DEBUG            0 // Debug from global scaling processing (includes panel fitter for DRM displays).
+#define HWC_DEBUG                       0 // Dump HWC entrypoints
+#define HWC_SYNC_DEBUG                  0 // Debug from HWC synchronization methods.
+#define HWCLOG_DEBUG                    0 // Debug HWC logger
+#define HPLUG_DEBUG                     0 // Debug from DRM hotplug processing.
+#define LOGDISP_DEBUG                   0 // Debug related to the LogicalDisplay classes
+#define LOWLOSS_COMPOSER_DEBUG          0 // Debug Lowloss composer
+#define MDS_DEBUG                       0 // Debug from MDS (multidisplay server) and related.
+#define MODE_DEBUG                      0 // Dump debug about mode enumeration/update.
+#define MUTEX_CONDITION_DEBUG           0 // Debug mutex/conditions.
+#define PAVP_DEBUG                      0 // Debug from PAVP.
+#define PHYDISP_DEBUG                   0 // Debug related to the PhysicalDisplay classes
+#define PARTITION_DEBUG                 0 // Partitioning info from the PartitionedComposer
+#define PERSISTENT_REGISTRY_DEBUG       0 // Debug persistent registry.
+#define PLANEALLOC_OPT_DEBUG            0 // Debug from plane allocator optimizer (detailed).
+#define PLANEALLOC_CAPS_DEBUG           0 // Debug from plane allocator plane caps pre-check.
+#define PLANEALLOC_SUMMARY_DEBUG        0 // Summary debug from plane allocator module.
+#define PRIMARYDISPLAYPROXY_DEBUG       0 // Debug for Proxy Display
+#define SYNC_FENCE_DEBUG                0 // Debug relating to sync fences
+#define VIRTUALDISPLAY_DEBUG            0 // Debug from the Virtual Display subsystem
+#define VISIBLERECTFILTER_DEBUG         0 // Debug VisibleRect Filter
+#define VSYNC_DEBUG                     0 // Debug about vsync.
+#define VSYNC_RATE_DEBUG                0 // Debug about vsync issue rate.
+#define WIDI_DEBUG                      0 // Dump debug from WIDI display
+
+// Mode related debug combo.
+#define DRMDISPLAY_MODE_DEBUG ( DRM_DEBUG || MODE_DEBUG || HPLUG_DEBUG || DRM_SUSPEND_DEBUG || DRM_BLANKING_DEBUG )
+
+// Dump HWC input state on prepare
+#define PREPARE_INFO_DEBUG      (0 || DRM_DEBUG)
+
+// Dump HWC input state on set
+#define SET_INFO_DEBUG          (0 || DRM_DEBUG)
+
+// Trace enabling tags
+#define DISPLAY_TRACE                   sbInternalBuild
+#define DRM_CALL_TRACE                  sbInternalBuild
+#define HWC_TRACE                       sbInternalBuild
+#define RENDER_TRACE                    sbInternalBuild
+#define BUFFER_WAIT_TRACE               sbInternalBuild
+#define TRACKER_TRACE                   sbInternalBuild
 
 // _cplusplus
 #ifdef _cplusplus

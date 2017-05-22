@@ -14,13 +14,15 @@
 // limitations under the License.
 */
 
-#include "common.h"
+#include "hwctrace.h"
 #include "log.h"
-#include "Layer.h"
-#include "AbstractLog.h"
+//#include "Layer.h"
+#include "abstractlog.h"
 #include "AbstractCompositionChecker.h"
 #include "option.h"
 #include "optionmanager.h"
+
+#include <spinlock.h>
 
 namespace hwcomposer {
 
@@ -35,7 +37,7 @@ public:
     ~BasicLog();
 
     virtual char*       read(uint32_t& size, bool& lost);
-    Mutex&              getLock();
+    SpinLock&           getLock();
     void                setLogviewToLogcat(bool enable);
 
 protected:
@@ -49,7 +51,7 @@ private:
     char*                   mBack;
     bool                    mbLogviewToLogcat;
     uint32_t                mAllocatedSize;
-    Mutex                   mLock;
+    SpinLock                mLock;
 };
 
 BasicLog::BasicLog(uint32_t maxLogSize) :
@@ -71,7 +73,7 @@ BasicLog::BasicLog(uint32_t maxLogSize) :
 }
 
 BasicLog::~BasicLog() {
-  Mutex::Autolock _l(mLock);
+  ScopedSpinLock _l(mLock);
   delete[] mLogBuf;
 }
 
@@ -177,7 +179,7 @@ void BasicLog::setLogviewToLogcat(bool enable) {
   mbLogviewToLogcat = enable;
 }
 
-intel::ufo::hwc::Mutex& BasicLog::getLock() {
+SpinLock& BasicLog::getLock() {
   return mLock;
 }
 
@@ -215,6 +217,7 @@ void Log::disable()
     }
 }
 
+/*
 static const char* compositionTypeString(uint32_t type)
 {
     switch (type)
@@ -230,12 +233,13 @@ static const char* compositionTypeString(uint32_t type)
     default:
         return "  ";
     }
-}
+}*/
 
 const char* Log::addInternal(const char* fmt, va_list& args) {
   return mpLogWrite->addV(fmt, args);
 }
 
+/*
 void Log::addInternal(uint32_t numDisplays,
                       hwc_display_contents_1_t** pDisplays, uint32_t frameIndex,
                       const char* description, va_list& args) {
@@ -306,15 +310,16 @@ void Log::addInternal(const Content& content, const char* description,
     }
   }
 }
+*/
 
-status_t Log::readLogParcel(Parcel* reply) {
+/*status_t Log::readLogParcel(Parcel* reply) {
   // If we are receiving a request to read a log, then the user wants logging
   // enabled.
   // Note, first call will always return not enabled
   enable();
 
   if (spLog) {
-    Mutex::Autolock _l(spLog->mLog->getLock());
+    ScopedSpinLock _l(spLog->mLog->getLock());
     uint32_t size = 0;
     bool lost;
     const char* entry = spLog->mLog->read(size, lost);
@@ -349,7 +354,7 @@ status_t Log::readLogParcel(Parcel* reply) {
     reply->writeInt32(NOT_ENOUGH_DATA);
   }
   return 0;
-}
+}*/
 
 void Log::enableLogviewToLogcat(bool en) {
   if (en == true) {
@@ -365,6 +370,7 @@ void Log::enableLogviewToLogcat(bool en) {
   }
 }
 
+/*
 static uint32_t convertToHwc1Transform(ETransform transform) {
   uint32_t t;
   switch (transform) {
@@ -454,7 +460,7 @@ void Log::validate(const Content::LayerStack& layers, const Layer& target,
       mpCheckComposition->CheckComposition(ctx, valLayer, composer);
     }
   }
-}
+}*/
 
 // Override the default log writer with the one passed, returning the original.
 // And set the composition checker object too.
@@ -487,12 +493,15 @@ AbstractLogWrite* Log::setLogVal(AbstractLogWrite* logVal,
     }
 }
 
+// FIXME:
+/*
 extern "C" ANDROID_API AbstractLogWrite* hwcSetLogVal(AbstractLogWrite* logVal,
                                                     validation::AbstractCompositionChecker* checkComposition,
                                                     uint32_t& versionSupportMask)
 {
     return Log::setLogVal(logVal, checkComposition, versionSupportMask);
 }
+*/
 
 class InitLog {
 public:

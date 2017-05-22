@@ -17,8 +17,6 @@
 #ifndef COMMON_UTILS_LOG_ABSTRACTCOMPOSITIONCHECKER_H
 #define COMMON_UTILS_LOG_ABSTRACTCOMPOSITIONCHECKER_H
 
-#include <hardware/hwcomposer.h>
-
 namespace hwcomposer {
 
 // HWC supports version 0 of AbstractCompositionChecker interface
@@ -28,7 +26,9 @@ namespace hwcomposer {
 // IInterface.
 class AbstractCompositionChecker {
  public:
-  class ValLayer : public hwc_layer_1_t {};
+    // FIX ME: Original definiation
+  //class ValLayer : public hwc_layer_1_t {};
+    class ValLayer {};
 
   virtual ~AbstractCompositionChecker() {
   }

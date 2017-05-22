@@ -15,8 +15,8 @@
 */
 
 #include "VpgBufferManager.h"
-#include "Drm.h"
-#include "DrmFormatHelper.h"
+#include "drm.h"
+#include "drmutils.h"
 #include "GrallocClient.h"
 #include "Utils.h"
 #include <drm_fourcc.h>
@@ -94,12 +94,12 @@ int32_t remapDeprecatedFormats(int32_t format)
     // TODO: Should this go into Gralloc?
     switch (format)
     {
-        case HAL_PIXEL_FORMAT_YUV420PackedSemiPlanar_Tiled_INTEL:
-             ALOGD_IF( BUFFER_MANAGER_DEBUG, "Renaming deprecated format HAL_PIXEL_FORMAT_YUV420PackedSemiPlanar_Tiled_INTEL to HAL_PIXEL_FORMAT_NV12_Y_TILED_INTEL" );
-             return HAL_PIXEL_FORMAT_NV12_Y_TILED_INTEL;
-        case HAL_PIXEL_FORMAT_YUV420PackedSemiPlanar_INTEL:
-             ALOGD_IF( BUFFER_MANAGER_DEBUG, "Renaming deprecated format HAL_PIXEL_FORMAT_YUV420PackedSemiPlanar_INTEL to HAL_PIXEL_FORMAT_NV12_LINEAR_INTEL" );
-             return HAL_PIXEL_FORMAT_NV12_LINEAR_INTEL;
+	case HWC_PIXEL_FORMAT_YUV420PackedSemiPlanar_Tiled_INTEL:
+	     ALOGD_IF( BUFFER_MANAGER_DEBUG, "Renaming deprecated format HWC_PIXEL_FORMAT_YUV420PackedSemiPlanar_Tiled_INTEL to HWC_PIXEL_FORMAT_NV12_Y_TILED_INTEL" );
+	     return HWC_PIXEL_FORMAT_NV12_Y_TILED_INTEL;
+	case HWC_PIXEL_FORMAT_YUV420PackedSemiPlanar_INTEL:
+	     ALOGD_IF( BUFFER_MANAGER_DEBUG, "Renaming deprecated format HWC_PIXEL_FORMAT_YUV420PackedSemiPlanar_INTEL to HWC_PIXEL_FORMAT_NV12_LINEAR_INTEL" );
+	     return HWC_PIXEL_FORMAT_NV12_LINEAR_INTEL;
     }
     return format;
 }
@@ -1369,7 +1369,7 @@ int VpgBufferManager::GrallocCallbacks::preBufferAlloc( const struct intel_ufo_h
 #endif
 
     // Kernel erroneously disallows this case
-    if (*format == HAL_PIXEL_FORMAT_BGRA_8888)
+    if (*format == DRM_FORMAT_ARGB8888)
     {
         *flags &= ~INTEL_UFO_BUFFER_FLAG_RC;
     }

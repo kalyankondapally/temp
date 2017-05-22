@@ -362,7 +362,7 @@ void CompositionManager::Composition::onUpdateAll(const Content::LayerStack& src
     // TODO: Pipe render target flags through to the physical display.
     // An NV12 output format is expected to go to the encoder
     mRenderTargetUsage = GRALLOC_USAGE_HW_COMPOSER | GRALLOC_USAGE_HW_RENDER;
-    if (format == HAL_PIXEL_FORMAT_NV12_Y_TILED_INTEL)
+    if (format == HWC_PIXEL_FORMAT_NV12_Y_TILED_INTEL)
         mRenderTargetUsage |= GRALLOC_USAGE_HW_VIDEO_ENCODER;
 
     mRenderTarget.onUpdateFlags();

@@ -42,6 +42,9 @@ struct gbm_handle {
 
 typedef struct gbm_handle *HWCNativeHandle;
 typedef hwcomposer::String8 HWCString;
+typedef int64_t nsecs_t;       // nano-seconds
+
+typedef int32_t err_status_t;
 
 namespace hwcomposer {
 int property_get(const char *key, char *value, const char *default_value);
@@ -64,13 +67,11 @@ extern "C" {
 #define ITRACE(fmt, ...) fprintf(stderr, "\n" fmt, ##__VA_ARGS__)
 #define WTRACE(fmt, ...) fprintf(stderr, "%s: \n" fmt, __func__, ##__VA_ARGS__)
 #define ETRACE(fmt, ...) fprintf(stderr, "%s: \n" fmt, __func__, ##__VA_ARGS__)
-#define ETRACEIF(fmt, ...) \
-  fprintf(stderr, "%s: \n" fmt, __func__, ##__VA_ARGS__)
-#define ITRACEIF(fmt, ...) fprintf(stderr, "\n" fmt, ##__VA_ARGS__)
-#define DTRACEIF(fmt, ...) \
-  fprintf(stderr, "%s: \n" fmt, __func__, ##__VA_ARGS__)
-#define VTRACEIF(fmt, ...) \
-  fprintf(stderr, "%s: \n" fmt, __func__, ##__VA_ARGS__)
+#define ETRACEIF(fmt, ...) ((void)0)
+#define ITRACEIF(fmt, ...) ((void)0)
+#define DTRACEIF(fmt, ...) ((void)0)
+#define VTRACEIF(fmt, ...) ((void)0)
+#define WTRACEIF(fmt, ...) ((void)0)
 #define HWCASSERT(fmt, ...) ((void)0)
 #define STRACE() ((void)0)
 

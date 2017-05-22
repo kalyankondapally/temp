@@ -14,23 +14,23 @@
 // limitations under the License.
 */
 
-#ifndef INTEL_UFO_HWC_HWCOPTIONMANAGER_H
-#define INTEL_UFO_HWC_HWCOPTIONMANAGER_H
+#ifndef COMMON_UTILS_OPTIONMANAGER_H
+#define COMMON_UTILS_OPTIONMANAGER_H
+
+#include "singleton.h"
 
 #include <vector>
 
-#include "singleton.h"
+#include "gpudevice.h"
 #include "option.h"
 #include "spinlock.h"
 
 namespace hwcomposer {
 
-class Hwc;
-
 class OptionManager : public Singleton<OptionManager> {
  public:
-  void initialize(Hwc& hwc) {
-    mpHwc = &hwc;
+  void initialize(GpuDevice& device) {
+    mpDevice = &device;
   }
 
   void add(Option* pOption);
@@ -38,13 +38,13 @@ class OptionManager : public Singleton<OptionManager> {
   String8 dump();
 
   void forceGeometryChange() {
-    /*if (mpHwc)
+    if (mpDevice)
     {
         // Apply the forced geometry change and synchronize with the flip
         // queue to ensure its complete
-        mpHwc->forceGeometryChange();
-        mpHwc->synchronize();
-    }*/
+	mpDevice->forceGeometryChange();
+	mpDevice->synchronize();
+    }
   }
 
   // Static accessor to search registered options for a name match
@@ -58,8 +58,8 @@ class OptionManager : public Singleton<OptionManager> {
 
   SpinLock mLock;
   std::vector<Option*> mOptions;
-  Hwc* mpHwc;
+  GpuDevice* mpDevice;
 };
 
 };      // namespace hwcomposer
-#endif  // INTEL_UFO_HWC_HWCOPTIONMANAGER_H
+#endif  // COMMON_UTILS_OPTIONMANAGER_H

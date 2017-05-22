@@ -28,6 +28,7 @@
 namespace hwcomposer {
 
 class NativeDisplay;
+class PhysicalDisplayManager;
 
 #define DRM_HOTPLUG_EVENT_SIZE 256
 
@@ -56,6 +57,23 @@ class GpuDevice {
   void RegisterHotPlugEventCallback(
       std::shared_ptr<DisplayHotPlugEventCallback> callback);
 
+  // Get physical display manager.
+  PhysicalDisplayManager& GetPhysicalDisplayManager( void ) { return *mPhysicalDisplayManager_; }
+
+  // Block until SF is up and running (is fully open and is not blanked/powered-off).
+  void EnsureCompositorIsReady( void ) { }
+
+  // Force a geometry change on the next onPrepare and redraw.
+  void ForceGeometryChangeAndRedraw() { }
+
+  void forceRedraw( ) { }
+
+  // This will force a fresh redraw and wait for it to complete.
+  // It flushes up to the issued frame on all displays before returning to caller.
+  // Any trailing plug changes will also have been fully processed.
+  // If timeoutNs is 0 this is blocking.
+  void synchronize( nsecs_t timeoutNs = 5000000000 ) { }
+
  private:
   class DisplayManager;
   // Order is important here as we need fd_ to be valid
@@ -64,6 +82,7 @@ class GpuDevice {
   std::unique_ptr<DisplayManager> display_manager_;
   Option mOptionVppComposer;
   Option mOptionPartGlComp;
+  PhysicalDisplayManager* mPhysicalDisplayManager_;
   bool initialized_;
 };
 

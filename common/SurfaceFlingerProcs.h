@@ -18,6 +18,7 @@
 #define INTEL_UFO_HWC_SURFACEFLINGERPROCS_H
 
 #include "Common.h"
+#include "base.h"
 
 namespace intel {
 namespace ufo {

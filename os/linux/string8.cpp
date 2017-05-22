@@ -21,6 +21,7 @@
 
 #include "sharedbuffer.h"
 #include "platformdefines.h"
+#include "hwcdefs_internal.h"
 
 namespace hwcomposer {
 

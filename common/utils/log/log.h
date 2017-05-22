@@ -17,13 +17,13 @@
 #ifndef COMMON_UTILS_LOG_H
 #define COMMON_UTILS_LOG_H
 
+#include "base.h"
 #include "hwcutils.h"
 #include "option.h"
-#include "AbstractLog.h"
+#include "abstractlog.h"
+#include "platformdefines.h"
 
 namespace hwcomposer {
-
-using intel::ufo::hwc::services::IDiagnostic;
 
 namespace validation
 {
@@ -54,15 +54,15 @@ public:
             va_end(args);
         }
     }
-
+/*
     // Basic logging function, logs a description and a number of layers
     static void add(const Content::LayerStack& layers, const char* fmt, ...)
     {
         if (sbLogViewerBuild && spLog)
         {
             va_list args;
-            va_start(args, fmt);
-            spLog->addInternal(layers, fmt, args);
+	    va_start(args, fmt);
+	    spLog->addInternal(layers, fmt, args);
             va_end(args);
         }
     }
@@ -73,8 +73,8 @@ public:
         if (sbLogViewerBuild && spLog)
         {
             va_list args;
-            va_start(args, fmt);
-            spLog->addInternal(display, fmt, args);
+	    va_start(args, fmt);
+	    spLog->addInternal(display, fmt, args);
             va_end(args);
         }
     }
@@ -116,7 +116,7 @@ public:
             va_end(args);
         }
     }
-
+*/
     // Always log to HWC log; conditionally log to Android log
     static void alogd(bool enableDebug, const char* fmt, ...) {
       va_list args;
@@ -126,12 +126,15 @@ public:
         const char* str = spLog->addInternal(fmt, args);
 
         if (enableDebug) {
+	  // FIXME:
+	  /*
           nsecs_t timestamp = systemTime(CLOCK_MONOTONIC);
           DTRACE(INTEL_UFO_HWC_TIMESTAMP_STR " %s",
-                 INTEL_UFO_HWC_TIMESTAMP_PARAM(timestamp), str);
+		 INTEL_UFO_HWC_TIMESTAMP_PARAM(timestamp), str);*/
         }
       } else if (enableDebug) {
-        LOG_PRI_VA(ANDROID_LOG_DEBUG, LOG_TAG, fmt, args);
+	  // FIXME:
+	//LOG_PRI_VA(ANDROID_LOG_DEBUG, LOG_TAG, fmt, args);
       }
 
       va_end(args);
@@ -144,9 +147,12 @@ public:
 
       if (sbLogViewerBuild && spLog) {
         const char* str = spLog->addInternal(fmt, args);
+	// FIXME:
+	/*
         nsecs_t timestamp = systemTime(CLOCK_MONOTONIC);
         ITRACE(INTEL_UFO_HWC_TIMESTAMP_STR " %s",
                INTEL_UFO_HWC_TIMESTAMP_PARAM(timestamp), str);
+	       */
       }
       va_end(args);
     }
@@ -159,11 +165,14 @@ public:
       if (enable) {
         if (sbLogViewerBuild && spLog) {
           const char* str = spLog->addInternal(fmt, args);
+	  // FIXME:
+	  /*
           nsecs_t timestamp = systemTime(CLOCK_MONOTONIC);
           ETRACE(INTEL_UFO_HWC_TIMESTAMP_STR " %s",
                  INTEL_UFO_HWC_TIMESTAMP_PARAM(timestamp), str);
+		 */
         } else {
-          LOG_PRI_VA(ANDROID_LOG_ERROR, LOG_TAG, fmt, args);
+	  //LOG_PRI_VA(ANDROID_LOG_ERROR, LOG_TAG, fmt, args);
         }
       }
 
@@ -182,7 +191,8 @@ public:
         return (sbInternalBuild && spLog);
     }
 
-    static android::status_t readLogParcel(Parcel* parcel);
+    // FIXME:
+    // static err_status_t readLogParcel(Parcel* parcel);
 
     static void enable();
     static void disable();
@@ -195,12 +205,12 @@ public:
                                uint32_t& versionSupportMask);
 
 private:
-
-    void        addInternal(uint32_t numDisplays, hwc_display_contents_1_t** pDisplays, uint32_t frameIndex, const char* description, va_list& args);
-    void        addInternal(const Content::LayerStack& layers, const Layer& target, const char* description, va_list& args);
-    void        addInternal(const Content::LayerStack& layers, const char* description, va_list& args);
-    void        addInternal(const Content::Display& display, const char* description, va_list& args);
-    void        addInternal(const Content& content, const char* description, va_list& args);
+    // FIXME:
+    // void        addInternal(uint32_t numDisplays, hwc_display_contents_1_t** pDisplays, uint32_t frameIndex, const char* description, va_list& args);
+    // void        addInternal(const Content::LayerStack& layers, const Layer& target, const char* description, va_list& args);
+    // void        addInternal(const Content::LayerStack& layers, const char* description, va_list& args);
+    // void        addInternal(const Content::Display& display, const char* description, va_list& args);
+    // void        addInternal(const Content& content, const char* description, va_list& args);
 
     const char* addInternal(const char* description, va_list& args);
 
@@ -217,8 +227,8 @@ private:
 
     // Composition validation support
    private:
-    void validate(const Content::LayerStack& layers, const Layer& target,
-                  const char* composer);
+    /*void validate(const Content::LayerStack& layers, const Layer& target,
+		  const char* composer);*/
 
     // Interface for composition validation
     validation::AbstractCompositionChecker* mpCheckComposition;

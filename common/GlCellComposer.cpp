@@ -735,7 +735,7 @@ bool GlCellComposer::isLayerSupportedAsInput(const Layer& layer)
     // YV12 videos shows blending artefacts when partGLcomp used with this source layers.
     // Disable partglcomp (use vpp instead) as temporary workaround if such format present in input.
     int32_t format = layer.getBufferFormat();
-    if (format == HAL_PIXEL_FORMAT_YV12)
+    if (format == HWC_PIXEL_FORMAT_YV12)
         ret = false;
 
     ECompressionType compression = layer.getBufferCompression();
@@ -762,16 +762,16 @@ bool GlCellComposer::isLayerSupportedAsOutput(const Layer& layer)
     bool hasPlaneAlpha = layer.isPlaneAlpha();
     switch (format)
     {
-        case HAL_PIXEL_FORMAT_RGBA_8888:
-        case HAL_PIXEL_FORMAT_BGRA_8888:
-        case HAL_PIXEL_FORMAT_RGBX_8888:
+	case DRM_FORMAT_ABGR8888:
+	case DRM_FORMAT_ARGB8888:
+	case DRM_FORMAT_XBGR8888:
             return mBm.isCompressionSupportedByGL(compression);
-        case HAL_PIXEL_FORMAT_RGB_565:
+	case DRM_FORMAT_RGB565:
             return (compression == COMPRESSION_NONE);
-        case HAL_PIXEL_FORMAT_NV12_Y_TILED_INTEL:
-        case HAL_PIXEL_FORMAT_NV12_LINEAR_INTEL:
-        case HAL_PIXEL_FORMAT_NV12_LINEAR_PACKED_INTEL:
-        case HAL_PIXEL_FORMAT_NV12_X_TILED_INTEL:
+	case HWC_PIXEL_FORMAT_NV12_Y_TILED_INTEL:
+	case HWC_PIXEL_FORMAT_NV12_LINEAR_INTEL:
+	case HWC_PIXEL_FORMAT_NV12_LINEAR_PACKED_INTEL:
+	case HWC_PIXEL_FORMAT_NV12_X_TILED_INTEL:
             ALOGD_IF(COMPOSITION_DEBUG, "NV12HWC: %s format = %d (%s and %s)", __FUNCTION__, format, mNv12TargetSupported ? "supported" : "unsupported", mNv12RenderingEnabled ? "enabled" : "disabled");
             return ((mNv12TargetSupported && mNv12RenderingEnabled)
                     && (!hasPlaneAlpha) // NV12 output is not compatible with constant alpha
@@ -1240,10 +1240,10 @@ status_t GlCellComposer::beginFrame(const Content::LayerStack& source, const Lay
     ALOGD_IF(COMPOSITION_DEBUG, "NV12HWC: %s destBufferFormat=%d", __FUNCTION__, bufferFormat);
     switch (bufferFormat)
     {
-    case HAL_PIXEL_FORMAT_NV12_Y_TILED_INTEL:
-    case HAL_PIXEL_FORMAT_NV12_LINEAR_INTEL:
-    case HAL_PIXEL_FORMAT_NV12_LINEAR_PACKED_INTEL:
-    case HAL_PIXEL_FORMAT_NV12_X_TILED_INTEL:
+    case HWC_PIXEL_FORMAT_NV12_Y_TILED_INTEL:
+    case HWC_PIXEL_FORMAT_NV12_LINEAR_INTEL:
+    case HWC_PIXEL_FORMAT_NV12_LINEAR_PACKED_INTEL:
+    case HWC_PIXEL_FORMAT_NV12_X_TILED_INTEL:
         mDestTextureExternal = true;
         break;
     default:
