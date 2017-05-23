@@ -11,6 +11,7 @@ common_SOURCES =              \
     common/core/overlaylayer.cpp \
     common/core/timeline.cpp \
     common/core/layer.cpp \
+    common/Content.cpp \
     common/display/display.cpp \
     common/display/displaycaps.cpp \
     common/display/displayqueue.cpp \

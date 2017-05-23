@@ -14,15 +14,16 @@
 // limitations under the License.
 */
 
-#include "Common.h"
+#include "hwcutils.h"
 #include "Content.h"
-#include "Layer.h"
-#include "Log.h"
-#include "Timeline.h"
+#include "layer.h"
+#include "log.h"
+#include "timeline.h"
 
-namespace intel {
-namespace ufo {
-namespace hwc {
+//namespace intel {
+//namespace ufo {
+//namespace hwc {
+namespace hwcomposer {
 
 Content::Content()
 {
@@ -36,7 +37,9 @@ void Content::setGeometryChanged(bool geometry)
 {
     for (size_t d = 0; d < size(); d++)
     {
+#ifdef uncomment
         editDisplay(d).setGeometryChanged(geometry);
+#endif
     }
 }
 
@@ -171,7 +174,9 @@ void Content::LayerStack::removeLayer(uint32_t ly, bool bUpdateSource)
         layer.closeAcquireFence();
         layer.returnReleaseFence(-1);
     }
+#ifdef uncomment
     mpLayers.removeAt(ly);
+#endif
 }
 
 void Content::LayerStack::removeAllLayers(bool bUpdateSource)
@@ -193,7 +198,7 @@ void Content::LayerStack::removeAllLayers(bool bUpdateSource)
 
 void Content::LayerStack::setAllReleaseFences(int fence) const
 {
-    String8 dupList;
+    HWCString dupList;
     const bool bWantLog = Log::wantLog( );
     if ( fence != -1 )
     {
@@ -206,7 +211,7 @@ void Content::LayerStack::setAllReleaseFences(int fence) const
                 layer.returnReleaseFence( dupFence );
                 if ( bWantLog )
                 {
-                    dupList += String8::format( " fd:%d", layer.getReleaseFence() );
+                    dupList += HWCString::format( " fd:%d", layer.getReleaseFence() );
                 }
             }
         }
@@ -221,7 +226,7 @@ void Content::LayerStack::setAllReleaseFences(int fence) const
                 layer.returnReleaseFence( -1 );
                 if ( bWantLog )
                 {
-                    dupList += String8::format( " fd:-1" );
+                    dupList += HWCString::format( " fd:-1" );
                 }
             }
         }
@@ -239,18 +244,22 @@ void Content::LayerStack::onCompose()
         const Layer& layer = *mpLayers[ly];
         if (layer.isComposition())
         {
+#ifdef uncomment
             layer.getComposition()->onCompose();
+#endif
         }
     }
 }
 
 void Content::LayerStack::subset(const LayerStack source, uint32_t start, uint32_t size)
 {
-    ALOG_ASSERT( start + size <= source.size() );
+    HWCASSERT( start + size <= source.size() );
     this->resize(size);
     for (uint32_t ly = 0; ly < size; ly++)
     {
+#ifdef uncommet
         this->setLayer(ly, &source.getLayer(start + ly));
+#endif
     }
 }
 
@@ -258,20 +267,22 @@ bool Content::LayerStack::matches( const LayerStack& other, bool* pbMatchesHandl
 {
     if ( size() != other.size() )
     {
-        ALOGD_IF( CONTENT_DEBUG, "Content::LayerStack mismatch layer size %u v %u", size(), other.size() );
+        DTRACEIF( CONTENT_DEBUG, "Content::LayerStack mismatch layer size %u v %u", size(), other.size() );
         return false;
     }
     bool bMatchesHandles = true;
     for ( uint32_t ly = 0; ly < size(); ++ly )
     {
-        const Layer& ours = getLayer(ly);
+       
         const Layer& theirs = other.getLayer(ly);
         bool bThisLayerMatchesHandle;
+#ifdef uncomment
         if ( !ours.matches( theirs, &bThisLayerMatchesHandle ) )
         {
-            ALOGD_IF( CONTENT_DEBUG, "Content::LayerStack mismatch on layer %u", ly );
+            DTRACEIF( CONTENT_DEBUG, "Content::LayerStack mismatch on layer %u", ly );
             return false;
         }
+#endif
         bMatchesHandles &= bThisLayerMatchesHandle;
     }
     if ( pbMatchesHandles )
@@ -281,21 +292,21 @@ bool Content::LayerStack::matches( const LayerStack& other, bool* pbMatchesHandl
     return true;
 }
 
-String8 Content::LayerStack::dumpHeader() const
+HWCString Content::LayerStack::dumpHeader() const
 {
-    return String8::format("%s%s%s",
+    return HWCString::format("%s%s%s",
                                isGeometryChanged() ? "Geometry " : "",
                                isVideo()           ? "Video " : "",
                                isEncrypted()       ? "Encrypted " : "");
 }
 
 
-String8 Content::LayerStack::dump(const char* pIdentifier) const
+HWCString Content::LayerStack::dump(const char* pIdentifier) const
 {
     if (!sbInternalBuild)
         return String8();
 
-    String8 output = dumpHeader() + "\n";
+    HWCString output = dumpHeader() + "\n";
 
     for (uint32_t ly = 0; ly < mpLayers.size(); ly++)
     {
@@ -317,7 +328,7 @@ bool Content::LayerStack::dumpContentToTGA(const String8& prefix) const
 
     for (uint32_t ly = 0; ly < mpLayers.size(); ly++)
     {
-        String8 lyPrefix = String8::format( "%s_l%u", prefix.string(), ly );
+        HWCString lyPrefix = HWCString::format( "%s_l%u", prefix.string(), ly );
         if ( !mpLayers[ly]->dumpContentToTGA( lyPrefix ) )
             bOK = false;
     }
@@ -346,32 +357,34 @@ bool Content::Display::matches( const Display& other, bool* pbMatchesHandles ) c
             return true;
         }
     }
-    ALOGD_IF( CONTENT_DEBUG, "Display mismatch\n%s\n v \n%s", dump().string(), other.dump().string() );
+    DTRACEIF( CONTENT_DEBUG, "Display mismatch\n%s\n v \n%s", dump().string(), other.dump().string() );
     return false;
 }
 
-String8 Content::Display::dumpHeader() const
+HWCString Content::Display::dumpHeader() const
 {
-    return String8::format("Frame:%d %" PRIi64 "s %03" PRIi64 "ms Fd:%p/%d %dx%d %dHz %s %s %s%s%s",
+#ifdef uncomment
+    return HWCString::format("Frame:%d %" PRIi64 "s %03" PRIi64 "ms Fd:%p/%d %dx%d %dHz %s %s %s%s%s",
                            mFrameIndex,
                            mFrameReceivedTime/1000000000, (mFrameReceivedTime%1000000000)/1000000,
                            getRetireFenceReturn(), getRetireFence(),
                            mWidth, mHeight, mRefresh, getHALFormatShortString(mFormat),
-                           mDmIndex == INVALID_DISPLAY_ID ? "Dm:invalid" : String8::format( "Dm:%u", mDmIndex ).string(),
-                           isOutputScaled()   ? String8::format( "OutputScaled [%d,%d,%d,%d] ",
+                           mDmIndex == INVALID_DISPLAY_ID ? "Dm:invalid" : HWCString::format( "Dm:%u", mDmIndex ).string(),
+                           isOutputScaled()   ? HWCString::format( "OutputScaled [%d,%d,%d,%d] ",
                                                 mOutputScaledDst.left, mOutputScaledDst.top,
                                                 mOutputScaledDst.right, mOutputScaledDst.bottom ).string() : "",
                            isEnabled()        ? "Enabled " : "",
                            isBlanked()        ? "Blanked " : "");
+#endif
 }
 
 
-String8 Content::Display::dump(const char* pIdentifier) const
+HWCString Content::Display::dump(const char* pIdentifier) const
 {
     if (!sbInternalBuild || !isEnabled())
-        return String8();
+        return HWCString();
 
-    String8 output = String8::format("%s %s %s\n",
+    HWCString output = HWCString::format("%s %s %s\n",
                                 pIdentifier,
                                 dumpHeader().string(),
                                 mLayerStack.dump("").string());
@@ -387,7 +400,7 @@ bool Content::Display::dumpContentToTGA(const String8& prefix) const
     if (!sbInternalBuild)
         return false;
 
-    String8 filename = String8::format( "/data/hwc/%s.log", prefix.string() );
+    HWCString filename = HWCString::format( "/data/hwc/%s.log", prefix.string() );
     FILE* fp;
     if ( ( fp = fopen( filename.string(), "wt" ) ) != NULL )
     {
@@ -397,7 +410,7 @@ bool Content::Display::dumpContentToTGA(const String8& prefix) const
     }
     else
     {
-        ALOGE( "Failed to open %s", filename.string() );
+        ETRACE( "Failed to open %s", filename.string() );
     }
 
     const Content::LayerStack& stack = getLayerStack();
@@ -408,7 +421,7 @@ bool Content::matches( const Content& other, bool* pbMatchesHandles ) const
 {
     if ( size() == other.size() )
     {
-        ALOGD_IF( CONTENT_DEBUG, "Content mismatch display size %u v %u", size(), other.size() );
+        DTRACEIF( CONTENT_DEBUG, "Content mismatch display size %u v %u", size(), other.size() );
         return false;
     }
     bool bMatchesHandles = true;
@@ -419,7 +432,7 @@ bool Content::matches( const Content& other, bool* pbMatchesHandles ) const
         bool bThisDisplayMatchesHandles;
         if ( !ours.matches( theirs, &bThisDisplayMatchesHandles ) )
         {
-            ALOGD_IF( CONTENT_DEBUG, "Content mismatch on display %u", d );
+            DTRACEIF( CONTENT_DEBUG, "Content mismatch on display %u", d );
             return false;
         }
         bMatchesHandles &= bThisDisplayMatchesHandles;
@@ -436,6 +449,7 @@ void Content::snapshotOf( const Content& from, std::vector<Layer> copiedLayers[]
     *this = from;
     for ( uint32_t d = 0; d < size(); ++d )
     {
+#ifdef uncomment
         Content::LayerStack& layerStack = editDisplay(d).editLayerStack();
         const uint32_t numLayers = layerStack.size();
         copiedLayers[d].resize( numLayers );
@@ -449,23 +463,26 @@ void Content::snapshotOf( const Content& from, std::vector<Layer> copiedLayers[]
             // Replace layer with copied layer,
             layerStack.setLayer( ly, &copiedLayers[d][ly] );
         }
+#endif
     }
 }
 
-String8 Content::dump(const char* pIdentifier) const
+HWCString Content::dump(const char* pIdentifier) const
 {
     if (!sbInternalBuild)
         return String8();
 
-    String8 output;
+    HWCString output;
     for (size_t d = 0; d < size(); d++)
     {
-        output += getDisplay(d).dump(String8::format("%s Display:%zd", pIdentifier, d));
+        output += getDisplay(d).dump(HWCString::format("%s Display:%zd", pIdentifier, d));
     }
 
     return output;
 }
 
-}; // namespace hwc
-}; // namespace ufo
-}; // namespace intel
+};
+
+//}; // namespace hwc
+//}; // namespace ufo
+//}; // namespace intel

@@ -14,19 +14,24 @@
 // limitations under the License.
 */
 
-#ifndef INTEL_UFO_HWC_CONTENTREFERENCE_H
-#define INTEL_UFO_HWC_CONTENTREFERENCE_H
+#ifndef INTEL_COMMON_HWC_CONTENTREFERENCE_H
+#define INTEL_COMMON_HWC_CONTENTREFERENCE_H
 
-#include "Common.h"
+#include "hwcutils.h"
 #include <vector>
+#include <hwcdefs.h>
+#ifdef uncomment
 #include <utils/Vector.h>
 #include <utils/Timers.h>
+#endif
 
-namespace intel {
-namespace ufo {
-namespace hwc {
+//namespace intel {
+//namespace ufo {
+//namespace hwc {
+namespace hwcomposer {
 
 class Layer;
+class AbstractComposition;
 
 // This class defines a display state at any point in time as a list of pointers to layer
 // objects.
@@ -47,12 +52,16 @@ public:
 
     Content();
     ~Content();
-
+#ifdef uncomment
     // TODO: Remove this later. Temporary constructor
     Content(hwc_display_contents_1_t** pDisplay, uint32_t num);
+#else
+#endif
 
     const Display&              getDisplay(uint32_t l) const            { return mDisplays[l]; }
+#ifdef uncomment
     Display&                    editDisplay(uint32_t l)                 { return mDisplays.editItemAt(l); }
+#endif
 
     uint32_t                    size() const                            { return mDisplays.size(); }
     void                        resize(uint32_t size)                   { mDisplays.resize(size); }
@@ -68,10 +77,10 @@ public:
     // This must be used when taking a copy of contents that will persist beyond the current frame.
     void                        snapshotOf( const Content& other, std::vector<Layer> copiedLayers[] );
 
-    String8                     dump(const char* pIdentifier = "Content") const;
+    HWCString                     dump(const char* pIdentifier = "Content") const;
 
 private:
-    Vector<Display>             mDisplays;
+    std::vector<Display>             mDisplays;
 };
 
 // The Content class owns its display objects. This allows a filter to adjust a display
@@ -84,9 +93,11 @@ public:
     LayerStack(const Layer* pLayers, uint32_t num);
     virtual ~LayerStack();
 
-    const Layer&            getLayer(uint32_t ly) const                 { ALOG_ASSERT(mpLayers[ly]); return *(mpLayers[ly]); }
+    const Layer&            getLayer(uint32_t ly) const                 { HWCASSERT(mpLayers[ly]); return *(mpLayers[ly]); }
+#ifdef uncomment
     const Layer* const*     getLayerArray() const                       { return mpLayers.array(); }
     void                    setLayer(uint32_t ly, const Layer* pL)      { mpLayers.editItemAt(ly) = pL; }
+#endif
     const Layer&            operator[](uint32_t ly) const               { return *(mpLayers[ly]); }
 
     uint32_t                size() const                                { return mpLayers.size(); }
@@ -110,12 +121,12 @@ public:
     // If pbMatchesHandles is provided, then on return it will be set true iff all layer handles also match.
     bool                    matches( const LayerStack& other, bool* pbMatchesHandles = NULL ) const;
 
-    String8                 dumpHeader() const;
-    String8                 dump(const char* pIdentifier = "") const;
+    HWCString                 dumpHeader() const;
+    HWCString                 dump(const char* pIdentifier = "") const;
 
     // Dump the contents of a layer stack - only useful in internal builds
     // Will dump to /data/hwc/<prefix>_l<N>.tga
-    bool                    dumpContentToTGA(const String8& prefix) const;
+    bool                    dumpContentToTGA(const HWCString& prefix) const;
 
     // Helper function to call the onCompose entrypoints for any component layers in a layerstack if needed
     void                    onCompose();
@@ -125,7 +136,7 @@ public:
 
 
 private:
-    Vector<const Layer*>    mpLayers;                   // List of the layers that are currently on this stack
+    std::vector<const Layer*>    mpLayers;                   // List of the layers that are currently on this stack
     bool                    mbGeometry:1;               // Geometry change with this stack
     bool                    mbEncrypted:1;              // At least one layer on this display is encrypted
     bool                    mbVideo:1;                  // At least one video plane is present
@@ -145,7 +156,7 @@ public:
     uint32_t                getHeight() const                           { return mHeight;   }
     uint32_t                getRefresh() const                          { return mRefresh;  }
     uint32_t                getFormat() const                           { return mFormat;   }
-    const hwc_rect_t&       getOutputScaledDst() const                  { return mOutputScaledDst; }
+    const HwcRect<int>&       getOutputScaledDst() const                  { return mOutputScaledDst; }
     EDisplayType            getDisplayType() const                      { return mDisplayType; }
     uint32_t                getDisplayManagerIndex() const              { return mDmIndex; }
     int*                    getRetireFenceReturn() const                { return mpSourceRetireFence; }
@@ -176,13 +187,13 @@ public:
     void                    setDisplayManagerIndex(uint32_t dmIndex)    { mDmIndex = dmIndex;  }
     void                    setRetireFenceReturn(int* pRetireFence)     { mpSourceRetireFence = pRetireFence; }
     void                    setOutputLayer(const Layer* pLayer)         { mpOutputLayer = pLayer; }
-    void                    setOutputScaled(const hwc_rect_t& dst)      { mbOutputScaled = true; mOutputScaledDst = dst; }
+    void                    setOutputScaled(const HwcRect<int>& dst)      { mbOutputScaled = true; mOutputScaledDst = dst; }
 
     // Update all display state from the source except the layer stack
     void                    updateDisplayState(const Content::Display &source);
 
     // We must always have somewhere to put the source retire fence in any situation where we generate one.
-    void                    returnCompositionRetireFence(int fence) const { ALOG_ASSERT(mpSourceRetireFence); *mpSourceRetireFence = fence; }
+    void                    returnCompositionRetireFence(int fence) const { HWCASSERT(mpSourceRetireFence); *mpSourceRetireFence = fence; }
 
     // Disable this display
     void                    disable();
@@ -199,12 +210,12 @@ public:
     // If pbMatchesHandles is provided, then on return it will be set true iff all layer handles also match.
     bool                    matches( const Display& other, bool* pbMatchesHandles = NULL ) const;
 
-    String8                 dumpHeader() const;
-    String8                 dump(const char* pIdentifier = "") const;
+    HWCString                 dumpHeader() const;
+    HWCString                 dump(const char* pIdentifier = "") const;
 
     // Dump the contents of a display - only useful in internal builds
     // Will dump to /data/hwc/<prefix>_l<N>.tga
-    bool                    dumpContentToTGA(const String8& prefix) const;
+    bool                    dumpContentToTGA(const HWCString& prefix) const;
 
 private:
     LayerStack              mLayerStack;
@@ -216,7 +227,7 @@ private:
     uint32_t                mHeight;            // Height of the display in pixels
     uint32_t                mRefresh;           // Refresh rate of the display in Hz
     uint32_t                mFormat;            // Preferred format of the display
-    hwc_rect_t              mOutputScaledDst;   // Output scaled destination position/size.
+    HwcRect<int>              mOutputScaledDst;   // Output scaled destination position/size.
     EDisplayType            mDisplayType;       // Type of display
     uint32_t                mDmIndex;           // Display manager index.
 
@@ -230,8 +241,9 @@ private:
 
 };
 
-}; // namespace hwc
-}; // namespace ufo
-}; // namespace intel
+};
+//}; // namespace hwc
+//}; // namespace ufo
+//}; // namespace intel
 
-#endif // INTEL_UFO_HWC_CONTENTREFERENCE_H
+#endif // INTEL_COMMON_HWC_CONTENTREFERENCE_H
