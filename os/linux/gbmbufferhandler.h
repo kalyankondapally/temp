@@ -34,6 +34,9 @@ class GbmBufferHandler : public NativeBufferHandler {
 
   bool CreateBuffer(uint32_t w, uint32_t h, int format,
                     HWCNativeHandle *handle) override;
+  HWCNativeHandle CreateGraphicsBuffer(uint32_t w, uint32_t h, int format, int usage);
+  HWCNativeHandle ReAllocateGraphicsBuffer(uint32_t w, uint32_t h, int format,
+					   int usage, HWCNativeHandle handle);
   bool DestroyBuffer(HWCNativeHandle handle) override;
   bool ImportBuffer(HWCNativeHandle handle, HwcBuffer *bo) override;
   uint32_t GetTotalPlanes(HWCNativeHandle handle) override;

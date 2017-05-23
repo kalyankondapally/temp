@@ -15,10 +15,9 @@
 */
 
 #include "BufferManager.h"
+#include "drm_internal.h"
 
-namespace intel {
-namespace ufo {
-namespace hwc {
+namespace hwcomposer {
 
 BufferManager::Buffer::Buffer( )
 {
@@ -36,9 +35,16 @@ String8 BufferManager::Buffer::getTag( void )
     return String8( mTag );
 }
 
-void BufferManager::setBufferTag( buffer_handle_t handle, const String8& tag )
+BufferManager::BufferManager() {
+    buffer_handler_.reset(NativeBufferHandler::CreateInstance(Drm::get().getDrmHandle( )));
+    if (!buffer_handler_) {
+      ETRACE("Failed to create native buffer handler instance");
+    }
+}
+
+void BufferManager::setBufferTag( HWCNativeHandle handle, const String8& tag )
 {
-    sp<AbstractBufferManager::Buffer> pAbstractBuffer = acquireBuffer( handle );
+    std::shared_ptr<AbstractBufferManager::Buffer> pAbstractBuffer = acquireBuffer( handle );
     if ( pAbstractBuffer == NULL )
     {
         return;
@@ -47,9 +53,9 @@ void BufferManager::setBufferTag( buffer_handle_t handle, const String8& tag )
     pBuffer->setTag( tag );
 }
 
-String8 BufferManager::getBufferTag( buffer_handle_t handle )
+String8 BufferManager::getBufferTag( HWCNativeHandle handle )
 {
-    sp<AbstractBufferManager::Buffer> pAbstractBuffer = acquireBuffer( handle );
+    std::shared_ptr<AbstractBufferManager::Buffer> pAbstractBuffer = acquireBuffer( handle );
     if ( pAbstractBuffer == NULL )
     {
         return String8( "UNKNOWN" );
@@ -58,51 +64,54 @@ String8 BufferManager::getBufferTag( buffer_handle_t handle )
     return pBuffer->getTag( );
 }
 
-sp<GraphicBuffer> BufferManager::createGraphicBuffer( const char* pchTag,
+std::shared_ptr<HWCNativeHandlesp> BufferManager::createGraphicBuffer( const char* pchTag,
                                                       uint32_t w, uint32_t h, int32_t format, uint32_t usage )
 {
-    ALOG_ASSERT( pchTag );
-    ALOG_ASSERT( w );
-    ALOG_ASSERT( h );
-    ALOG_ASSERT( format );
+    HWCASSERT( pchTag );
+    HWCASSERT( w );
+    HWCASSERT( h );
+    HWCASSERT( format );
+    HWCASSERT(buffer_handler_);
 
-    ALOGD_IF( BUFFER_MANAGER_DEBUG,
+    DTRACEIF( BUFFER_MANAGER_DEBUG,
               "createGraphicBuffer %s allocate GraphicBuffer [%ux%u fmt:%u/%s usage:0x%x]",
               pchTag, w, h, format, getHALFormatShortString(format), usage );
 
-    sp<GraphicBuffer> pGB = new GraphicBuffer( w, h, format, usage );
-    if ( ( pGB == NULL ) || ( pGB->handle == NULL ) )
+    std::shared_ptr<HWCNativeHandlesp> pGB(buffer_handler_->CreateGraphicsBuffer(w, h, format, usage));
+    if ( ( pGB == NULL ) || ( pGB.get()->handle == NULL ) )
     {
-        ALOGE( "createGraphicBuffer %s failed to allocate GraphicBuffer [%ux%u fmt:%u/%s usage:0x%x]",
+#ifdef uncomment
+	ETRACE( "createGraphicBuffer %s failed to allocate GraphicBuffer [%ux%u fmt:%u/%s usage:0x%x]",
             pchTag, w, h, format, getHALFormatShortString(format), usage );
+#endif
         pGB = NULL;
     }
     else if ( sbInternalBuild )
     {
-        setBufferTag( pGB->handle, String8::format( "%s", pchTag ) );
+	setBufferTag( pGB.get(), String8::format( "%s", pchTag ) );
     }
 
     return pGB;
 }
-
-sp<GraphicBuffer> BufferManager::createGraphicBuffer( const char* pchTag,
+#ifdef uncomment
+std::shared_ptr<HWCNativeHandlesp> BufferManager::createGraphicBuffer( const char* pchTag,
                                                       uint32_t w, uint32_t h, int32_t format, uint32_t usage,
                                                       uint32_t stride, native_handle_t* handle, bool keepOwnership )
 {
-    ALOG_ASSERT( pchTag );
-    ALOG_ASSERT( w );
-    ALOG_ASSERT( h );
-    ALOG_ASSERT( format );
-    ALOG_ASSERT( stride );
+    HWCASSERT( pchTag );
+    HWCASSERT( w );
+    HWCASSERT( h );
+    HWCASSERT( format );
+    HWCASSERT(buffer_handler_);
 
-    ALOGD_IF( BUFFER_MANAGER_DEBUG,
+    DTRACEIF( BUFFER_MANAGER_DEBUG,
               "createGraphicBuffer %s allocate GraphicBuffer [%ux%u fmt:%u/%s usage:0x%x stride %u handle %p keep %d]",
               pchTag, w, h, format, getHALFormatShortString(format), usage, stride, handle, keepOwnership );
 
-    sp<GraphicBuffer> pGB = new GraphicBuffer( w, h, format, usage, stride, handle, keepOwnership );
+    std::shared_ptr<HWCNativeHandlesp> pGB = buffer_handler_->CreateGraphicsBuffer(w, h, format, usage);
     if ( ( pGB == NULL ) || ( pGB->handle == NULL ) )
     {
-        ALOGE( "createGraphicBuffer %s failed to allocate GraphicBuffer [%ux%u fmt:%u/%s usage:0x%x stride %u handle %p keep %d]",
+	ETRACE( "createGraphicBuffer %s failed to allocate GraphicBuffer [%ux%u fmt:%u/%s usage:0x%x stride %u handle %p keep %d]",
             pchTag, w, h, format, getHALFormatShortString(format), usage, stride, handle, keepOwnership );
         pGB = NULL;
     }
@@ -110,47 +119,49 @@ sp<GraphicBuffer> BufferManager::createGraphicBuffer( const char* pchTag,
 
     return pGB;
 }
-
-void BufferManager::reallocateGraphicBuffer( sp<GraphicBuffer>& pGB,
+#endif
+void BufferManager::reallocateGraphicBuffer( std::shared_ptr<HWCNativeHandlesp>& pGB,
                                              const char* pchTag,
                                              uint32_t w, uint32_t h, int32_t format, uint32_t usage )
 {
-    ALOG_ASSERT( pchTag );
-    ALOG_ASSERT( w );
-    ALOG_ASSERT( h );
-    ALOG_ASSERT( format );
+    HWCASSERT( pchTag );
+    HWCASSERT( w );
+    HWCASSERT( h );
+    HWCASSERT( format );
     if ( pGB == NULL )
     {
         return;
     }
 
-    ALOGD_IF( BUFFER_MANAGER_DEBUG,
+    DTRACEIF( BUFFER_MANAGER_DEBUG,
               "reallocateGraphicBuffer %s allocate GraphicBuffer [%ux%u fmt:%u/%s usage:0x%x]",
               pchTag, w, h, format, getHALFormatShortString(format), usage );
 
-    pGB->reallocate( w, h, format, usage );
+    pGB.reset(buffer_handler_->ReAllocateGraphicsBuffer( w, h, format, usage, pGB.get() ));
     if ( ( pGB == NULL ) || ( pGB->handle == NULL ) )
     {
-        ALOGE( "reallocateGraphicBuffer %s failed to allocate GraphicBuffer [%ux%u fmt:%u/%s usage:0x%x]",
+#ifdef uncomment
+	ETRACE( "reallocateGraphicBuffer %s failed to allocate GraphicBuffer [%ux%u fmt:%u/%s usage:0x%x]",
             pchTag, w, h, format, getHALFormatShortString(format), usage );
+#endif
         pGB = NULL;
     }
     if ( sbInternalBuild )
     {
-        setBufferTag( pGB->handle, String8::format( "%s", pchTag ) );
+	setBufferTag( pGB.get(), String8::format( "%s", pchTag ) );
     }
 }
 
-sp<GraphicBuffer> BufferManager::createPurgedGraphicBuffer( const char* pchTag,
+std::shared_ptr<HWCNativeHandlesp> BufferManager::createPurgedGraphicBuffer( const char* pchTag,
                                                             uint32_t w, uint32_t h, uint32_t format, uint32_t usage,
                                                             bool* pbIsPurged )
 {
-    sp<GraphicBuffer> pBuffer = createGraphicBuffer( pchTag, w, h, format, usage );
+    std::shared_ptr<HWCNativeHandlesp> pBuffer = createGraphicBuffer( pchTag, w, h, format, usage );
     bool bIsPurged = false;
     if ( pBuffer != NULL )
     {
         // Purge to release memory (maps all pages to single physical page).
-        bIsPurged = ( purgeBuffer( pBuffer->handle ) > 0 );
+	bIsPurged = ( purgeBuffer( pBuffer.get() ) > 0 );
     }
     if ( pbIsPurged )
     {
@@ -159,16 +170,14 @@ sp<GraphicBuffer> BufferManager::createPurgedGraphicBuffer( const char* pchTag,
     return pBuffer;
 }
 
-void BufferManager::setSurfaceFlingerRT( buffer_handle_t /*handle*/, uint32_t /*displayIndex*/ ) { };
+void BufferManager::setSurfaceFlingerRT( HWCNativeHandle /*handle*/, uint32_t /*displayIndex*/ ) { };
 
 void BufferManager::purgeSurfaceFlingerRenderTargets( uint32_t /*displayIndex*/ ) { };
 
 void BufferManager::realizeSurfaceFlingerRenderTargets( uint32_t /*displayIndex*/ ) { };
 
-uint32_t BufferManager::purgeBuffer( buffer_handle_t /*handle*/ ) { return 0; }
+uint32_t BufferManager::purgeBuffer( HWCNativeHandle /*handle*/ ) { return 0; }
 
-uint32_t BufferManager::realizeBuffer( buffer_handle_t /*handle*/ ) { return 0; }
+uint32_t BufferManager::realizeBuffer( HWCNativeHandle /*handle*/ ) { return 0; }
 
-}; // namespace hwc
-}; // namespace ufo
-}; // namespace intel
+}; // namespace hwcomposer

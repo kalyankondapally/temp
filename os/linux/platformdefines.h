@@ -37,11 +37,12 @@ struct gbm_handle {
 #else
   struct gbm_import_fd_data import_data;
 #endif
-  struct gbm_bo* bo = NULL;
+  struct gbm_bo* handle = NULL;
   uint32_t total_planes = 0;
 };
 
 typedef struct gbm_handle *HWCNativeHandle;
+typedef struct gbm_handle HWCNativeHandlesp;
 typedef hwcomposer::String8 HWCString;
 typedef int64_t nsecs_t;       // nano-seconds
 

@@ -34,6 +34,12 @@ class NativeBufferHandler {
   virtual bool CreateBuffer(uint32_t w, uint32_t h, int format,
                             HWCNativeHandle *handle) = 0;
 
+  virtual HWCNativeHandle CreateGraphicsBuffer(uint32_t w, uint32_t h, int format,
+						int usage) = 0;
+
+  virtual HWCNativeHandle ReAllocateGraphicsBuffer(uint32_t w, uint32_t h, int format,
+						   int usage, HWCNativeHandle handle) = 0;
+
   virtual bool DestroyBuffer(HWCNativeHandle handle) = 0;
 
   virtual bool ImportBuffer(HWCNativeHandle handle, HwcBuffer *bo) = 0;

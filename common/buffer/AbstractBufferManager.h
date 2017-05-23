@@ -14,16 +14,14 @@
 // limitations under the License.
 */
 
-#ifndef INTEL_UFO_HWC_ABSTRACTBUFFERMANAGER_H
-#define INTEL_UFO_HWC_ABSTRACTBUFFERMANAGER_H
+#ifndef COMMON_BUFFER_ABSTRACTBUFFERMANAGER_H
+#define COMMON_BUFFER_ABSTRACTBUFFERMANAGER_H
 
-#include "Layer.h"
-#include <utils/RefBase.h>
-#include <ui/GraphicBuffer.h>
+#include <memory>
+#include "layer.h"
+#include "platformdefines.h"
 
-namespace intel {
-namespace ufo {
-namespace hwc {
+namespace hwcomposer {
 
 // An abstract interface representing a buffer manager providing functions
 // like retrieving buffer details and waiting on buffers.
@@ -41,16 +39,16 @@ public:
     public:
         virtual ~Tracker() {};
         // This method is called immediately after a new buffer has been allocated.
-        virtual void notifyBufferAlloc( buffer_handle_t handle ) = 0;
+        virtual void notifyBufferAlloc( HWCNativeHandle handle ) = 0;
         // This method is called immediately before an existing buffer is freed.
-        virtual void notifyBufferFree( buffer_handle_t handle ) = 0;
+        virtual void notifyBufferFree( HWCNativeHandle handle ) = 0;
     };
 
     // Opaque Buffer object.
     // Implementation is platform specific.
     // Buffers are reference counted.
     // A buffer may be acquired using AbstractBufferManager::acquireBuffer( ).
-    class Buffer : public RefBase
+    class Buffer
     {
     };
 
@@ -71,20 +69,20 @@ public:
     virtual void getLayerBufferDetails( Layer* pLayer, Layer::BufferDetails* pDetails ) = 0;
 
     // Set a buffer's PAVP status.
-    virtual void setPavpSession( buffer_handle_t handle, uint32_t session, uint32_t instance, uint32_t isEncrypted ) = 0;
+    virtual void setPavpSession( HWCNativeHandle handle, uint32_t session, uint32_t instance, uint32_t isEncrypted ) = 0;
 
     // Set key frame flag for encoder use
-    virtual void setBufferKeyFrame( buffer_handle_t handle, bool isKeyFrame ) = 0;
+    virtual void setBufferKeyFrame( HWCNativeHandle handle, bool isKeyFrame ) = 0;
 
     // Wait for any writes to the buffer to complete.
     // handle must be non-NULL.
     // This will wait for up to timeoutNs nanoseconds.
     // If timeoutNs is 0 then this is a polling test.
     // Returns false if the buffer still has work pending.
-    virtual bool wait( buffer_handle_t handle, nsecs_t timeoutNs ) = 0;
+    virtual bool wait( HWCNativeHandle handle, nsecs_t timeoutNs ) = 0;
 
     // Acquire a buffer, preventing it from being destroyed.
-    virtual sp<Buffer> acquireBuffer( buffer_handle_t handle ) = 0;
+    virtual std::shared_ptr<Buffer> acquireBuffer( HWCNativeHandle handle ) = 0;
 
     // Buffer usage flags.  Values should be consecutive so they can be used as indices.
     enum BufferUsage {
@@ -96,15 +94,15 @@ public:
     };
 
     // Specify any buffer usage.
-    virtual void setBufferUsage( buffer_handle_t handle, BufferUsage usage ) = 0;
+    virtual void setBufferUsage( HWCNativeHandle handle, BufferUsage usage ) = 0;
 
     // Get buffer size in bytes.
-    virtual uint32_t getBufferSizeBytes( buffer_handle_t handle ) = 0;
+    virtual uint32_t getBufferSizeBytes( HWCNativeHandle handle ) = 0;
 
-    virtual void requestCompression( buffer_handle_t handle, ECompressionType compression ) = 0;
+    virtual void requestCompression( HWCNativeHandle handle, ECompressionType compression ) = 0;
 
     // Assert that an acquired buffer matches expected handle and deviceId.
-    virtual void validate( sp<Buffer> pBuffer, buffer_handle_t handle, uint64_t deviceId ) = 0;
+    virtual void validate( std::shared_ptr<Buffer> pBuffer, HWCNativeHandle handle, uint64_t deviceId ) = 0;
 
     // Post onSet entry point.
     // This is called at the end of each onSet.
@@ -121,31 +119,32 @@ public:
 
     // Wrapper to create a graphic buffer.
     // If sucessful, returns succesfully allocated buffer, else returns NULL.
-    virtual sp<GraphicBuffer> createGraphicBuffer( const char* pchTag,
+    virtual std::shared_ptr<HWCNativeHandlesp> createGraphicBuffer( const char* pchTag,
                                                    uint32_t w, uint32_t h, int32_t format, uint32_t usage ) = 0;
 
     // Wrapper to create a graphic buffer.
     // If sucessful, returns succesfully allocated buffer, else returns NULL.
-    virtual sp<GraphicBuffer> createGraphicBuffer( const char* pchTag,
+#ifdef uncomment
+    virtual std::shared_ptr<HWCNativeHandlesp> createGraphicBuffer( const char* pchTag,
                                                    uint32_t w, uint32_t h, int32_t format, uint32_t usage,
                                                    uint32_t stride, native_handle_t* handle, bool keepOwnership ) = 0;
-
+#endif
     // Wrapper to reallocate a graphic buffer.
     // If sucessful, on return pGB will be the succesfully reallocated buffer, else pGB will be NULL.
-    virtual void reallocateGraphicBuffer( sp<GraphicBuffer>& pGB,
+    virtual void reallocateGraphicBuffer( std::shared_ptr<HWCNativeHandlesp>& pGB,
                                           const char* pchTag,
                                           uint32_t w, uint32_t h, int32_t format, uint32_t usage ) = 0;
 
     // Wrapper to create a graphic buffer with minimal backing store (e.g. for "empty" buffers).
     // If sucessful, returns succesfully allocated buffer, else returns NULL.
-    virtual sp<GraphicBuffer> createPurgedGraphicBuffer( const char* pchTag,
+    virtual std::shared_ptr<HWCNativeHandlesp> createPurgedGraphicBuffer( const char* pchTag,
                                                          uint32_t w, uint32_t h, uint32_t format, uint32_t usage,
                                                          bool* pbIsPurged = NULL ) = 0;
 
     // Specify this buffer as a SurfaceFlinger RenderTarget for a display.
     // handle must be non-NULL.
     // OPTIONAL.
-    virtual void setSurfaceFlingerRT( buffer_handle_t handle, uint32_t displayIndex ) = 0;
+    virtual void setSurfaceFlingerRT( HWCNativeHandle handle, uint32_t displayIndex ) = 0;
 
     // This will be called before leaving onPrepare to inform the buffer manager
     // that SurfaceFlinger compositions will not be used on a display.
@@ -163,20 +162,18 @@ public:
     // Returns the full buffer size in bytes if succesful.
     // Returns zero if the call fails or is not implemented.
     // OPTIONAL.
-    virtual uint32_t purgeBuffer( buffer_handle_t handle ) = 0;
+    virtual uint32_t purgeBuffer( HWCNativeHandle handle ) = 0;
 
     // Realize the backing for this buffer.
     // Returns the full buffer size in bytes if succesful.
     // Returns zero if the call fails or is not implemented.
     // OPTIONAL.
-    virtual uint32_t realizeBuffer( buffer_handle_t handle ) = 0;
+    virtual uint32_t realizeBuffer( HWCNativeHandle handle ) = 0;
 
     // Dump info about the buffermanager.
     virtual String8 dump( void ) = 0;
 };
 
-}; // namespace hwc
-}; // namespace ufo
-}; // namespace intel
+}; // namespace hwcomposer
 
-#endif // INTEL_UFO_HWC_ABSTRACTBUFFERMANAGER_H
+#endif // COMMON_BUFFER_ABSTRACTBUFFERMANAGER_H
