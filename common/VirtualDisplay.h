@@ -17,7 +17,7 @@
 #ifndef INTEL_HWC_VIRTUAL_DISPLAY_H
 #define INTEL_HWC_VIRTUAL_DISPLAY_H
 
-#include "PhysicalDisplay.h"
+#include "physicaldisplay.h"
 #include "SinglePlaneDisplayCaps.h"
 
 namespace intel {

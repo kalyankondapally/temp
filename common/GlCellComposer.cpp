@@ -16,7 +16,7 @@
 
 #include <stdio.h>
 #include "Hwc.h"
-#include "PhysicalDisplay.h"
+#include "physicaldisplay.h"
 #include "GlCellComposer.h"
 #include "Utils.h"
 #include "Log.h"

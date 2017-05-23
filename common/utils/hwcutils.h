@@ -60,11 +60,6 @@ inline T alignTo(T value, T align) {
   return (value + (align - 1)) & ~(align - 1);
 }
 
-inline float fixed16ToFloat(int v)
-{
-    return float(v) / 65536.0f;
-}
-
 // Call poll() on fd.
 //  - timeout: time in miliseconds to stay blocked before returning if fd
 //  is not ready.

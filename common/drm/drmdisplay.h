@@ -23,6 +23,7 @@
 #include "drmdisplaycaps.h"
 //#include "displayqueue.h"
 #include "option.h"
+#include "spinlock.h"
 
 #include <xf86drmMode.h>
 
@@ -114,9 +115,10 @@ public:
     // The buffer is sized to the current display mode adjusted for current global display scaling.
     // It is possible to override the default size.
     void allocateBlankingLayer( const uint32_t width = 0, const uint32_t height = 0 );
-
+#ifdef uncomment
     // Get the blanking layer.
     const Layer& getBlankingLayer( void ) { mBlankBufferFramesSinceLastUsed = 0; return mBlankLayer; }
+#endif
 
     // Release unused buffers if they have not been used for a number of frames.
     void considerReleasingBuffers( void );
@@ -227,7 +229,7 @@ private:
 
 private:
     // Drm ID is set by the DRM probe class
-    friend int Drm::probe(Hwc& hwc);
+    friend int Drm::probe(GpuDevice& hwc);
     void setDrmDisplayID(uint32_t id)    { mDrmDisplay = id; }
 #ifdef uncomment
     bool updateTiming( const DisplayQueue::Frame& frame );
@@ -401,16 +403,16 @@ private:
         processRecovery();
         return !isAvailable( ) || mPageFlipHandler.readyForFlip( );
     }
-
+#ifdef uncomment
     // Called from page flip handler to release the old frame when a new frame has been flipped.
     void releaseFlippedFrame( Frame* pOldFrame );
-
+#endif
     // Implements DisplayQueue::syncFlip( ).
     // This is called from the DisplayQueue worker to ensure the most recent Drm flip has completed.
     virtual void syncFlip( void );
 
     // Implements DisplayQueue::getHwc( ).
-    virtual Hwc& getHwc( void ) { return mHwc; }
+    virtual GpuDevice& getGpuDevice( void ) { return mDevice; }
 
     // Function to update our list of timings to the current connector.
     // Display timings lock MUST NOT be held on entry.
@@ -438,11 +440,12 @@ private:
     // Returns true if there is a seamless update required.
     bool getSeamlessMode( drmModeModeInfo &modeInfoOut );
     void applySeamlessMode( const drmModeModeInfo &modeInfo );
+#ifdef uncomment
     // Adapt the display mode if required with the specified fb.
     // We need to know the fb because setCrtc requires it.
     // This is called from the end of flip.
     void legacySeamlessAdaptMode( const Layer* pLayer );
-
+#endif
     // Set new status.
     // Notify ready (potentially) on a status change.
     void setStatus( EStatus eStatus ) { meStatus = eStatus; notifyReady(); }
@@ -468,10 +471,10 @@ private:
 
     // Connection state that can change each time a connection is established.
     Connection          mCurrentConnection;                 // Current connection (most recent - as established by start/hotplug).
-    Vector<drmModeModeInfo> mCurrentConnectionModes;        // Current connection modes (most recent - as established by start/hotplug).
+    std::vector<drmModeModeInfo> mCurrentConnectionModes;   // Current connection modes (most recent - as established by start/hotplug).
 
     Connection          mActiveConnection;                  // Active connection (received and applied by worker).
-    Vector<uint32_t>    mTimingToConnectorMode;             // LUT to convert from display timing index to Drm connector mode index.
+    std::vector<uint32_t>    mTimingToConnectorMode;        // LUT to convert from display timing index to Drm connector mode index.
 
     // Generic state.
     uint32_t            mDrmDisplay;                        // ID for this DrmDisplay instance (set by Drm manager).
@@ -490,7 +493,7 @@ private:
     uint32_t            mSeamlessAppliedRefresh;            // DRRS refresh rate Hz (applied).
     uint32_t            mDynamicAppliedTimingIndex;         // Dynamic refresh timing index (applied).
 
-    Mutex               mSetVSyncLock;                      // Lock for setVSync.
+    SpinLock            mSetVSyncLock;                      // Lock for setVSync.
 
     // Queue state.
     enum EQueueState
@@ -499,7 +502,7 @@ private:
         QUEUE_STATE_STARTED,
         QUEUE_STATE_SUSPENDED
     };
-    Mutex               mSyncQueue;                         // Sync work being queued.
+    SpinLock            mSyncQueue;                         // Sync work being queued.
     EQueueState         meQueueState;                       // Track queue state (startup/shutdown/suspend/resume).
 
     // Flags.

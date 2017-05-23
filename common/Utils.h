@@ -14,15 +14,14 @@
 // limitations under the License.
 */
 
-#ifndef INTEL_UFO_HWC_UTILS_H
-#define INTEL_UFO_HWC_UTILS_H
-#include <ufo/graphics.h>
+#ifndef COMMON_UTILS_UTILS_H
+#define COMMON_UTILS_UTILS_H
+#include <drm_fourcc.h>
 #include <math.h>
-#include "Format.h"
+#include "format.h"
+#include <hwcdefs.h>
 
-namespace intel {
-namespace ufo {
-namespace hwc {
+namespace hwcomposer {
 
 // Return true if buffer format can be used for direct driving the encoder (WiDi)
 inline bool isEncoderReadyVideo(int format)
@@ -31,7 +30,7 @@ inline bool isEncoderReadyVideo(int format)
 	|| format == HWC_PIXEL_FORMAT_YUV420PackedSemiPlanar_Tiled_INTEL;
 }
 
-inline bool isVideo(int format)
+inline bool isVideoFormat(int format)
 {
     return format == HWC_PIXEL_FORMAT_NV12_X_TILED_INTEL
 	|| format == HWC_PIXEL_FORMAT_NV12_Y_TILED_INTEL
@@ -123,7 +122,7 @@ inline bool isPacked(int format)
 	|| format == HWC_PIXEL_FORMAT_P010_INTEL;
 }
 
-inline bool isAlpha(int format)
+inline bool isAlphaFormat(int format)
 {
     return format == DRM_FORMAT_ABGR8888
 	|| format == DRM_FORMAT_ARGB8888
@@ -178,7 +177,7 @@ inline int bitsPerPixelForFormat(int format)
         return 8;
 
     default:
-        ALOGW("format %d unknown, assuming 32bpp", format);
+	WTRACE("format %d unknown, assuming 32bpp", format);
         return 32;
     }
 }
@@ -241,9 +240,9 @@ inline uint32_t bitMask32(uint32_t idx)
         return 0;
 }
 
-inline hwc_rect_t floatToIntRect (const hwc_frect_t& fr)
+inline HwcRect<int> floatToIntRect (const HwcRect<float>& fr)
 {
-    hwc_rect_t ir;
+    HwcRect<int> ir;
     ir.left = fr.left;
     ir.right = fr.right;
     ir.top = fr.top;
@@ -251,9 +250,9 @@ inline hwc_rect_t floatToIntRect (const hwc_frect_t& fr)
     return ir;
 }
 
-inline hwc_frect_t intToFloatRect (const hwc_rect_t& fr)
+inline HwcRect<float> intToFloatRect (const HwcRect<int>& fr)
 {
-    hwc_frect_t ir;
+    HwcRect<float> ir;
     ir.left = fr.left;
     ir.right = fr.right;
     ir.top = fr.top;
@@ -261,7 +260,7 @@ inline hwc_frect_t intToFloatRect (const hwc_rect_t& fr)
     return ir;
 }
 
-inline bool computeOverlap (const hwc_rect_t &rect1, const hwc_rect_t &rect2, hwc_rect_t *newRect)
+inline bool computeOverlap (const HwcRect<int> &rect1, const HwcRect<int> &rect2, HwcRect<int> *newRect)
 {
     newRect->left = max(rect1.left, rect2.left);
     newRect->right = min(rect1.right, rect2.right);
@@ -272,7 +271,7 @@ inline bool computeOverlap (const hwc_rect_t &rect1, const hwc_rect_t &rect2, hw
     return true;
 }
 
-inline void combineRect(hwc_frect_t& src, const hwc_frect_t& dst)
+inline void combineRect(HwcRect<float>& src, const HwcRect<float>& dst)
 {
     src.left = src.left < dst.left ? src.left : dst.left;
     src.top = src.top < dst.top ? src.top : dst.top;
@@ -280,10 +279,10 @@ inline void combineRect(hwc_frect_t& src, const hwc_frect_t& dst)
     src.bottom = src.bottom > dst.bottom ? src.bottom : dst.bottom;
 }
 
-inline void computeRelativeRect( const hwc_frect_t& inCoordSpace,
-                                     const hwc_frect_t& outCoordSpace,
-                                     const hwc_frect_t& rect,
-                                     hwc_frect_t& dstRect)
+inline void computeRelativeRect( const HwcRect<float>& inCoordSpace,
+				     const HwcRect<float>& outCoordSpace,
+				     const HwcRect<float>& rect,
+				     HwcRect<float>& dstRect)
 {
     float x_ratio = (outCoordSpace.right - outCoordSpace.left) / (inCoordSpace.right - inCoordSpace.left);
     float y_ratio = (outCoordSpace.bottom - outCoordSpace.top) / (inCoordSpace.bottom - inCoordSpace.top);
@@ -294,8 +293,6 @@ inline void computeRelativeRect( const hwc_frect_t& inCoordSpace,
     dstRect.bottom = outCoordSpace.top + (rect.bottom - inCoordSpace.top) * y_ratio;
 }
 
-} // namespace hwc
-} // namespace ufo
-} // namespace intel
+} // namespace hwcomposer
 
-#endif // INTEL_UFO_HWC_UTILS_H
+#endif // COMMON_UTILS_UTILS_H

@@ -10,6 +10,7 @@ common_SOURCES =              \
     common/core/overlaybuffermanager.cpp \
     common/core/overlaylayer.cpp \
     common/core/timeline.cpp \
+    common/Layer.cpp \
     common/display/display.cpp \
     common/display/displaycaps.cpp \
     common/display/displayqueue.cpp \
@@ -65,7 +66,6 @@ drm_SOURCES =              \
 	$(NULL)
 
 drm_SOURCES2 =              \
-    common/drm/drmdisplaycaps.cpp \
     common/drm/drmdisplay.cpp \
 	$(NULL)
 

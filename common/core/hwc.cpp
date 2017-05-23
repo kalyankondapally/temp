@@ -16,7 +16,7 @@
 
 #include "Hwc.h"
 #include "HwcService.h"
-#include "PhysicalDisplay.h"
+#include "physicaldisplay.h"
 #include "Log.h"
 #include "Utils.h"
 #include "VirtualDisplay.h"

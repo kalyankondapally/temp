@@ -21,7 +21,6 @@
 #include "drmutils.h"
 #include "drmmodehelper.h"
 #include "drmnuclearpagefliphandler.h"
-#include "abstractplatform.h"
 //#include "HwcService.h"
 #include "displaystate.h"
 #include <drm_fourcc.h>
@@ -1277,7 +1276,7 @@ void DrmDisplay::applySeamlessMode( const drmModeModeInfo &modeInfo )
 {
     mSeamlessAppliedRefresh = modeInfo.vrefresh;
 }
-
+#ifdef uncomment
 void DrmDisplay::legacySeamlessAdaptMode( const Layer* pLayer )
 {
     DRMDISPLAY_ASSERT_CONSUMER_THREAD
@@ -1302,7 +1301,7 @@ void DrmDisplay::legacySeamlessAdaptMode( const Layer* pLayer )
         }
     }
 }
-
+#endif
 bool DrmDisplay::defaultFrameRequired( void )
 {
     if ( mOptionDefaultFrame == eDF_Auto )
@@ -1318,7 +1317,7 @@ void DrmDisplay::setDisplay( int32_t overrideMode )
 {
     DRMDISPLAY_ASSERT_CONSUMER_THREAD
     INTEL_UFO_HWC_ASSERT_MUTEX_NOT_HELD( mSetVSyncLock );
-    Mutex::Autolock _l( mSetVSyncLock );
+    ScopedSpinLock _l(mSetVSyncLock);
 
     if ( meStatus == AVAILABLE )
     {
@@ -1363,7 +1362,7 @@ void DrmDisplay::resetDisplay( void )
 {
     DRMDISPLAY_ASSERT_CONSUMER_THREAD
     INTEL_UFO_HWC_ASSERT_MUTEX_NOT_HELD( mSetVSyncLock );
-    Mutex::Autolock _l( mSetVSyncLock );
+    ScopedSpinLock _l(mSetVSyncLock);
 
     if ( meStatus != AVAILABLE )
     {
@@ -1583,7 +1582,7 @@ void DrmDisplay::consumeSuspend( uint32_t timelineIndex, bool bUseDPMS, bool bDe
             const uint32_t wait25Ms = 25000;
             const uint32_t timeout300Ms = 300000;
             uint32_t totalWait = 0;
-            for (;;)
+	    for (;)
             {
                 if ( !bOK )
                 {
@@ -1665,7 +1664,7 @@ void DrmDisplay::consumeResume( void )
             const uint32_t wait25Ms = 25000;
             const uint32_t timeout300Ms = 300000;
             uint32_t totalWait = 0;
-            for (;;)
+	    for (;)
             {
                 if ( !bOK )
                 {
@@ -1781,7 +1780,7 @@ void DrmDisplay::setBlanking( void )
     }
     */
 }
-
+#ifdef uncomment
 void DrmDisplay::releaseFlippedFrame( Frame* pOldFrame )
 {
     HWCASSERT( pOldFrame );
@@ -1801,7 +1800,6 @@ void DrmDisplay::releaseFlippedFrame( Frame* pOldFrame )
     delete pOldFrame;
 }
 
-/*
 void DrmDisplay::consumeFrame( DisplayQueue::Frame* pNewDisplayFrame )
 {
     DRMDISPLAY_ASSERT_CONSUMER_THREAD
@@ -1839,7 +1837,7 @@ void DrmDisplay::consumeFrame( DisplayQueue::Frame* pNewDisplayFrame )
 
     considerReleasingBuffers( );
 }
-*/
+#endif
 
 void DrmDisplay::processPending( void )
 {
@@ -1958,7 +1956,7 @@ void DrmDisplay::setVSync( bool bEnable )
     //  This must be thread safe since it services both SF event
     //  control requests received via onVSyncEnable() and internal
     //  updates via startup/shutdown/suspend/resume events.
-    Mutex::Autolock _l( mSetVSyncLock );
+    ScopedSpinLock _l(mSetVSyncLock);
     doSetVSync( bEnable );
     mbVSyncGenEnabled = bEnable;
 }
@@ -2115,7 +2113,7 @@ int DrmDisplay::queueStartup( const Connection& newConnection, bool bNew )
         Log::add( "Drm Display Startup => Self Teardown" );
         disableAllEncryptedSessions();
     }
-    Mutex::Autolock _l( mSyncQueue );
+    ScopedSpinLock _l(mSyncQueue);
     if ( meQueueState == QUEUE_STATE_SHUTDOWN )
     {
         ret = queueEvent( new EventStartup( newConnection, bNew ) );
@@ -2144,7 +2142,7 @@ int DrmDisplay::queueShutdown( void )
         Log::add( "Drm Display Shutdown => Self Teardown" );
         disableAllEncryptedSessions();
     }
-    Mutex::Autolock _l( mSyncQueue );
+    ScopedSpinLock _l(mSyncQueue);
     if ( ( meQueueState == QUEUE_STATE_STARTED )
       || ( meQueueState == QUEUE_STATE_SUSPENDED ) )
     {
@@ -2177,7 +2175,7 @@ int DrmDisplay::queueSuspend( bool bUseDPMS, bool bDeactivateDisplay )
         Log::add( "Drm Display Suspend => Self Teardown" );
         disableAllEncryptedSessions();
     }
-    Mutex::Autolock _l( mSyncQueue );
+    ScopedSpinLock _l(mSyncQueue);
     if ( meQueueState == QUEUE_STATE_STARTED )
     {
         // Create a timeline slot so we can be sure to release all frames queued prior to the suspend.
@@ -2210,7 +2208,7 @@ int DrmDisplay::queueResume( void )
         Log::add( "Drm Display Resume => Self Teardown" );
         disableAllEncryptedSessions();
     }
-    Mutex::Autolock _l( mSyncQueue );
+    ScopedSpinLock _l(mSyncQueue);
     if ( meQueueState == QUEUE_STATE_SUSPENDED )
     {
         ret = queueEvent( new EventResume( ) );
@@ -2245,7 +2243,7 @@ int DrmDisplay::queueFrame( const Content::Display& display, uint32_t zorder, in
     HWCASSERT( pRetireFenceFd );
     HWCASSERT( *pRetireFenceFd == -1 );
 
-    Mutex::Autolock _l( mSyncQueue );
+    ScopedSpinLock _l(mSyncQueue);
     if ( meQueueState != QUEUE_STATE_STARTED )
     {
         // Drop all frame if not started or if suspended.

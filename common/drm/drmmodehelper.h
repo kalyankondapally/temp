@@ -14,15 +14,13 @@
 // limitations under the License.
 */
 
-#ifndef INTEL_UFO_HWC_DRMMODEHELPER_H
-#define INTEL_UFO_HWC_DRMMODEHELPER_H
+#ifndef COMMON_DRM_DRMMODEHELPER_H
+#define COMMON_DRM_DRMMODEHELPER_H
 
-#include "PhysicalDisplay.h"
+#include "physicaldisplay.h"
 #include <drm_mode.h>
 
-namespace intel {
-namespace ufo {
-namespace hwc {
+namespace hwcomposer {
 
 // Notionally, this could be in Display::Timing, however, we dont really want to force the drm_mode_modeinfo
 // structure to be a global, so handle it differently
@@ -66,8 +64,6 @@ inline Timing::EAspectRatio getDrmModeAspectRatio(const struct drm_mode_modeinfo
 #endif
 }
 
-}; // namespace hwc
-}; // namespace ufo
-}; // namespace intel
+}; // namespace hwcomposer
 
-#endif // INTEL_UFO_HWC_DRMMODEHELPER_H
+#endif // COMMON_DRM_DRMMODEHELPER_H

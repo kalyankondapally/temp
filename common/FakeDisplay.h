@@ -17,7 +17,7 @@
 #ifndef INTEL_UFO_HWC_FAKE_H
 #define INTEL_UFO_HWC_FAKE_H
 
-#include "PhysicalDisplay.h"
+#include "physicaldisplay.h"
 #include "SinglePlaneDisplayCaps.h"
 
 namespace intel {

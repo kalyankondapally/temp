@@ -14,18 +14,20 @@
 // limitations under the License.
 */
 
-#ifndef INTEL_UFO_HWC_LAYER_H
-#define INTEL_UFO_HWC_LAYER_H
+#ifndef COMMON_CORE_LAYER_H
+#define COMMON_CORE_LAYER_H
 
-#include "AbstractComposition.h"
-#include "Timeline.h"
-#include "Format.h"
+#include <vector>
+
+#include <hwcdefs.h>
+
+#include "timeline.h"
+#include "format.h"
 #include "Utils.h"
-#include <utils/Vector.h>
 
-namespace intel {
-namespace ufo {
-namespace hwc {
+namespace hwcomposer {
+
+class AbstractComposition;
 
 class Layer
 {
@@ -151,8 +153,10 @@ public:
     };
 
     Layer();
+#ifdef uncomment_hwc1
     Layer(hwc_layer_1_t& hwc_layer);
-    Layer(buffer_handle_t handle);
+#endif
+    Layer(HWCNativeHandle handle);
 
     // Reset layer to constructed state
     void clear();
@@ -178,18 +182,22 @@ public:
 
     uint32_t            getHints() const                    { return mHints;                            }
     uint32_t            getFlags() const                    { return mFlags;                            }
-    buffer_handle_t     getHandle() const
+    HWCNativeHandle     getHandle() const
     {
+#ifdef uncomment
         const Layer & target = mpComposition ? mpComposition->getTarget() : *this;
         return (&target == this) ? mHandle : target.getHandle();
+#else
+	return NULL;
+#endif
     }
     ETransform          getTransform() const                { return mTransform;                        }
     EBlendMode          getBlending() const                 { return mBlending;                         }
     DataSpace           getDataSpace() const                { return mDataSpace;                        }
-    const hwc_frect_t&  getSrc() const                      { return mSrc;                              }
-    hwc_frect_t&        editSrc()                           { return mSrc;                              }
-    const hwc_rect_t&   getDst() const                      { return mDst;                              }
-    hwc_rect_t&         editDst()                           { return mDst;                              }
+    const HwcRect<float>&  getSrc() const                      { return mSrc;                              }
+    HwcRect<float>&        editSrc()                           { return mSrc;                              }
+    const HwcRect<int>&   getDst() const                      { return mDst;                              }
+    HwcRect<int>&         editDst()                           { return mDst;                              }
     float               getPlaneAlpha() const               { return mPlaneAlpha;                       }
     uint32_t            getFps() const                      { return mFrameRate.getFps();               }
     const FramerateTracker& getFrameRateTracker() const     { return mFrameRate;                        }
@@ -223,8 +231,8 @@ public:
     bool                isFrontBufferRendered() const       { return mbFrontBufferRendered;             }
     bool                isFullScreenVideo(uint32_t outWidth, uint32_t outHeight) const;
 
-    const Vector<hwc_rect_t>& getVisibleRegions() const     { return mVisibleRegions;                   }
-    Vector<hwc_rect_t>& editVisibleRegions()                { return mVisibleRegions;                   }
+    const std::vector<HwcRect<int>>& getVisibleRegions() const     { return mVisibleRegions;                   }
+    std::vector<HwcRect<int>>& editVisibleRegions()                { return mVisibleRegions;                   }
 
     // Set various state.  NOTE: you *MUST* call 'onUpdateFlags()' following any of these.
     void setBufferFormat(int32_t format)                    { mBufferDetails.setFormat( format );
@@ -235,18 +243,18 @@ public:
                                                                 mBufferDetails.setTilingFormat( tileFormat ); }
     void setHints(uint32_t hints)                           { mHints = hints;                           }
     void setFlags(uint32_t flags)                           { mFlags = flags;                           }
-    void setHandle(buffer_handle_t handle)                  { mHandle = handle;                         }
+    void setHandle(HWCNativeHandle handle)                  { mHandle = handle;                         }
     void setTransform(ETransform transform)                 { mTransform = transform;                   }
     void setBlending(EBlendMode blending)                   { mBlending = blending;                     }
     void setDataSpace(DataSpace dataSpace)                  { mDataSpace = dataSpace;                   }
-    void setSrc(hwc_rect_t src)                             { mSrc.left   = src.left;
+    void setSrc(HwcRect<int> src)                             { mSrc.left   = src.left;
                                                               mSrc.right  = src.right;
                                                               mSrc.top    = src.top;
                                                               mSrc.bottom = src.bottom;                 }
-    void setSrc(const hwc_frect_t src)                      { mSrc = src;                               }
-    void setDst(const hwc_rect_t dst)                       { mDst = dst;                               }
+    void setSrc(const HwcRect<float> src)                      { mSrc = src;                               }
+    void setDst(const HwcRect<int> dst)                       { mDst = dst;                               }
     void setPlaneAlpha(float planeAlpha)                    { mPlaneAlpha = planeAlpha;                 }
-    void setVisibleRegions(const Vector<hwc_rect_t>& vr)    { mVisibleRegions = vr;                     }
+    void setVisibleRegions(const std::vector<HwcRect<int>>& vr)    { mVisibleRegions = vr;                     }
     void setFps(uint32_t fps)                               { mFrameRate.setFps(fps);                   }
     void setComposition(AbstractComposition *pComposition)  { mpComposition = pComposition;             }
     void setBufferPavpSession(uint32_t session, uint32_t instance, uint32_t isEncrypted);
@@ -271,17 +279,20 @@ public:
     // If timeoutNs is 0 then this is a polling test.
     // Returns false if the layer's buffer still has work pending.
     bool waitRendering(nsecs_t timeoutNs) const;
-
+#ifdef uncomment_hwc1
     // Update every field in the layer.
     // Note, accurate frame rate tracking requires the timestamp for the composition to be provided
     void onUpdateAll(hwc_layer_1& layer, nsecs_t frameTime = 0, bool bForceOpaque = false);
-    void onUpdateAll(buffer_handle_t handle, bool bForceOpaque = false);
+#endif
+    void onUpdateAll(HWCNativeHandle handle, bool bForceOpaque = false);
 
     // Update just the changing frame specific data. This should only be used when no geometry change has happened since the last onUpdateAll()
     // Note, accurate frame rate tracking requires the timestamp for the composition to be provided
     void onUpdateFrameState(const Layer& layer);
+#ifdef uncomment_hwc1
     void onUpdateFrameState(hwc_layer_1& layer, nsecs_t frameTime = 0);
-    void onUpdateFrameState(buffer_handle_t handle, nsecs_t frameTime = 0);
+#endif
+    void onUpdateFrameState(HWCNativeHandle handle, nsecs_t frameTime = 0);
 
     // Update the fence pointers only
     void onUpdateFences(const Layer& layer);
@@ -299,9 +310,9 @@ public:
     void onUpdateMediaTimestampFps(nsecs_t n, uint32_t fps) { mBufferDetails.setMediaTimestampFps(n, fps); }
 
     static const Layer& Empty();
-
+#ifdef uncomment_hwc1
     bool isEqual(const hwc_layer_1& layer) const;
-
+#endif
     // Does this Layer match another Layer.
     // Returns true if match (ignoring handles).
     // If pbMatchesHandle is provided, then on return it will be set true iff handles also match.
@@ -324,8 +335,12 @@ private:
 
     const BufferDetails & getBufferDetails() const
     {
+#ifdef uncomment
         const Layer & target = mpComposition ? mpComposition->getTarget() : *this;
         return (&target == this) ? mBufferDetails : target.getBufferDetails();
+#else
+	return mBufferDetails;
+#endif
     }
 
 private:
@@ -344,10 +359,10 @@ private:
     BufferDetails               mBufferDetails;
 
     // Copy of the input layer state. This can be modified by the HWC at need
-    buffer_handle_t             mHandle;
-    hwc_frect_t                 mSrc;
-    hwc_rect_t                  mDst;
-    Vector<hwc_rect_t>          mVisibleRegions;
+    HWCNativeHandle             mHandle;
+    HwcRect<float>                 mSrc;
+    HwcRect<int>                  mDst;
+    std::vector<HwcRect<int>>     mVisibleRegions;
     uint32_t                    mHints;
     uint32_t                    mFlags;
     EBlendMode                  mBlending;
@@ -369,7 +384,7 @@ private:
     bool                        mbSrcCropped:1;             // Layer is presenting a cropped subrect of the source buffer.
     bool                        mbFrontBufferRendered:1;    // Rendering may occur after the buffer is presented.
 };
-
+#ifdef uncomment_hwc1
 inline bool operator==(const hwc_layer_1 &hwcLayer, const Layer &layer)
 {
     return layer.isEqual(hwcLayer);
@@ -379,9 +394,8 @@ inline bool operator==(const Layer &layer, const hwc_layer_1 &hwcLayer)
 {
     return layer.isEqual(hwcLayer);
 }
+#endif
 
-}; // namespace hwc
-}; // namespace ufo
-}; // namespace intel
+}; // namespace hwcomposer
 
-#endif // INTEL_UFO_HWC_LAYER_H
+#endif // COMMON_CORE_LAYER_H

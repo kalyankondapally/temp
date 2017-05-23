@@ -14,32 +14,30 @@
 // limitations under the License.
 */
 
-#include "Common.h"
+#include <inttypes.h>
+
 #include "Layer.h"
 #include "Utils.h"
-#include "Log.h"
-#include "Timeline.h"
-#include "ufo/graphics.h"
-#include "AbstractBufferManager.h"
+#include "log.h"
+#include "timeline.h"
 
-#include <ui/Rect.h>
-#include <ui/GraphicBufferMapper.h>
+#include <hwcdefs.h>
 
-namespace intel {
-namespace ufo {
-namespace hwc {
+namespace hwcomposer {
 
 Layer::FramerateTracker::FramerateTracker() :
     mLastTimestamp(0),
     mPeriod(0),
     mFps(0)
 {
+#ifdef uncomment
     reset(systemTime(CLOCK_MONOTONIC));
+#endif
 }
 
 void Layer::FramerateTracker::reset(nsecs_t start, uint32_t defaultFps)
 {
-    ALOG_ASSERT(defaultFps != 0);
+    HWCASSERT(defaultFps != 0);
 
     mPeriod = 1000000000 / defaultFps;
     mLastTimestamp = start;
@@ -95,15 +93,16 @@ Layer::Layer()
     onUpdateFlags(); // Just to initialise the flags.
 }
 
-
+#ifdef uncomment
 Layer::Layer(hwc_layer_1_t& hwc_layer)
     // Constructor state should happen in the clear function
 {
     clear();
     onUpdateAll(hwc_layer, 0);
 }
+#endif
 
-Layer::Layer(buffer_handle_t handle)
+Layer::Layer(HWCNativeHandle handle)
 {
     clear();
     onUpdateAll(handle);
@@ -120,8 +119,9 @@ void Layer::clear()
     mBlending = EBlendMode::NONE;
     mTransform = ETransform::NONE;
     mPlaneAlpha = 0;
+#ifdef uncomment
     mDataSpace = DataSpace_Unknown;
-
+#endif
     mSrc.left = 0;
     mSrc.right = 0;
     mSrc.top = 0;
@@ -142,9 +142,13 @@ void Layer::onUpdatePending(nsecs_t now)
     mBufferDetails.clear( );
 }
 
-void Layer::onUpdateFrameState(buffer_handle_t handle, nsecs_t now)
+void Layer::onUpdateFrameState(HWCNativeHandle handle, nsecs_t now)
 {
+#ifdef uncomment
     bool bHandleChanged = handle != mHandle;
+#else
+    bool bHandleChanged = false;
+#endif
     mFrameRate.update(now, bHandleChanged);
     mHandle = handle;
 
@@ -154,7 +158,7 @@ void Layer::onUpdateFrameState(buffer_handle_t handle, nsecs_t now)
         onUpdateBufferState();
     }
 }
-
+#ifdef uncomment_hwc1
 void Layer::onUpdateFrameState(hwc_layer_1& layer, nsecs_t now)
 {
     onUpdateFrameState(layer.handle, now);
@@ -162,7 +166,7 @@ void Layer::onUpdateFrameState(hwc_layer_1& layer, nsecs_t now)
     setAcquireFenceReturn( &layer.acquireFenceFd );
     setReleaseFenceReturn( &layer.releaseFenceFd );
 }
-
+#endif
 void Layer::onUpdateFrameState(const Layer& layer)
 {
     mFrameRate              = layer.mFrameRate;
@@ -213,11 +217,11 @@ void Layer::onUpdateFlags()
     }
     mbSrcOffset = ( mSrc.left != 0 ) || ( mSrc.top != 0 );
     mbSrcCropped = ( mSrc.right < getBufferWidth()) || ( mSrc.bottom < getBufferHeight());
-    mbVideo = intel::ufo::hwc::isVideo(getBufferFormat());
-    mbAlpha = intel::ufo::hwc::isAlpha(getBufferFormat());
+    mbVideo = isVideoFormat(getBufferFormat());
+    mbAlpha = isAlphaFormat(getBufferFormat());
     mbBlend = ((mBlending != EBlendMode::NONE) && mbAlpha) || isPlaneAlpha();
     mbFrontBufferRendered = ( getBufferModeFlags() & FRONT_BUFFER_RENDER );
-
+#ifdef uncomment
     if (mbVideo)
     {
         mDataSpace = DataSpace_BT601_625;
@@ -227,25 +231,26 @@ void Layer::onUpdateFlags()
     {
         mDataSpace = DataSpace_SRGB_Linear;
     }
+#endif
 
 }
-
+#ifdef uncomment_hwc1
 static ETransform convertHwc1Transform(uint32_t transform)
 {
     // Older hwcomposer_defs.h files no not always have this defined.
-    const uint32_t HWC_TRANSFORM_NONE = 0;
-    const uint32_t HWC_TRANSFORM_FLIP_H_ROT_90 = HAL_TRANSFORM_FLIP_H | HAL_TRANSFORM_ROT_90;
-    const uint32_t HWC_TRANSFORM_FLIP_V_ROT_90 = HAL_TRANSFORM_FLIP_V | HAL_TRANSFORM_ROT_90;
+    const uint32_t kIdentity = 0;
+    const uint32_t HWC_TRANSFORM_FLIP_H_ROT_90 = kReflectX | kRotate90;
+    const uint32_t HWC_TRANSFORM_FLIP_V_ROT_90 = kReflectY | kRotate90;
 
     ETransform t = ETransform::NONE;
     switch (transform)
     {
-        case HWC_TRANSFORM_NONE          : t = ETransform::NONE     ; break;
-        case HWC_TRANSFORM_FLIP_H        : t = ETransform::FLIP_H   ; break;
-        case HWC_TRANSFORM_FLIP_V        : t = ETransform::FLIP_V   ; break;
-        case HWC_TRANSFORM_ROT_90        : t = ETransform::ROT_90   ; break;
-        case HWC_TRANSFORM_ROT_180       : t = ETransform::ROT_180  ; break;
-        case HWC_TRANSFORM_ROT_270       : t = ETransform::ROT_270  ; break;
+	case kIdentity          : t = ETransform::NONE     ; break;
+	case kReflectY        : t = ETransform::FLIP_H   ; break;
+	case kReflectX        : t = ETransform::FLIP_V   ; break;
+	case kRotate90        : t = ETransform::ROT_90   ; break;
+	case kRotate180       : t = ETransform::ROT_180  ; break;
+	case kRotate270       : t = ETransform::ROT_270  ; break;
         case HWC_TRANSFORM_FLIP_H_ROT_90 : t = ETransform::FLIP_H_90; break;
         case HWC_TRANSFORM_FLIP_V_ROT_90 : t = ETransform::FLIP_V_90; break;
     }
@@ -257,9 +262,9 @@ static EBlendMode convertHwc1Blending(uint32_t blend)
     EBlendMode b = EBlendMode::NONE;
     switch (blend)
     {
-        case HWC_BLENDING_NONE       : b = EBlendMode::NONE;           break;
-        case HWC_BLENDING_PREMULT    : b = EBlendMode::PREMULT;        break;
-        case HWC_BLENDING_COVERAGE   : b = EBlendMode::COVERAGE;       break;
+	case kBlendingNone       : b = EBlendMode::NONE;           break;
+	case kBlendingPremult    : b = EBlendMode::PREMULT;        break;
+	case kBlendingCoverage   : b = EBlendMode::COVERAGE;       break;
     }
     return b;
 }
@@ -312,8 +317,8 @@ void Layer::onUpdateAll(hwc_layer_1& layer, nsecs_t now, bool bForceOpaque)
     onUpdateBufferState();
     onUpdateFlags();
 }
-
-void Layer::onUpdateAll(buffer_handle_t handle, bool bForceOpaque)
+#endif
+void Layer::onUpdateAll(HWCNativeHandle handle, bool bForceOpaque)
 {
     mHandle     = handle;
     mBlending   = bForceOpaque ? EBlendMode::NONE : EBlendMode::PREMULT;
@@ -336,29 +341,38 @@ void Layer::onUpdateAll(buffer_handle_t handle, bool bForceOpaque)
     mSourceReleaseFence.clear();
     mpComposition = NULL;
     mPlaneAlpha = 1.0f;
+#ifdef uncomment
     mDataSpace = DataSpace_Unknown;
-
+#endif
     mFrameRate.reset(0);
 
     mVisibleRegions.resize(1);
+#ifdef uncomment
     mVisibleRegions.editItemAt(0) = mDst;
-
+#else
+    mVisibleRegions[0] = mDst;
+#endif
     onUpdateFlags();
 }
 
 bool Layer::doWaitAcquireFence(nsecs_t timeoutNs) const
 {
     ATRACE_NAME_IF( BUFFER_WAIT_TRACE, "Layer::waitAcquireFence" );
+#ifdef uncomment
     uint32_t timeoutMs = ns2ms(timeoutNs);
+#else
+    uint32_t timeoutMs = 0;
+ #endif
+
     if ( timeoutMs == 0 )
     {
-        ALOGD_IF( CONTENT_DEBUG, "Layer %s: Checking fence %s",
+	DTRACEIF( CONTENT_DEBUG, "Layer %s: Checking fence %s",
             dump().string(), mSourceAcquireFence.dump().string() );
         return mSourceAcquireFence.checkAndClose( );
     }
     else
     {
-        ALOGD_IF( CONTENT_DEBUG, "Layer %s: Waiting for fence %s timeout %u",
+	DTRACEIF( CONTENT_DEBUG, "Layer %s: Waiting for fence %s timeout %u",
             dump().string(), mSourceAcquireFence.dump().string(), timeoutMs );
         return mSourceAcquireFence.waitAndClose( timeoutMs );
     }
@@ -366,15 +380,19 @@ bool Layer::doWaitAcquireFence(nsecs_t timeoutNs) const
 
 void Layer::onUpdateBufferState()
 {
+#ifdef uncomment
     AbstractBufferManager::get().getLayerBufferDetails( this, &mBufferDetails );
+#endif
 }
 
 void Layer::setBufferPavpSession(uint32_t session, uint32_t instance, uint32_t isEncrypted)
 {
+#ifdef uncomment
     if (mHandle != NULL)
     {
         AbstractBufferManager::get().setPavpSession( mHandle, session, instance, isEncrypted );
     }
+#endif
     mBufferDetails.setEncrypted( isEncrypted );
     mBufferDetails.setPavpSessionID( session );
     mBufferDetails.setPavpInstanceID( instance );
@@ -389,7 +407,11 @@ bool Layer::waitRendering(nsecs_t timeoutNs) const
     }
     else
     {
+#ifdef uncomment
         return AbstractBufferManager::get().wait( mHandle, timeoutNs );
+#else
+	return false;
+#endif
     }
 }
 
@@ -398,7 +420,7 @@ const Layer& Layer::Empty()
     static Layer sEmpty;
     return sEmpty;
 }
-
+#ifdef uncomment_hwc1
 bool Layer::isEqual(const hwc_layer_1& layer) const
 {
     // Note, cant use a memcmp here as internal pointers and flags may change.
@@ -417,7 +439,7 @@ bool Layer::isEqual(const hwc_layer_1& layer) const
     }
     return false;
 }
-
+#endif
 bool Layer::matches( const Layer& other, bool* pbMatchesHandle ) const
 {
     // All the rendering state needs to be checked
@@ -429,7 +451,7 @@ bool Layer::matches( const Layer& other, bool* pbMatchesHandle ) const
          getDst()               != other.getDst()         ||
          getBufferCompression() != other.getBufferCompression() )
     {
-        ALOGD_IF( CONTENT_DEBUG, "Mismatched Transform %d=%d Blending %d=%d planeAlpha %1.2f=%1.2f Encrypted %x=%x Src(%4.1f,%4.1f,%4.1f,%4.1f)=(%4.1f,%4.1f,%4.1f,%4.1f) Dst(%d,%d,%d,%d)=(%d,%d,%d,%d) Compression %d=%d",
+	DTRACEIF( CONTENT_DEBUG, "Mismatched Transform %d=%d Blending %d=%d planeAlpha %1.2f=%1.2f Encrypted %x=%x Src(%4.1f,%4.1f,%4.1f,%4.1f)=(%4.1f,%4.1f,%4.1f,%4.1f) Dst(%d,%d,%d,%d)=(%d,%d,%d,%d) Compression %d=%d",
             getTransform(),  other.getTransform(),
             getBlending(),   other.getBlending(),
             getPlaneAlpha(), other.getPlaneAlpha(),
@@ -474,7 +496,7 @@ bool Layer::isFullScreenVideo(uint32_t outWidth, uint32_t outHeight) const
     // 1. Width of target display frame == width of target device, with 1 pixel of tolerance.
     if ( abs( int32_t( dstWidth - outWidth ) ) <= 1 )
     {
-        ALOGD_IF( FILTER_DEBUG,
+	DTRACEIF( FILTER_DEBUG,
             "isLayerFullScreenVideo: Layer %s : Full screen video due to rule 1 %u v %u",
                 dump().string(), dstWidth, outWidth );
         bFullScreenVideo = true;
@@ -482,7 +504,7 @@ bool Layer::isFullScreenVideo(uint32_t outWidth, uint32_t outHeight) const
     // 2. OR - Height of target display frame == height of target device, with 1 pixel of tolerance.
     else if ( abs( int32_t( dstHeight - outHeight ) ) <= 1 )
     {
-        ALOGD_IF( FILTER_DEBUG,
+	DTRACEIF( FILTER_DEBUG,
             "isLayerFullScreenVideo: Layer %s : Full screen video due to rule 2 %u v %u",
                 dump().string(), dstHeight, outHeight );
         bFullScreenVideo = true;
@@ -492,7 +514,7 @@ bool Layer::isFullScreenVideo(uint32_t outWidth, uint32_t outHeight) const
     else if ( outWidth && outHeight
               && ( ((( dstWidth * dstHeight ) * 100 ) / ( outWidth * outHeight )) > 90 ) )
     {
-        ALOGD_IF( FILTER_DEBUG,
+	DTRACEIF( FILTER_DEBUG,
             "isLayerFullScreenVideo: Layer %s : Full screen video due to rule 3 df(%u x %u) target(%u x %u) [==%u%%]",
                 dump().string(), dstWidth, dstHeight, outWidth, outHeight,
                 ((( dstWidth * dstHeight ) * 100 ) / ( outWidth * outHeight )) );
@@ -504,6 +526,7 @@ bool Layer::isFullScreenVideo(uint32_t outWidth, uint32_t outHeight) const
 
 String8 Layer::dump(const char* pPrefix) const
 {
+#ifdef uncomment
     if (!sbLogViewerBuild)
         return String8();
 
@@ -577,10 +600,10 @@ String8 Layer::dump(const char* pPrefix) const
     {
         output.appendFormat(" RC(%s)", AbstractBufferManager::get().getCompressionName(getBufferCompression()));
     }
-
+#ifdef uncomment
     if (mpComposition)
         output.appendFormat(" %s", mpComposition->getName());
-
+#endif
     if(getMediaTimestamp())
         output.appendFormat(" vTS:%" PRIu64, getMediaTimestamp());
 
@@ -588,10 +611,14 @@ String8 Layer::dump(const char* pPrefix) const
         output.appendFormat(" vFps:%u", getMediaFps());
 
     return output;
+#else
+    return String8();
+#endif
 }
 
 bool Layer::dumpContentToTGA(const String8& name) const
 {
+#ifdef uncomment
     if (!sbInternalBuild || mHandle == NULL)
         return false;
 
@@ -605,13 +632,13 @@ bool Layer::dumpContentToTGA(const String8& name) const
     status_t r = mapper.lock(getHandle(), GRALLOC_USAGE_SW_READ_OFTEN, Rect(0, 0, width, height), (void **)&pBufferPixels);
     if (r != OK || !pBufferPixels)
     {
-        ALOGE("dumpContentToTGA: Failed to lock surface");
+	ETRACE("dumpContentToTGA: Failed to lock surface");
         return false;
     }
 
     bool bRet = true;
     String8 filename = String8::format( "/data/hwc/%s.tga", name.string() );
-    ALOGD( "Dumping %s to %s", dump().string(), filename.string() );
+    DTRACE( "Dumping %s to %s", dump().string(), filename.string() );
 
     FILE* fp = fopen( filename,"wb" );
 
@@ -636,7 +663,7 @@ bool Layer::dumpContentToTGA(const String8& name) const
 #pragma pack()
 
         const uint32_t szTGAHeader = 18;
-        ALOG_ASSERT( sizeof( TGAHeader ) == szTGAHeader );
+	HWCASSERT( sizeof( TGAHeader ) == szTGAHeader );
         memset( &TGAHeader, 0, szTGAHeader );
         TGAHeader.mImageType = 2;       // Uncompressed BGR
         TGAHeader.mWidth     = width;   // Width in pixels
@@ -808,7 +835,7 @@ bool Layer::dumpContentToTGA(const String8& name) const
 
         if ( ftell( fp ) <= (long)szTGAHeader )
         {
-            ALOGE( "Failed to dump %s", dump().string() );
+	    ETRACE( "Failed to dump %s", dump().string() );
             bRet = false;
         }
 
@@ -816,14 +843,15 @@ bool Layer::dumpContentToTGA(const String8& name) const
     }
     else
     {
-        ALOGE( "Failed to open output file %s", filename.string() );
+	ETRACE( "Failed to open output file %s", filename.string() );
         bRet = false;
     }
 
     mapper.unlock(getHandle());
     return bRet;
+#else
+    return false;
+#endif
 }
 
-}; // namespace hwc
-}; // namespace ufo
-}; // namespace intel
+}; // namespace hwcomposer
