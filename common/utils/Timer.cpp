@@ -14,12 +14,9 @@
 // limitations under the License.
 */
 
-#include "Common.h"
 #include "Timer.h"
 
-namespace intel {
-namespace ufo {
-namespace hwc {
+namespace hwcomposer {
 
 status_t Timer::set(uint32_t timeoutMS)
 {
@@ -34,7 +31,7 @@ status_t Timer::set(uint32_t timeoutMS)
 
         if (0 != timer_create(CLOCK_MONOTONIC, &timerEvent, &mTimer))
         {
-            ALOGE("Failed to create timer: %s", strerror(errno));
+            ETRACE("Failed to create timer: %s", strerror(errno));
             return UNKNOWN_ERROR;
         }
         mbHaveTimer = true;
@@ -83,7 +80,7 @@ status_t Timer::setTimer(uint32_t timeoutMS)
 
     if (0 != timer_settime(mTimer, 0, &timerSpec, NULL))
     {
-        ALOGE("Failed to create set-timer: %s", strerror(errno));
+        ETRACE("Failed to create set-timer: %s", strerror(errno));
         timerDelete();
         return UNKNOWN_ERROR;
     }
@@ -92,11 +89,9 @@ status_t Timer::setTimer(uint32_t timeoutMS)
 
 void Timer::timeoutHandler(sigval_t value)
 {
-    ALOG_ASSERT( value.sival_ptr );
+    HWCASSERT( value.sival_ptr );
     Timer *pTimer = static_cast<Timer*>(value.sival_ptr);
     pTimer->mCallback.notify(*pTimer);
 }
 
-}; // namespace hwc
-}; // namespace ufo
-}; // namespace intel
+}; // namespace hwcomposer

@@ -14,19 +14,14 @@
 // limitations under the License.
 */
 
-#ifndef INTEL_UFO_HWC_BUFFERQUEUE_H
-#define INTEL_UFO_HWC_BUFFERQUEUE_H
+#ifndef COMMON_BUFFER_BUFFERQUEUE_H
+#define COMMON_BUFFER_BUFFERQUEUE_H
 
-#include <utils/Vector.h>
-#include <ui/GraphicBuffer.h>
-#include <sync/sync.h>
-#include "Timeline.h"
+#include "timeline.h"
 #include "Utils.h"
 #include "Timer.h"
 
-namespace intel {
-namespace ufo {
-namespace hwc {
+namespace hwcomposer {
 
 class Buffer;
 
@@ -260,8 +255,6 @@ private:
     Mutex                       mLock;                                      //< Lock required to synchronize timeout GC with SF thread.
 };
 
-} // namespace hwc
-} // namespace ufo
-} // namespace intel
+} // namespace hwcomposer
 
-#endif // INTEL_UFO_HWC_BUFFERQUEUE_H
+#endif // COMMON_BUFFER_BUFFERQUEUE_H

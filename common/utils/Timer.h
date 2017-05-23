@@ -14,15 +14,16 @@
 // limitations under the License.
 */
 
-#ifndef INTEL_UFO_HWC_TIMER_H
-#define INTEL_UFO_HWC_TIMER_H
+#ifndef COMMON_UTILS_TIMER_H
+#define COMMON_UTILS_TIMER_H
+
+#include <sys/types.h>
+#include <sys/wait.h> 
 
 #include "hwcutils.h"
 #include "base.h"
 
-namespace intel {
-namespace ufo {
-namespace hwc {
+namespace hwcomposer {
 
 // A one-shot timer that calls the supplied 'Callback' on expiration.
 class Timer : NonCopyable
@@ -78,8 +79,6 @@ private:
     CallbackMFn mCallbackmFn;
 };
 
-}; // namespace hwc
-}; // namespace ufo
-}; // namespace intel
+}; // namespace hwcomposer
 
-#endif // INTEL_UFO_HWC_TIMER_H
+#endif // COMMON_UTILS_TIMER_H

@@ -32,6 +32,7 @@ common_SOURCES =              \
     common/utils/disjoint_layers.cpp \
     common/utils/option.cpp \
     common/utils/optionmanager.cpp \
+    common/utils/Timer.cpp \
     common/utils/log/log.cpp \
     common/filter/debugfilter.cpp \
     common/filter/emptyfilter.cpp \
