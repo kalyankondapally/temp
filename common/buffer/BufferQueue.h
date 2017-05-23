@@ -18,8 +18,11 @@
 #define COMMON_BUFFER_BUFFERQUEUE_H
 
 #include "timeline.h"
-#include "Utils.h"
+#include "utils.h"
 #include "Timer.h"
+#include "platformdefines.h"
+
+#include <spinlock.h>
 
 namespace hwcomposer {
 
@@ -74,7 +77,7 @@ public:
     void setConstraints( uint32_t maxBufferCount, uint32_t maxBufferAlloc );
 
     // Generate debug trace for all buffers.
-    String8 dump( void ) const;
+    HWCString dump( void ) const;
 
     // Get access to the next buffer on the queue.
     // The user must wait on the returned acquireFenceFd before using the Buffer.
@@ -90,7 +93,7 @@ public:
     void queue( int releaseFenceFd = AWAITING_RELEASE_FENCE );
 
     // Get graphic buffer from handle.
-    sp<GraphicBuffer> getGraphicBuffer( BufferHandle handle );
+    std::shared_ptr<HWCNativeHandlesp> getGraphicBuffer( BufferHandle handle );
 
     // Register an external buffer reference.
     // Only one external reference can be registered at any time.
@@ -247,12 +250,12 @@ private:
     Option                      mOptionGCTimeout;                           //< Time in milliseconds after which unused buffers are released.
     uint32_t                    mMaxBufferCount;                            //< Max buffer count to grow pool by; if zero then unbound.
     uint32_t                    mMaxBufferAlloc;                            //< Max buffer allocation in MB to grow pool by; if zero then unbound.
-    Vector< Buffer* >           mBuffers;                                   //< List of Buffer records.
+    std::vector< Buffer* >      mBuffers;                                   //< List of Buffer records.
     uint32_t                    mBufferAllocBytes;                          //< Total buffer allocations in bytes.
     uint32_t                    mLatestAvailableBuffer;                     //< Index of current/next buffer to use (if possible).
     uint32_t                    mDequeuedBuffer;                            //< Index of buffer most recently dequeued (or ~0U if none dequeued).
     TimerMFn<BufferQueue, &BufferQueue::idleTimeoutHandler>  mIdleTimer;    //< Timeout for garbage collection buffers.
-    Mutex                       mLock;                                      //< Lock required to synchronize timeout GC with SF thread.
+    SpinLock mLock;                                                         //< Lock required to synchronize timeout GC with SF thread.
 };
 
 } // namespace hwcomposer

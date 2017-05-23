@@ -101,6 +101,8 @@ public:
     // Returns zero if the call fails or is not implemented.
     // OPTIONAL.
     virtual uint32_t realizeBuffer( HWCNativeHandle handle );
+
+    bool getBufferDetails(HWCNativeHandle handle, HwcBuffer *bo) override;
  private:
    std::unique_ptr<NativeBufferHandler> buffer_handler_;
 };

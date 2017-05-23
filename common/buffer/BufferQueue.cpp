@@ -14,12 +14,13 @@
 // limitations under the License.
 */
 
+#include <cinttypes>
+
 #include "AbstractBufferManager.h"
 #include "BufferQueue.h"
+#include "hwcbuffer.h"
 
-namespace intel {
-namespace ufo {
-namespace hwc {
+namespace hwcomposer {
 
 // This class should be private to the buffer queue.
 // It's a helper class to wrap a graphic buffer and an acquire fence.
@@ -38,7 +39,7 @@ public:
     Buffer( uint32_t w, uint32_t h, int32_t format, uint32_t usage );
 
     // Construct a Buffer from an existing GraphicBuffer.
-    Buffer( sp<GraphicBuffer> pBuffer );
+    Buffer( std::shared_ptr<HWCNativeHandlesp> pBuffer );
 
     // Check underlying allocation was succesful.
     bool allocationOK( void )  { return  ( ( mpGraphicBuffer != NULL )
@@ -57,19 +58,20 @@ public:
     bool matchesConfiguration( uint32_t w, uint32_t h, int32_t format, uint32_t  usage );
 
     // Get human-readable description of Buffer state.
-    String8 dump( void );
+    HWCString dump( void );
 
-    AbstractBufferManager&          mBM;                    // Buffer manager.
-    sp<GraphicBuffer>               mpGraphicBuffer;        // Pointer to the buffer itself
-    uint32_t                        mSizeBytes;             // Size of the buffer in bytes (0 if shared).
-    Timeline::Fence                 mAcquireFence;          // Fence that needs to be waited on before access.
-                                                            // NOTES: BufferQueue is using a Hwc fence so fences can be
-                                                            // cancelled out-of-order (to support early release of buffers back
-                                                            // to the queue when frames are consumed/dropped out-of-order).
-    BufferQueue::BufferReference*   mpRef;                  // External reference
-    uint32_t                        mUse;                   // Buffer usage flags
-    nsecs_t                         mLastFrameUsedTime;     // Buffer last frame used time (updated at onEndOfFrame).
-    bool                            mbShared:1;             // Graphic buffer is shared.
+    AbstractBufferManager&             mBM;                    // Buffer manager.
+    std::shared_ptr<HWCNativeHandlesp> mpGraphicBuffer;        // Pointer to the buffer itself
+    HwcBuffer                          mBuffer;                // Buffer meta data
+    uint32_t                           mSizeBytes;             // Size of the buffer in bytes (0 if shared).
+    Timeline::Fence                    mAcquireFence;          // Fence that needs to be waited on before access.
+							       // NOTES: BufferQueue is using a Hwc fence so fences can be
+							       // cancelled out-of-order (to support early release of buffers back
+							       // to the queue when frames are consumed/dropped out-of-order).
+    BufferQueue::BufferReference*      mpRef;                  // External reference
+    uint32_t                           mUse;                   // Buffer usage flags
+    nsecs_t                            mLastFrameUsedTime;     // Buffer last frame used time (updated at onEndOfFrame).
+    bool                               mbShared:1;             // Graphic buffer is shared.
 };
 
 
@@ -83,7 +85,7 @@ Buffer::Buffer( uint32_t w, uint32_t h, int32_t format, uint32_t usage ) :
     allocate( w, h, format, usage );
 }
 
-Buffer::Buffer( sp<GraphicBuffer> pBuffer ) :
+Buffer::Buffer( std::shared_ptr<HWCNativeHandlesp> pBuffer ) :
     mBM( AbstractBufferManager::get() ),
     mpGraphicBuffer( pBuffer ),
     mSizeBytes( 0 ),
@@ -92,19 +94,22 @@ Buffer::Buffer( sp<GraphicBuffer> pBuffer ) :
     mLastFrameUsedTime(0),
     mbShared( true )
 {
+    if (mpGraphicBuffer.get())
+      mBM.getBufferDetails(mpGraphicBuffer.get(), &mBuffer);
 }
 
 void Buffer::allocate( uint32_t w, uint32_t h, int32_t format, uint32_t  usage )
 {
-    ALOG_ASSERT( w );
-    ALOG_ASSERT( h );
-    ALOG_ASSERT( format );
-    ALOG_ASSERT( usage & GRALLOC_USAGE_HW_COMPOSER );
+    HWCASSERT( w );
+    HWCASSERT( h );
+    HWCASSERT( format );
+    HWCASSERT( usage & GRALLOC_USAGE_HW_COMPOSER );
     mpGraphicBuffer = mBM.createGraphicBuffer( "BUFFERQUEUE", w, h, format, usage );
     mbShared = false;
     if ( allocationOK() )
     {
-        mSizeBytes = mBM.getBufferSizeBytes( mpGraphicBuffer->handle );
+	mSizeBytes = mBM.getBufferSizeBytes( mpGraphicBuffer.get() );
+	mBM.getBufferDetails(mpGraphicBuffer.get(), &mBuffer);
     }
     else
     {
@@ -115,15 +120,16 @@ void Buffer::allocate( uint32_t w, uint32_t h, int32_t format, uint32_t  usage )
 
 void Buffer::reallocate( uint32_t w, uint32_t h, int32_t format, uint32_t  usage )
 {
-    ALOG_ASSERT( w );
-    ALOG_ASSERT( h );
-    ALOG_ASSERT( format );
-    ALOG_ASSERT( usage & GRALLOC_USAGE_HW_COMPOSER );
+    HWCASSERT( w );
+    HWCASSERT( h );
+    HWCASSERT( format );
+    HWCASSERT( usage & GRALLOC_USAGE_HW_COMPOSER );
     mBM.reallocateGraphicBuffer( mpGraphicBuffer, "BUFFERQUEUE", w, h, format, usage );
     mbShared = false;
     if ( allocationOK() )
     {
-        mSizeBytes = mBM.getBufferSizeBytes( mpGraphicBuffer->handle );
+	mSizeBytes = mBM.getBufferSizeBytes( mpGraphicBuffer.get() );
+	mBM.getBufferDetails(mpGraphicBuffer.get(), &mBuffer);
     }
     else
     {
@@ -134,56 +140,61 @@ void Buffer::reallocate( uint32_t w, uint32_t h, int32_t format, uint32_t  usage
 
 void Buffer::reconfigure( uint32_t w, uint32_t h, int32_t format, uint32_t  usage )
 {
-    ALOG_ASSERT( w );
-    ALOG_ASSERT( h );
-    ALOG_ASSERT( format );
-    ALOG_ASSERT( usage & GRALLOC_USAGE_HW_COMPOSER );
+    HWCASSERT( w );
+    HWCASSERT( h );
+    HWCASSERT( format );
+    HWCASSERT( usage & GRALLOC_USAGE_HW_COMPOSER );
     if ( !allocationOK() )
     {
         // Attempt to allocate a buffer that was not yet successfully allocated.
         allocate( w, h, format, usage );
     }
-    else if ( ( mpGraphicBuffer->getWidth( ) != w )
-           || ( mpGraphicBuffer->getHeight( ) != h )
-           || ( mpGraphicBuffer->getPixelFormat( ) != format )
-           || ( mpGraphicBuffer->getUsage( ) != usage ) )
+    else if ( ( mBuffer.width != w )
+	   || ( mBuffer.height != h )
+	   || ( mBuffer.format != format )
+	   || ( mBuffer.usage != usage ) )
     {
         // Re-allocate an existing buffer.
         mAcquireFence.waitAndClose();
         reallocate( w, h, format, usage );
     }
-    ALOGE_IF( !allocationOK(), "BufferQueue failed to reconfigure [%ux%u fmt:%u/%s usage:0x%x]",
+    ETRACEIF( !allocationOK(), "BufferQueue failed to reconfigure [%ux%u fmt:%u/%s usage:0x%x]",
             w, h, format, getHALFormatShortString(format), usage );
 }
 
 bool Buffer::matchesConfiguration(uint32_t w, uint32_t h, int32_t format, uint32_t  usage)
 {
-    ALOG_ASSERT( w );
-    ALOG_ASSERT( h );
-    ALOG_ASSERT( format );
-    ALOG_ASSERT( usage & GRALLOC_USAGE_HW_COMPOSER );
+    HWCASSERT( w );
+    HWCASSERT( h );
+    HWCASSERT( format );
+#ifdef uncomment
+    HWCASSERT( usage & GRALLOC_USAGE_HW_COMPOSER );
+#endif
     if ( !allocationOK() )
         return false;
-    GraphicBuffer& gb = *mpGraphicBuffer;
-    bool bMatch = ((gb.getWidth( ) == w )
-                  && ( gb.getHeight( ) == h )
-                  && (gb.getPixelFormat( ) == format)
-                  && (gb.getUsage( ) == usage));
-    ALOGD_IF( BUFFERQUEUE_DEBUG, "%s %s %s", __FUNCTION__, dump().string(), bMatch ? "MATCH" : "MISMATCH" );
+
+    bool bMatch = ((mBuffer.width == w )
+		  && ( mBuffer.height == h )
+		  && (mBuffer.format == format)
+		  && (mBuffer.usage == usage));
+    DTRACEIF( BUFFERQUEUE_DEBUG, "%s %s %s", __FUNCTION__, dump().string(), bMatch ? "MATCH" : "MISMATCH" );
     return bMatch;
 }
 
-String8 Buffer::dump( void )
+HWCString Buffer::dump( void )
 {
     if ( !allocationOK() )
-        return String8("Invalid Allocation");
+	return HWCString("Invalid Allocation");
 
-    GraphicBuffer& gb = *mpGraphicBuffer;
-    return String8::format("Record:%p GraphicBuffer:%p %8u bytes%s %4dx%4d %s 0x%08x use:%c|%c %" PRIi64 "s %03" PRIi64 "ms ref:%-18p %s",
-                    this, gb.handle, mSizeBytes, mbShared ? " (shared)" : "",
-                     gb.getWidth(), gb.getHeight(),
-                    getHALFormatShortString(gb.getPixelFormat()),
-                    gb.getUsage(),
+    return HWCString::format("Record:%p GraphicBuffer:%p %8u bytes%s %4dx%4d %s 0x%08x use:%c|%c %" PRIi64 "s %03" PRIi64 "ms ref:%-18p %s",
+		    this, mpGraphicBuffer.get()->handle, mSizeBytes, mbShared ? " (shared)" : "",
+		     mBuffer.width, mBuffer.height,
+#ifdef uncomment
+		    getHALFormatShortString(mBuffer.format),
+#else
+			     String8(),
+#endif
+		    mBuffer.usage,
                     mUse & EUsedThisFrame ? 'U' : '-',
                     mUse & EUsedRecently ? 'R' : '-',
                     mLastFrameUsedTime / 1000000000,
@@ -215,12 +226,12 @@ void BufferQueue::setConstraints( uint32_t maxBufferCount, uint32_t maxBufferAll
 {
     mMaxBufferCount   = maxBufferCount;
     mMaxBufferAlloc   = maxBufferAlloc;
-    ALOGD_IF( BUFFERQUEUE_DEBUG, "BufferQueue x%u %uMB", mMaxBufferCount, mMaxBufferAlloc );
+    DTRACEIF( BUFFERQUEUE_DEBUG, "BufferQueue x%u %uMB", mMaxBufferCount, mMaxBufferAlloc );
 }
 
-String8 BufferQueue::dump( void ) const
+HWCString BufferQueue::dump( void ) const
 {
-    String8 output;
+    HWCString output;
     for (uint32_t i = 0; i < mBuffers.size(); i++)
     {
         if ( mBuffers[i]->allocationOK() )
@@ -304,7 +315,7 @@ void BufferQueue::updateBufferStats( void )
 
             // Perform some validation that the release fence isnt left trailing at -3
             // (add other error checks here).
-            INTEL_HWC_DEV_ASSERT( b.mAcquireFence.get() != AWAITING_RELEASE_FENCE );
+	    HWCASSERT( b.mAcquireFence.get() != AWAITING_RELEASE_FENCE );
             if ( b.mAcquireFence.get() == AWAITING_RELEASE_FENCE )
             {
                 ++errors;
@@ -427,7 +438,7 @@ void BufferQueue::logBufferState( void )
     for (uint32_t i = 0; i < sz; i++)
     {
         // Perform some validation that the release fence isnt left trailing at -3.
-        INTEL_HWC_DEV_ASSERT(mBuffers[i]->mAcquireFence.get() != AWAITING_RELEASE_FENCE);
+	HWCASSERT(mBuffers[i]->mAcquireFence.get() != AWAITING_RELEASE_FENCE);
         if (mBuffers[i]->mAcquireFence.get() == AWAITING_RELEASE_FENCE)
             bInvalidFence = true;
     }
@@ -507,8 +518,8 @@ uint32_t BufferQueue::getBlockedBuffers( uint32_t* pBitmask )
 
 BufferQueue::BufferHandle BufferQueue::dequeue(uint32_t width, uint32_t height, int32_t bufferFormat, uint32_t usage, Timeline::Fence** ppReleaseFence)
 {
-    ALOGD_IF(BUFFERQUEUE_DEBUG, "BufferQueue::dequeue %dx%d %x %x", width, height, bufferFormat, usage);
-    ALOG_ASSERT( mDequeuedBuffer == ~0U );
+    DTRACEIF(BUFFERQUEUE_DEBUG, "BufferQueue::dequeue %dx%d %x %x", width, height, bufferFormat, usage);
+    HWCASSERT( mDequeuedBuffer == ~0U );
     Buffer* pBuffer;
 
     // To maximize buffer re-use, we use equivalent buffer formats with alpha (e.g.RGBX=>RGBA).
@@ -517,8 +528,10 @@ BufferQueue::BufferHandle BufferQueue::dequeue(uint32_t width, uint32_t height, 
     int altFormat = equivalentFormatWithAlpha( bufferFormat );
     if ( altFormat != bufferFormat )
     {
-        ALOGD_IF( BUFFERQUEUE_DEBUG, "BufferQueue::dequeue Using alpha equivalent format %d/%s for %d/%s",
+#ifdef uncomment
+	DTRACEIF( BUFFERQUEUE_DEBUG, "BufferQueue::dequeue Using alpha equivalent format %d/%s for %d/%s",
             altFormat, getHALFormatShortString( altFormat ), bufferFormat, getHALFormatShortString( bufferFormat ) );
+#endif
         bufferFormat = altFormat;
     }
 
@@ -529,39 +542,39 @@ BufferQueue::BufferHandle BufferQueue::dequeue(uint32_t width, uint32_t height, 
         // Keep adding buffers if we haven't exceeded limits yet.
         // This is just a crude worst-case estimate assuming 4byte-pixels and 4K aligned scanlines.
         const uint32_t estimateWorstCaseSize = (( width*4 + 4095 ) & ~4095) * height;
-        ALOGD_IF( BUFFERQUEUE_DEBUG, " Need new/reuse buffers %zu/%u alloc %u/%u est +%u bytes",
+	DTRACEIF( BUFFERQUEUE_DEBUG, " Need new/reuse buffers %zu/%u alloc %u/%u est +%u bytes",
             mBuffers.size(), mMaxBufferCount, mBufferAllocBytes, mMaxBufferAlloc,  estimateWorstCaseSize );
 
         if ( ( !mMaxBufferCount || ( mBuffers.size() < mMaxBufferCount) )
           && ( !mMaxBufferAlloc || ( ( mBufferAllocBytes + estimateWorstCaseSize ) < mMaxBufferAlloc ) ) )
         {
-            ALOGD_IF(BUFFERQUEUE_DEBUG, "BufferQueue::dequeue New buffer allocated");
+	    DTRACEIF(BUFFERQUEUE_DEBUG, "BufferQueue::dequeue New buffer allocated");
             // Add new Buffers on demand.
             pBuffer = new Buffer(width, height, bufferFormat, usage);
             if ( ( pBuffer == NULL ) || ( !pBuffer->allocationOK() ) )
             {
-                ALOGE( "BufferQueue::Buffer allocation failure" );
+		ETRACE( "BufferQueue::Buffer allocation failure" );
                 delete pBuffer;
                 return NULL;
             }
             mBufferAllocBytes += pBuffer->mSizeBytes;
             mLatestAvailableBuffer = mBuffers.size();
             mBuffers.push_back(pBuffer);
-            ALOGD_IF(BUFFERQUEUE_DEBUG, "BufferQueue::dequeue pool grown - new size %u", mLatestAvailableBuffer+1);
+	    DTRACEIF(BUFFERQUEUE_DEBUG, "BufferQueue::dequeue pool grown - new size %u", mLatestAvailableBuffer+1);
         }
         else
         {
             // Access existing Buffer.
-            ALOGD_IF(BUFFERQUEUE_DEBUG, "BufferQueue::dequeue Wait for existing %dx%d %x %x", width, height, bufferFormat, usage);
+	    DTRACEIF(BUFFERQUEUE_DEBUG, "BufferQueue::dequeue Wait for existing %dx%d %x %x", width, height, bufferFormat, usage);
             pBuffer = waitForFirstAvailableBuffer(width, height, bufferFormat, usage);
             if ( pBuffer == NULL )
             {
-                ALOGE( "BufferQueue::Wait for first available buffer failure" );
+		ETRACE( "BufferQueue::Wait for first available buffer failure" );
                 return NULL;
             }
             if ( !pBuffer->allocationOK() )
             {
-                ALOGE( "BufferQueue::Wait for first available buffer alloc failure" );
+		ETRACE( "BufferQueue::Wait for first available buffer alloc failure" );
                 return NULL;
             }
             // Ensure it matches the current configuration.
@@ -569,7 +582,7 @@ BufferQueue::BufferHandle BufferQueue::dequeue(uint32_t width, uint32_t height, 
             pBuffer->reconfigure(width, height, bufferFormat, usage);
             if ( !pBuffer->allocationOK() )
             {
-                ALOGE( "BufferQueue::Buffer reconfigure alloc failure" );
+		ETRACE( "BufferQueue::Buffer reconfigure alloc failure" );
                 return NULL;
             }
             mBufferAllocBytes += pBuffer->mSizeBytes;
@@ -592,7 +605,7 @@ BufferQueue::BufferHandle BufferQueue::dequeue(uint32_t width, uint32_t height, 
     }
 #endif
 
-    ALOG_ASSERT( pBuffer == mBuffers[ mLatestAvailableBuffer ] );
+    HWCASSERT( pBuffer == mBuffers[ mLatestAvailableBuffer ] );
     mDequeuedBuffer = mLatestAvailableBuffer;
     pBuffer->mAcquireFence.set( DEQUEUED_BUFFER ); // Indicate that this buffer is now dequeued
     *ppReleaseFence = &(pBuffer->mAcquireFence);
@@ -601,20 +614,20 @@ BufferQueue::BufferHandle BufferQueue::dequeue(uint32_t width, uint32_t height, 
         // Inform an existing external reference that this buffer is no longer valid.
         pBuffer->mpRef->referenceInvalidate( pBuffer );
     }
-    ALOGD_IF( BUFFERQUEUE_DEBUG, "BufferQueue::dequeue index:%d, handle:%p, pReleaseFence:%p",
+    DTRACEIF( BUFFERQUEUE_DEBUG, "BufferQueue::dequeue index:%d, handle:%p, pReleaseFence:%p",
         mLatestAvailableBuffer, pBuffer->mpGraphicBuffer->handle, *ppReleaseFence );
     return pBuffer;
 }
 
 void BufferQueue::queue( int releaseFenceFd )
 {
-    ALOG_ASSERT( mDequeuedBuffer == mLatestAvailableBuffer );
+    HWCASSERT( mDequeuedBuffer == mLatestAvailableBuffer );
     mBuffers[ mLatestAvailableBuffer ]->mAcquireFence.set( releaseFenceFd );
-    ALOGD_IF( BUFFERQUEUE_DEBUG, "BufferQueue::queue index:%d %s", mLatestAvailableBuffer, mBuffers[ mLatestAvailableBuffer ]->dump().string() );
+    DTRACEIF( BUFFERQUEUE_DEBUG, "BufferQueue::queue index:%d %s", mLatestAvailableBuffer, mBuffers[ mLatestAvailableBuffer ]->dump().string() );
     mDequeuedBuffer = ~0U;
 }
 
-sp<GraphicBuffer> BufferQueue::getGraphicBuffer( BufferHandle handle )
+std::shared_ptr<HWCNativeHandlesp> BufferQueue::getGraphicBuffer( BufferHandle handle )
 {
     if ( handle == NULL )
         return NULL;
@@ -624,16 +637,16 @@ sp<GraphicBuffer> BufferQueue::getGraphicBuffer( BufferHandle handle )
 
 void BufferQueue::registerReference( BufferHandle handle, BufferReference* pExternalObject )
 {
-    ALOG_ASSERT( handle );
+    HWCASSERT( handle );
     if ( handle->mpRef )
     {
         // An existing reference MUST be removed before a new reference is registered.
-        ALOG_ASSERT( ( handle->mpRef == NULL )
+	HWCASSERT( ( handle->mpRef == NULL )
                   || ( pExternalObject == NULL )
                   || ( handle->mpRef == pExternalObject ) );
     }
     handle->mpRef = pExternalObject;
-    ALOGD_IF( BUFFERQUEUE_DEBUG, "BufferQueue::registerReference buffer %s", handle->dump().string() );
+    DTRACEIF( BUFFERQUEUE_DEBUG, "BufferQueue::registerReference buffer %s", handle->dump().string() );
 }
 
 void BufferQueue::markUsed( BufferHandle handle )
@@ -641,7 +654,7 @@ void BufferQueue::markUsed( BufferHandle handle )
     if ( handle == NULL )
         return;
     handle->mUse |= Buffer::EUsedThisFrame;
-    ALOGD_IF( BUFFERQUEUE_DEBUG, "BufferQueue::markUsed buffer %s", handle->dump().string() );
+    DTRACEIF( BUFFERQUEUE_DEBUG, "BufferQueue::markUsed buffer %s", handle->dump().string() );
 }
 
 void BufferQueue::clear( void )
@@ -650,7 +663,7 @@ void BufferQueue::clear( void )
     {
         if (mBuffers[i]->mAcquireFence.isValid())
         {
-            ALOGD_IF( BUFFERQUEUE_DEBUG, "BufferQueue::clear closing fence" );
+	    DTRACEIF( BUFFERQUEUE_DEBUG, "BufferQueue::clear closing fence" );
             mBuffers[i]->mAcquireFence.close();
         }
         delete mBuffers[i];
@@ -663,49 +676,49 @@ void BufferQueue::clear( void )
 
 Buffer* BufferQueue::checkForMatchingAvailableBuffer( uint32_t w, uint32_t h, int32_t format, uint32_t usage )
 {
-    ALOGD_IF( BUFFERQUEUE_DEBUG, "checkForMatchingAvailableBuffer" );
+    DTRACEIF( BUFFERQUEUE_DEBUG, "checkForMatchingAvailableBuffer" );
 
     for ( uint32_t i = 0; i < mBuffers.size(); i++ )
     {
         Buffer& nb = *mBuffers[ i ];
-        ALOGD_IF( BUFFERQUEUE_DEBUG, " Buffer %d %s", i, nb.dump().string() );
+	DTRACEIF( BUFFERQUEUE_DEBUG, " Buffer %d %s", i, nb.dump().string() );
 
         if ( nb.mbShared )
         {
             // Don't match 'temporary' shared records.
-            ALOGD_IF( BUFFERQUEUE_DEBUG, "  skipping temporary record" );
+	    DTRACEIF( BUFFERQUEUE_DEBUG, "  skipping temporary record" );
         }
         else if ( nb.mUse & Buffer::EUsedThisFrame )
         {
             // Don't match records that are already used in this frame.
-            ALOGD_IF( BUFFERQUEUE_DEBUG, "  skipping used buffer" );
+	    DTRACEIF( BUFFERQUEUE_DEBUG, "  skipping used buffer" );
         }
         else if (nb.matchesConfiguration(w, h, format, usage))
         {
             // The format matches the requirements
             if ( nb.mAcquireFence.isNull() )
             {
-                ALOGD_IF( BUFFERQUEUE_DEBUG, "  is matched and unused and fence is null, returning" );
+		DTRACEIF( BUFFERQUEUE_DEBUG, "  is matched and unused and fence is null, returning" );
                 mLatestAvailableBuffer = i;
                 return &nb;
             }
             else if ( nb.mAcquireFence.isValid()
                    && nb.mAcquireFence.checkAndClose() )
             {
-                ALOGD_IF( BUFFERQUEUE_DEBUG, "  is matched and unused and signalled, returning" );
+		DTRACEIF( BUFFERQUEUE_DEBUG, "  is matched and unused and signalled, returning" );
                 mLatestAvailableBuffer = i;
                 return &nb;
             }
-            ALOGD_IF( BUFFERQUEUE_DEBUG, "  is matched and unused but not ready, looking for another" );
+	    DTRACEIF( BUFFERQUEUE_DEBUG, "  is matched and unused but not ready, looking for another" );
         }
     }
-    ALOGD_IF(BUFFERQUEUE_DEBUG, "checkForMatchingAvailableBuffer No match" );
+    DTRACEIF(BUFFERQUEUE_DEBUG, "checkForMatchingAvailableBuffer No match" );
     return NULL;
 }
 
 Buffer* BufferQueue::waitForFirstAvailableBuffer( uint32_t w, uint32_t h, int32_t format, uint32_t usage )
 {
-    ALOGD_IF( BUFFERQUEUE_DEBUG, "waitForFirstAvailableBuffer" );
+    DTRACEIF( BUFFERQUEUE_DEBUG, "waitForFirstAvailableBuffer" );
 
     const uint32_t retryAttempts = 50; // 0.5 second retries,
     const uint32_t retryDelayMS  = 10;
@@ -714,35 +727,35 @@ Buffer* BufferQueue::waitForFirstAvailableBuffer( uint32_t w, uint32_t h, int32_
         for ( uint32_t i = 0; i < mBuffers.size(); i++ )
         {
             Buffer& nb = *mBuffers[ i ];
-            ALOGD_IF( BUFFERQUEUE_DEBUG, " Buffer %d %s", i, nb.dump().string() );
+	    DTRACEIF( BUFFERQUEUE_DEBUG, " Buffer %d %s", i, nb.dump().string() );
             if ( nb.mbShared )
             {
                 // Don't match 'temporary' shared records.
-                ALOGD_IF( BUFFERQUEUE_DEBUG, "  is a temporary record, look for another" );
+		DTRACEIF( BUFFERQUEUE_DEBUG, "  is a temporary record, look for another" );
             }
             else if ( nb.mUse & Buffer::EUsedThisFrame )
             {
                 // Don't match records that are already used in this frame.
-                ALOGD_IF( BUFFERQUEUE_DEBUG, "  is used, look for another" );
+		DTRACEIF( BUFFERQUEUE_DEBUG, "  is used, look for another" );
             }
             else
             {
                 if (nb.mAcquireFence.isNull())
                 {
-                    ALOGD_IF( BUFFERQUEUE_DEBUG, "  is unused and fence is null, returning" );
+		    DTRACEIF( BUFFERQUEUE_DEBUG, "  is unused and fence is null, returning" );
                     mLatestAvailableBuffer = i;
                     return &nb;
                 }
                 else if ( nb.mAcquireFence.isValid()
                        && nb.mAcquireFence.checkAndClose() )
                 {
-                    ALOGD_IF( BUFFERQUEUE_DEBUG, "  is unused and signalled, returning" );
+		    DTRACEIF( BUFFERQUEUE_DEBUG, "  is unused and signalled, returning" );
                     mLatestAvailableBuffer = i;
                     return &nb;
                 }
             }
         }
-        ALOGD_IF(BUFFERQUEUE_DEBUG, " waiting for %dms for a free buffer", retryDelayMS);
+	DTRACEIF(BUFFERQUEUE_DEBUG, " waiting for %dms for a free buffer", retryDelayMS);
         usleep( retryDelayMS * 1000 );
     }
 
@@ -764,7 +777,7 @@ Buffer* BufferQueue::waitForFirstAvailableBuffer( uint32_t w, uint32_t h, int32_
 
     if ( fallback < 0 )
     {
-        Log::aloge(true, "%s: Fallback buffer %u no suitable buffer to share/kick",
+	Log::aloge(true, "%s: Fallback buffer %u no suitable buffer to share/kick",
             __FUNCTION__, mBuffers.size() );
         pBuffer = new Buffer( w, h, format, usage );
         mBufferAllocBytes += pBuffer->mSizeBytes;
@@ -784,7 +797,7 @@ Buffer* BufferQueue::waitForFirstAvailableBuffer( uint32_t w, uint32_t h, int32_
         if ( bMatch )
         {
             // Share the fallback buffer record's GraphicBuffer if it is good to use.
-            Log::aloge( true,
+	    Log::aloge( true,
                         "%s: New buffer %u sharing existing GraphicBuffer [GRALLOC %p] from fallback buffer %u %s",
                         __FUNCTION__,
                         mBuffers.size(),
@@ -802,7 +815,7 @@ Buffer* BufferQueue::waitForFirstAvailableBuffer( uint32_t w, uint32_t h, int32_
                 mBufferAllocBytes += pBuffer->mSizeBytes;
                 // Drop the fallback record's existing allocation and replace it
                 // with a share to our pBuffer record's new GraphicBuffer.
-                Log::aloge( true,
+		Log::aloge( true,
                             "%s: New buffer %u sharing new GraphicBuffer [GRALLOC %p] to fallback buffer %u %s [kicking GRALLOC %p]",
                             __FUNCTION__,
                             mBuffers.size(),
@@ -820,20 +833,20 @@ Buffer* BufferQueue::waitForFirstAvailableBuffer( uint32_t w, uint32_t h, int32_
 
     if ( ( pBuffer == NULL ) || ( !pBuffer->allocationOK() ) )
     {
-        ALOGE( "BufferQueue::Buffer allocation failure" );
+	ETRACE( "BufferQueue::Buffer allocation failure" );
         delete pBuffer;
         return NULL;
     }
 
     mLatestAvailableBuffer = mBuffers.size();
     mBuffers.push_back(pBuffer);
-    ALOGD_IF( BUFFERQUEUE_DEBUG, "BufferQueue::dequeue pool grown - new size %u", mLatestAvailableBuffer+1 );
+    DTRACEIF( BUFFERQUEUE_DEBUG, "BufferQueue::dequeue pool grown - new size %u", mLatestAvailableBuffer+1 );
     return mBuffers[ mLatestAvailableBuffer ];
 }
 
 int32_t BufferQueue::findFallbackBuffer( uint32_t w, uint32_t h, int32_t format, uint32_t usage, bool& bMatch )
 {
-    ALOGD_IF( BUFFERQUEUE_DEBUG, "findFallbackBuffer for %u x %u fmt %d", w, h, format );
+    DTRACEIF( BUFFERQUEUE_DEBUG, "findFallbackBuffer for %u x %u fmt %d", w, h, format );
 
     uint32_t fallback = 0;
     int8_t   fallbackMatches = 0;
@@ -843,7 +856,7 @@ int32_t BufferQueue::findFallbackBuffer( uint32_t w, uint32_t h, int32_t format,
     {
         Buffer& nb = *mBuffers[ i ];
 
-        ALOGD_IF( BUFFERQUEUE_DEBUG, " Buffer %d %s", i, nb.dump().string() );
+	DTRACEIF( BUFFERQUEUE_DEBUG, " Buffer %d %s", i, nb.dump().string() );
 
         int8_t isShared = nb.mbShared ? 1 : 0;
         int8_t useThis = ( nb.mUse & Buffer::EUsedThisFrame ) ? 1 : 0;
@@ -856,7 +869,7 @@ int32_t BufferQueue::findFallbackBuffer( uint32_t w, uint32_t h, int32_t format,
                       + ( +1 * matchesConfig );
         bool bBetter = ( score > fallbackScore );
 
-        ALOGD_IF( BUFFERQUEUE_DEBUG, " Score candidate %u %d (%d/%d/%d) %s",
+	DTRACEIF( BUFFERQUEUE_DEBUG, " Score candidate %u %d (%d/%d/%d) %s",
             i, score, useThis, useRecent, matchesConfig, bBetter ? " BETTER" : "" );
 
         if ( bBetter )
@@ -880,24 +893,24 @@ int32_t BufferQueue::findFallbackBuffer( uint32_t w, uint32_t h, int32_t format,
 void BufferQueue::idleTimeoutHandler( void )
 {
     Log::alogd( BUFFERQUEUE_DEBUG, "BufferQueue: idle timeout" );
-    INTEL_UFO_HWC_ASSERT_MUTEX_NOT_HELD( mLock );
-    Mutex::Autolock _l( mLock );
+    HWC_ASSERT_LOCK_NOT_HELD(mLock);
+    ScopedSpinLock _l(mLock);
     processBuffers( );
 }
 
 void BufferQueue::onPrepareBegin( void )
 {
-    INTEL_UFO_HWC_ASSERT_MUTEX_NOT_HELD( mLock );
+    HWC_ASSERT_LOCK_NOT_HELD(mLock);
     mLock.lock();
-    ALOGD_IF( BUFFERQUEUE_DEBUG, "BufferQueue::onPrepareBegin (Buffers %zu/%u %u/%u bytes)",
+    DTRACEIF( BUFFERQUEUE_DEBUG, "BufferQueue::onPrepareBegin (Buffers %zu/%u %u/%u bytes)",
         mBuffers.size(), mMaxBufferCount,
         mBufferAllocBytes, mMaxBufferAlloc );
 }
 
 void BufferQueue::onPrepareEnd( void )
 {
-    INTEL_UFO_HWC_ASSERT_MUTEX_HELD( mLock );
-    ALOGD_IF( BUFFERQUEUE_DEBUG, "BufferQueue::onPrepareEnd (Buffers %zu/%u %u/%u bytes)",
+      HWC_ASSERT_LOCK_NOT_HELD(mLock);
+    DTRACEIF( BUFFERQUEUE_DEBUG, "BufferQueue::onPrepareEnd (Buffers %zu/%u %u/%u bytes)",
         mBuffers.size(), mMaxBufferCount,
         mBufferAllocBytes, mMaxBufferAlloc );
     mLock.unlock();
@@ -905,18 +918,18 @@ void BufferQueue::onPrepareEnd( void )
 
 void BufferQueue::onSetBegin( void )
 {
-    INTEL_UFO_HWC_ASSERT_MUTEX_NOT_HELD( mLock );
+    HWC_ASSERT_LOCK_NOT_HELD(mLock);
     mLock.lock();
-    ALOGD_IF( BUFFERQUEUE_DEBUG, "BufferQueue::onSetBegin (Buffers %zu/%u %u/%u bytes)",
+    DTRACEIF( BUFFERQUEUE_DEBUG, "BufferQueue::onSetBegin (Buffers %zu/%u %u/%u bytes)",
         mBuffers.size(), mMaxBufferCount,
         mBufferAllocBytes, mMaxBufferAlloc );
 }
 
 void BufferQueue::onSetEnd( void )
 {
-    INTEL_UFO_HWC_ASSERT_MUTEX_HELD( mLock );
+      HWC_ASSERT_LOCK_NOT_HELD(mLock);
 
-    ALOGD_IF( BUFFERQUEUE_DEBUG, "BufferQueue::onSetEnd (Buffers %zu/%u %u/%u bytes)",
+    DTRACEIF( BUFFERQUEUE_DEBUG, "BufferQueue::onSetEnd (Buffers %zu/%u %u/%u bytes)",
         mBuffers.size(), mMaxBufferCount,
         mBufferAllocBytes, mMaxBufferAlloc );
 
@@ -936,7 +949,7 @@ void BufferQueue::onSetEnd( void )
 
 void BufferQueue::processBuffers( void )
 {
-    INTEL_UFO_HWC_ASSERT_MUTEX_HELD( mLock );
+      HWC_ASSERT_LOCK_NOT_HELD(mLock);
 
 #if INTEL_HWC_INTERNAL_BUILD
     // Check our buffer byte count is aligned.
@@ -958,10 +971,12 @@ void BufferQueue::processBuffers( void )
     }
 
     uint32_t trimmed = 0;
-
+#ifdef uncomment
     // Tag used buffers with system time.
     nsecs_t nowTime = systemTime(CLOCK_MONOTONIC);
-
+#else
+	nsecs_t nowTime = 0;
+#endif
     // Iterate buffers in reverse order in case we garbage collect them.
     for ( int32_t i = mBuffers.size()-1; i >= 0; i-- )
     {
@@ -972,7 +987,7 @@ void BufferQueue::processBuffers( void )
         // Record the frame time.
         if ( b.mUse & Buffer::EUsedThisFrame )
         {
-            ALOGD_IF( BUFFERQUEUE_DEBUG, "  Buffer %d used this frame", i );
+	    DTRACEIF( BUFFERQUEUE_DEBUG, "  Buffer %d used this frame", i );
             b.mUse |= Buffer::EUsedRecently;
             b.mLastFrameUsedTime = nowTime;
             continue;
@@ -1024,14 +1039,14 @@ void BufferQueue::processBuffers( void )
             if ( b.mpRef )
             {
                 // Inform an existing external reference that this buffer is no longer valid.
-                ALOGD_IF( BUFFERQUEUE_DEBUG, "Invalidating external reference %p", b.mpRef );
+		DTRACEIF( BUFFERQUEUE_DEBUG, "Invalidating external reference %p", b.mpRef );
                 b.mpRef->referenceInvalidate( &b );
             }
-            ALOGD_IF( BUFFERQUEUE_DEBUG, "Deleting buffer record %p", &b );
+	    DTRACEIF( BUFFERQUEUE_DEBUG, "Deleting buffer record %p", &b );
 
             mBufferAllocBytes -= mBuffers[i]->mSizeBytes;
             delete mBuffers[i];
-            mBuffers.removeAt(i);
+	    mBuffers.erase(mBuffers.begin() + i);
             ++trimmed;
         }
     }
@@ -1061,6 +1076,4 @@ void BufferQueue::processBuffers( void )
     }
 }
 
-} // namespace hwc
-} // namespace ufo
-} // namespace intel
+} // namespace hwcomposer

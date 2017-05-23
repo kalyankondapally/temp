@@ -1,5 +1,6 @@
 common_SOURCES =              \
     common/buffer/BufferManager.cpp \
+    common/buffer/BufferQueue.cpp \
     common/compositor/compositor.cpp \
     common/compositor/factory.cpp \
     common/compositor/nativesurface.cpp \

@@ -19,20 +19,26 @@
 
 namespace hwcomposer {
 
+AbstractBufferManager& AbstractBufferManager::get()
+{
+#ifdef uncomment
+#endif
+}
+
 BufferManager::Buffer::Buffer( )
 {
     mTag[0] = '\0';
 }
 
-void BufferManager::Buffer::setTag( const String8& tag )
+void BufferManager::Buffer::setTag( const HWCString& tag )
 {
     strncpy( mTag, tag.string(), MAX_TAG_CHARS-1 );
     mTag[ MAX_TAG_CHARS-1] ='\0';
 }
 
-String8 BufferManager::Buffer::getTag( void )
+HWCString BufferManager::Buffer::getTag( void )
 {
-    return String8( mTag );
+    return HWCString( mTag );
 }
 
 BufferManager::BufferManager() {
@@ -42,7 +48,7 @@ BufferManager::BufferManager() {
     }
 }
 
-void BufferManager::setBufferTag( HWCNativeHandle handle, const String8& tag )
+void BufferManager::setBufferTag( HWCNativeHandle handle, const HWCString& tag )
 {
     std::shared_ptr<AbstractBufferManager::Buffer> pAbstractBuffer = acquireBuffer( handle );
     if ( pAbstractBuffer == NULL )
@@ -53,12 +59,12 @@ void BufferManager::setBufferTag( HWCNativeHandle handle, const String8& tag )
     pBuffer->setTag( tag );
 }
 
-String8 BufferManager::getBufferTag( HWCNativeHandle handle )
+HWCString BufferManager::getBufferTag( HWCNativeHandle handle )
 {
     std::shared_ptr<AbstractBufferManager::Buffer> pAbstractBuffer = acquireBuffer( handle );
     if ( pAbstractBuffer == NULL )
     {
-        return String8( "UNKNOWN" );
+	return HWCString( "UNKNOWN" );
     }
     Buffer* pBuffer = static_cast< Buffer* >( pAbstractBuffer.get() );
     return pBuffer->getTag( );
@@ -88,7 +94,7 @@ std::shared_ptr<HWCNativeHandlesp> BufferManager::createGraphicBuffer( const cha
     }
     else if ( sbInternalBuild )
     {
-	setBufferTag( pGB.get(), String8::format( "%s", pchTag ) );
+	setBufferTag( pGB.get(), HWCString::format( "%s", pchTag ) );
     }
 
     return pGB;
@@ -148,7 +154,7 @@ void BufferManager::reallocateGraphicBuffer( std::shared_ptr<HWCNativeHandlesp>&
     }
     if ( sbInternalBuild )
     {
-	setBufferTag( pGB.get(), String8::format( "%s", pchTag ) );
+	setBufferTag( pGB.get(), HWCString::format( "%s", pchTag ) );
     }
 }
 
@@ -179,5 +185,9 @@ void BufferManager::realizeSurfaceFlingerRenderTargets( uint32_t /*displayIndex*
 uint32_t BufferManager::purgeBuffer( HWCNativeHandle /*handle*/ ) { return 0; }
 
 uint32_t BufferManager::realizeBuffer( HWCNativeHandle /*handle*/ ) { return 0; }
+
+bool BufferManager::getBufferDetails(HWCNativeHandle handle, HwcBuffer *bo) {
+  return buffer_handler_->ImportBuffer(handle, bo);
+}
 
 }; // namespace hwcomposer

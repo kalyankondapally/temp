@@ -18,6 +18,8 @@
 #define COMMON_BUFFER_ABSTRACTBUFFERMANAGER_H
 
 #include <memory>
+
+#include "hwcbuffer.h"
 #include "layer.h"
 #include "platformdefines.h"
 
@@ -169,6 +171,9 @@ public:
     // Returns zero if the call fails or is not implemented.
     // OPTIONAL.
     virtual uint32_t realizeBuffer( HWCNativeHandle handle ) = 0;
+
+    // Retrieves buffer details of handle and stores it to bo.
+    virtual bool getBufferDetails(HWCNativeHandle handle, HwcBuffer *bo) = 0;
 
     // Dump info about the buffermanager.
     virtual String8 dump( void ) = 0;
