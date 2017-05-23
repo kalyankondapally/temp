@@ -15,23 +15,33 @@
 */
 
 #include <math.h>
-#include "Common.h"
-#include "Layer.h"
-#include "Log.h"
-#include "AbstractDisplay.h"
+#include "hwcutils.h"
+#include "layer.h"
+#include "log.h"
+#include "abstractdisplay.h"
+#ifdef uncomment
 #include "DisplayCaps.h"
 #include "HwcServiceApi.h"
 #include "Transform.h"
-#include "GlobalScalingFilter.h"
+#endif
+#include "globalscalingfilter.h"
 
-using namespace intel::ufo::hwc;
+using namespace hwcomposer;
 
-namespace intel {
-namespace ufo {
-namespace hwc {
 
+//namespace intel {
+//namespace ufo {
+//namespace hwc {
+namespace hwcomposer {
+
+#ifdef uncomment
 GlobalScalingFilter::GlobalScalingFilter(PhysicalDisplayManager& pdm) :
+#else
+GlobalScalingFilter::GlobalScalingFilter() :
+#endif
+#ifdef uncomment
     mPhysicalDisplayManager(pdm),
+#endif
     mOptionGlobalScaling    ("globalscaling", GLOBAL_SCALING_OPTION_ENABLE
                                             | GLOBAL_SCALING_OPTION_KEEP_ENABLED_ALWAYS
                                             | GLOBAL_SCALING_OPTION_RESTRICT_MATCHING_AR),
@@ -61,19 +71,21 @@ const Content& GlobalScalingFilter::onApply(const Content& ref)
 
     for (uint32_t d = 0; d < mContent.size(); d++)
     {
+#ifdef uncomment
         Content::Display& displayOut = mContent.editDisplay(d);
+#endif
 
         bool currentDisplayChanged = false;
-
+#ifdef uncomment
         // check if display is valid
         if (!displayOut.isEnabled())
         {
             // skip handling this invalid display
             continue;
         }
-
+#endif
         const Content::Display& refDisplayOut = ref.getDisplay(d);
-
+#ifdef uncomment
         const uint32_t phyIndex = mPhysicalDisplayManager.remap( refDisplayOut.getDisplayManagerIndex() );
         AbstractPhysicalDisplay* pPhys = mPhysicalDisplayManager.getPhysicalDisplay( phyIndex );
         if ( pPhys == NULL )
@@ -98,7 +110,6 @@ const Content& GlobalScalingFilter::onApply(const Content& ref)
             releaseGlobalScalingHW(*pPhys);
             displayInfo.mbGlobalScalingHwEnabled = false;
         }
-
         if (currentDisplayChanged)
         {
             // check if newly enabling scaling.
@@ -137,7 +148,7 @@ const Content& GlobalScalingFilter::onApply(const Content& ref)
                 }
             }
         }
-
+#endif
         // Any a display was changed then content should be changed
         contentChanged |= currentDisplayChanged;
     }
@@ -153,9 +164,9 @@ const Content& GlobalScalingFilter::onApply(const Content& ref)
 
 }
 
-String8 GlobalScalingFilter::dump()
+HWCString GlobalScalingFilter::dump()
 {
-    String8 output;
+    HWCString output;
     // TODO: add more dump info
     return output;
 }
@@ -168,7 +179,7 @@ int GlobalScalingFilter::setActualOutputResolution(uint32_t phyIndex, uint32_t o
     {
         return BAD_VALUE;
     }
-    Mutex::Autolock _l(mLock);
+    mLock.lock();
 
     struct DisplayInfo& displayInfo = mDisplayInfo[phyIndex];
     if ( displayInfo.mActualOutputWidth != outputWidth || displayInfo.mActualOutputHeight != outputHeight )
@@ -187,6 +198,7 @@ int GlobalScalingFilter::setActualOutputResolution(uint32_t phyIndex, uint32_t o
         displayInfo.mbSetActualOutputResolution = true;
     }
 
+    mLock.unlock();
     return OK;
 }
 
@@ -197,7 +209,7 @@ bool GlobalScalingFilter::getActualOutputResolution(uint32_t phyIndex, uint32_t&
         return false;
     }
 
-    Mutex::Autolock _l(mLock);
+    mLock.lock();
 
     if (mDisplayInfo[phyIndex].mbSetActualOutputResolution)
     {
@@ -205,20 +217,21 @@ bool GlobalScalingFilter::getActualOutputResolution(uint32_t phyIndex, uint32_t&
         outputHeight = mDisplayInfo[phyIndex].mActualOutputHeight;
     }
 
+    mLock.unlock();
     return mDisplayInfo[phyIndex].mbSetActualOutputResolution;
 }
 
 int GlobalScalingFilter::setUserOverscan(uint32_t phyIndex, int32_t xOverscan, int32_t yOverscan)
 {
-    ALOG_ASSERT( xOverscan <= HWCS_MAX_OVERSCAN || xOverscan >= -HWCS_MAX_OVERSCAN);
-    ALOG_ASSERT( yOverscan <= HWCS_MAX_OVERSCAN || yOverscan >= -HWCS_MAX_OVERSCAN);
+    HWCASSERT( xOverscan <= HWCS_MAX_OVERSCAN || xOverscan >= -HWCS_MAX_OVERSCAN);
+    HWCASSERT( yOverscan <= HWCS_MAX_OVERSCAN || yOverscan >= -HWCS_MAX_OVERSCAN);
 
     if (phyIndex >= cMaxSupportedPhysicalDisplays)
     {
         return BAD_VALUE;
     }
 
-    Mutex::Autolock _l(mLock);
+    mLock.lock();
 
     struct DisplayInfo& displayInfo = mDisplayInfo[phyIndex];
     if ( displayInfo.mUserOverscanX != xOverscan || displayInfo.mUserOverscanY != yOverscan )
@@ -237,6 +250,7 @@ int GlobalScalingFilter::setUserOverscan(uint32_t phyIndex, int32_t xOverscan, i
         displayInfo.mbHaveUserOverscan = false;
     }
 
+    mLock.unlock();
     return OK;
 }
 
@@ -247,7 +261,7 @@ bool GlobalScalingFilter::getUserOverscan(uint32_t phyIndex, int32_t& xOverscan,
         return false;
     }
 
-    Mutex::Autolock _l(mLock);
+    mLock.lock();
 
     if (mDisplayInfo[phyIndex].mbHaveUserOverscan)
     {
@@ -255,19 +269,20 @@ bool GlobalScalingFilter::getUserOverscan(uint32_t phyIndex, int32_t& xOverscan,
         yOverscan = mDisplayInfo[phyIndex].mUserOverscanY;
     }
 
+    mLock.unlock();
     return mDisplayInfo[phyIndex].mbHaveUserOverscan;
 }
 
 // set the user scaling mode
 int GlobalScalingFilter::setUserScalingMode(uint32_t phyIndex, EHwcsScalingMode scalingMode)
 {
-    ALOG_ASSERT( scalingMode < HWCS_SCALE_MAX_ENUM );
+    HWCASSERT( scalingMode < HWCS_SCALE_MAX_ENUM );
     if (phyIndex >= cMaxSupportedPhysicalDisplays)
     {
         return BAD_VALUE;
     }
 
-    Mutex::Autolock _l(mLock);
+    mLock.lock();
 
     struct DisplayInfo& displayInfo = mDisplayInfo[phyIndex];
     if (displayInfo.mUserScalingMode != scalingMode)
@@ -277,8 +292,9 @@ int GlobalScalingFilter::setUserScalingMode(uint32_t phyIndex, EHwcsScalingMode 
 
     displayInfo.mUserScalingMode = scalingMode;
     displayInfo.mbHaveUserScalingMode = true;
-    ALOGD_IF( GLOBAL_SCALING_DEBUG, "setUserScalingMode: phyIndex:%d, scalingMode:%d.", phyIndex, scalingMode);
+    DTRACEIF( GLOBAL_SCALING_DEBUG, "setUserScalingMode: phyIndex:%d, scalingMode:%d.", phyIndex, scalingMode);
 
+    mLock.unlock();
     return OK;
 }
 
@@ -289,21 +305,22 @@ bool GlobalScalingFilter::getUserScalingMode(uint32_t phyIndex, EHwcsScalingMode
         return false;
     }
 
-    Mutex::Autolock _l(mLock);
+    mLock.lock();
 
     if (!mDisplayInfo[phyIndex].mbHaveUserScalingMode)
     {
         return false;
     }
     scalingMode = mDisplayInfo[phyIndex].mUserScalingMode;
-    ALOGD_IF( GLOBAL_SCALING_DEBUG, "getUserScalingMode: phyIndex:%d, scalingMode:%d.", phyIndex, scalingMode);
+    DTRACEIF( GLOBAL_SCALING_DEBUG, "getUserScalingMode: phyIndex:%d, scalingMode:%d.", phyIndex, scalingMode);
 
+    mLock.unlock();
     return true;
 }
 
 EHwcsScalingMode GlobalScalingFilter::getScalingMode(DisplayInfo& displayInfo)
 {
-    Mutex::Autolock _l(mLock);
+    mLock.lock();
 
     if (displayInfo.mbHaveUserScalingMode)
     {
@@ -312,30 +329,34 @@ EHwcsScalingMode GlobalScalingFilter::getScalingMode(DisplayInfo& displayInfo)
 
     // user does not set Scaling mode, use default Scaling mode
     // TODO: read default scaling mode from Option
+    mLock.unlock();
     return HWCS_SCALE_FIT;
 }
 
 bool GlobalScalingFilter::isDisplaySettingsChanged(uint32_t phyIndex)
 {
-    ALOG_ASSERT( phyIndex < cMaxSupportedPhysicalDisplays );
+    HWCASSERT( phyIndex < cMaxSupportedPhysicalDisplays );
+    bool changed;
 
-    Mutex::Autolock _l(mLock);
-    return mDisplayInfo[phyIndex].mbSettingsChanged;
+    mLock.lock();
+    changed = mDisplayInfo[phyIndex].mbSettingsChanged;
+    mLock.unlock();
+    return changed;
 }
 
 bool GlobalScalingFilter::handleDisplaySettingsChanged(DisplayInfo& displayInfo)
 {
-    Mutex::Autolock _l(mLock);
+    mLock.lock();
     if (displayInfo.mbSettingsChanged)
     {
         displayInfo.mbSettingsChanged = false;
         return true;
     }
-
+    mLock.unlock();
     return false;
 }
 
-
+#ifdef uncomment
 bool GlobalScalingFilter::applyAllScalings(DisplayInfo& displayInfo, AbstractPhysicalDisplay& phys, Content::Display& contentDisplay )
 {
     // original size of the display (proxy display's size)
@@ -415,7 +436,7 @@ bool GlobalScalingFilter::applyAllScalings(DisplayInfo& displayInfo, AbstractPhy
         overscanFactorW = 1.0f - adjX * 2.0;
         overscanFactorH = 1.0f - adjY * 2.0;
 
-        ALOGD_IF( GLOBAL_SCALING_DEBUG,
+        DTRACEIF( GLOBAL_SCALING_DEBUG,
             "adjX:%f, adjY:%f, [MAX %d, RANGE%u%% disp %dx%d], overscanFactorW:%f,overscanFactorH:%f",
             adjX, adjX,
             HWCS_MAX_OVERSCAN,
@@ -429,7 +450,7 @@ bool GlobalScalingFilter::applyAllScalings(DisplayInfo& displayInfo, AbstractPhy
     if (bHaveDifferentScalingMode)
     {
         calculateScalingFactorFromScalingMode(displayInfo, contentDisplay, scalingModeFactorW, scalingModeFactorH);
-        ALOGD_IF( GLOBAL_SCALING_DEBUG,
+        DTRACEIF( GLOBAL_SCALING_DEBUG,
             "calculateScalingFactorFromScalingMode: phyIndex:%d, dispW:%d, dispH:%d, scalingModeFactorW:%f, scalingModeFactorW:%f.",
             phyIndex, dispW, dispH, scalingModeFactorW, scalingModeFactorH);
     }
@@ -438,7 +459,7 @@ bool GlobalScalingFilter::applyAllScalings(DisplayInfo& displayInfo, AbstractPhy
     if (bHaveDifferentOutputResolution)
     {
         calculateOutputScalingFactor(scalingMode, dispW, dispH, outputW, outputH, outputScalingFactorW,outputScalingFactorH);
-        ALOGD_IF( GLOBAL_SCALING_DEBUG,
+        DTRACEIF( GLOBAL_SCALING_DEBUG,
             "calculateOutputScalingFactor: phyIndex:%d,dispW:%d, dispH:%d, outputW:%d, outputH:%d,OutputScalingFactorW:%f, OutputScalingFactorW:%f.",
             phyIndex, dispW, dispH, outputW, outputH,
             outputScalingFactorW, outputScalingFactorH);
@@ -452,12 +473,12 @@ bool GlobalScalingFilter::applyAllScalings(DisplayInfo& displayInfo, AbstractPhy
     // calculate the final scaling factor
     totalScalingFactorW = overscanFactorW * outputScalingFactorW * scalingModeFactorW;
     totalScalingFactorH = overscanFactorH * outputScalingFactorH * scalingModeFactorH;
-    ALOG_ASSERT( (totalScalingFactorW != 0) && (totalScalingFactorH != 0) );
+    HWCASSERT( (totalScalingFactorW != 0) && (totalScalingFactorH != 0) );
 
     // if there is no scaling and no Output Resolution change, skip the transform
     if ((totalScalingFactorW == 1.0f) && (totalScalingFactorH == 1.0f) && !bHaveDifferentOutputResolution)
     {
-        ALOGD_IF(GLOBAL_SCALING_DEBUG,
+        DTRACEIF(GLOBAL_SCALING_DEBUG,
             "calculateOutputScalingFactor: no scaling on phyIndex:%d, skip the transform", phyIndex);
         return false;
     }
@@ -469,7 +490,7 @@ bool GlobalScalingFilter::applyAllScalings(DisplayInfo& displayInfo, AbstractPhy
     finalFrameX = ((int)outputW - (int)finalFrameW) / 2.0 + 0.5f;
     finalFrameY = ((int)outputH - (int)finalFrameH) / 2.0 + 0.5f;
 
-    ALOGD_IF( GLOBAL_SCALING_DEBUG,
+    DTRACEIF( GLOBAL_SCALING_DEBUG,
         "final transform:phyIndex:%d, totalScalingFactorW:%f,totalScalingFactorH:%f, finalFrameW:%d, finalFrameH:%d, finalFrameX:%d, finalFrameY:%d.",
         phyIndex, totalScalingFactorW, totalScalingFactorH,
         finalFrameW, finalFrameH, finalFrameX, finalFrameY);
@@ -485,7 +506,7 @@ bool GlobalScalingFilter::applyAllScalings(DisplayInfo& displayInfo, AbstractPhy
         if (displayInfo.mLayers.size() < layerCount)
         {
             // Note, as long as we always use mLayers.size() as a counter, this error condition is relatively harmless
-            ALOGE("Failed to allocate new layer list. Corruption may occur");
+            DTRACE("Failed to allocate new layer list. Corruption may occur");
             return false;
         }
     }
@@ -500,24 +521,24 @@ bool GlobalScalingFilter::applyAllScalings(DisplayInfo& displayInfo, AbstractPhy
         displayInfo.mLayers[i].onUpdateFrameState(layerStack.getLayer(i));
 
         // apply the total scaling to the dst of the layer
-        hwc_rect_t& dst = displayInfo.mLayers[i].editDst();
+        HwcRect<int>& dst = displayInfo.mLayers[i].editDst();
         dst.left   = finalFrameX + dst.left   * totalScalingFactorW + 0.5f;
         dst.top    = finalFrameY + dst.top    * totalScalingFactorH + 0.5f;
         dst.right  = finalFrameX + dst.right  * totalScalingFactorW + 0.5f;
         dst.bottom = finalFrameY + dst.bottom * totalScalingFactorH + 0.5f;
 
         // apply the total scaling to the visibleRegions of the layer
-        Vector<hwc_rect_t>& visRegions = displayInfo.mLayers[i].editVisibleRegions();
+        std::vector<HwcRect<int>>& visRegions = displayInfo.mLayers[i].editVisibleRegions();
         for (uint32_t r = 0; r < visRegions.size(); r++)
         {
-            hwc_rect_t& visRect = visRegions.editItemAt(r);
+            HwcRect<int>& visRect = visRegions.editItemAt(r);
             visRect.left   = finalFrameX + visRect.left   * totalScalingFactorW + 0.5f;
             visRect.top    = finalFrameY + visRect.top    * totalScalingFactorH + 0.5f;
             visRect.right  = finalFrameX + visRect.right  * totalScalingFactorW + 0.5f;
             visRect.bottom = finalFrameY + visRect.bottom * totalScalingFactorH + 0.5f;
         }
 
-        ALOGD_IF( GLOBAL_SCALING_DEBUG,
+        DTRACEIF( GLOBAL_SCALING_DEBUG,
             "final transform:phyIndex:%d, layer:%d, dst:(%d, %d, %d, %d).\n",
             phyIndex, i,
             dst.left, dst.top, dst.right, dst.bottom);
@@ -529,7 +550,7 @@ bool GlobalScalingFilter::applyAllScalings(DisplayInfo& displayInfo, AbstractPhy
         //   always clip here.
         clipLayerToDisplay(&displayInfo.mLayers[i], outputW, outputH);
         const hwc_frect_t& src = displayInfo.mLayers[i].getSrc();
-        ALOGD_IF( GLOBAL_SCALING_DEBUG,
+        DTRACEIF( GLOBAL_SCALING_DEBUG,
             "final transform:phyIndex:%d, layer:%d, after clip: src:(%f, %f, %f, %f), dst:(%d, %d, %d, %d).\n",
             phyIndex, i,
             src.left, src.top, src.right, src.bottom,
@@ -552,13 +573,13 @@ bool GlobalScalingFilter::applyAllScalings(DisplayInfo& displayInfo, AbstractPhy
     // indicating content is changed
     return true;
 }
-
+#endif
 // calculate the scaling factor from input size  to output size
 void GlobalScalingFilter::calculateOutputScalingFactor(EHwcsScalingMode scalingMode, uint32_t inW, uint32_t inH,
                               uint32_t outputW, uint32_t outputH, float& outputScalingFactorW, float& outputScalingFactorH)
 {
     uint32_t scaledDispW, scaledDispH;
-    ALOG_ASSERT( (inW > 0) && (inH > 0) && (outputW > 0) && (outputH > 0) );
+    HWCASSERT( (inW > 0) && (inH > 0) && (outputW > 0) && (outputH > 0) );
 
     switch ( scalingMode )
     {
@@ -593,11 +614,11 @@ void GlobalScalingFilter::calculateOutputScalingFactor(EHwcsScalingMode scalingM
     outputScalingFactorW = (float)scaledDispW / inW;
     outputScalingFactorH = (float)scaledDispH / inH;
 }
-
+#ifdef uncomment
 // return true if the HW is enabled for Global scaling
 bool GlobalScalingFilter::enableGlobalScalingHW(DisplayInfo& displayInfo, AbstractPhysicalDisplay& phys, Content::Display& display )
 {
-    ALOGD_IF( GLOBAL_SCALING_DEBUG, "enableGlobalScalingHW: phyIndex:%d, FrameIndex:%d.", phys.getDisplayManagerIndex(), display.getFrameIndex());
+    DTRACEIF( GLOBAL_SCALING_DEBUG, "enableGlobalScalingHW: phyIndex:%d, FrameIndex:%d.", phys.getDisplayManagerIndex(), display.getFrameIndex());
 
     uint32_t dispW = display.getWidth();
     uint32_t dispH = display.getHeight();
@@ -630,8 +651,8 @@ bool GlobalScalingFilter::enableGlobalScalingHW(DisplayInfo& displayInfo, Abstra
         // no global scaling,do nothing
         return false;
     }
-    ALOG_ASSERT( globalScalingFactorX != 0.0f );
-    ALOG_ASSERT( globalScalingFactorY != 0.0f );
+    HWCASSERT( globalScalingFactorX != 0.0f );
+    HWCASSERT( globalScalingFactorY != 0.0f );
 
     // check if the final frame is supportted by the Global Scaling HW on this display
     if ( !isSupporttedByGlobalScalingHW(phys,
@@ -647,7 +668,7 @@ bool GlobalScalingFilter::enableGlobalScalingHW(DisplayInfo& displayInfo, Abstra
     // acquire Global Scaling HW
     if ( !acquireGlobalScalingHW( phys, display, inputW, inputH, finalFrameX, finalFrameY, finalFrameW, finalFrameH ) )
     {
-        ALOGD_IF( GLOBAL_SCALING_DEBUG, "Failed to acquire global scaling HW on display:%d.\n", phys.getDisplayManagerIndex() );
+        DTRACEIF( GLOBAL_SCALING_DEBUG, "Failed to acquire global scaling HW on display:%d.\n", phys.getDisplayManagerIndex() );
         return false;
     }
 
@@ -661,7 +682,7 @@ bool GlobalScalingFilter::enableGlobalScalingHW(DisplayInfo& displayInfo, Abstra
 
     return true;
 }
-
+#endif
 bool GlobalScalingFilter::nearAspectPreserving( float globalScalingFactorX, float globalScalingFactorY )
 {
     // Tolerance to match AR as absolute percentage difference.
@@ -689,7 +710,7 @@ bool GlobalScalingFilter::checkGlobalScalingFactor( const Content::LayerStack& l
         !(layerCount == 1 && layer.isVideo()
             && ((layer.getDstWidth() == (uint32_t)finalFrameW) || (layer.getDstHeight() == (uint32_t)finalFrameH) )) )
     {
-        ALOGD_IF( GLOBAL_SCALING_DEBUG, "Current option only allows enabling global scaling HW when we have full height or width single plane video, skiped checking.");
+        DTRACEIF( GLOBAL_SCALING_DEBUG, "Current option only allows enabling global scaling HW when we have full height or width single plane video, skiped checking.");
         return false;
     }
     if ( layer.getSrcWidth() < 1.0f || layer.getSrcHeight() < 1.0f )
@@ -712,27 +733,27 @@ bool GlobalScalingFilter::checkGlobalScalingFactor( const Content::LayerStack& l
     if ( fabs( srcW - layer.getDstWidth() ) < 1.0f && fabs( srcH - layer.getDstHeight() ) < 1.0f )
     {
         // 1:1, no scaling
-        ALOGD_IF( GLOBAL_SCALING_DEBUG, "scaling factor of first layer is X:%f, Y %f, no scaling, skip checking the rest.", factorX, factorY );
+        DTRACEIF( GLOBAL_SCALING_DEBUG, "scaling factor of first layer is X:%f, Y %f, no scaling, skip checking the rest.", factorX, factorY );
         return false;
     }
 
     factorX = layer.getDstWidth() / srcW;
     factorY = layer.getDstHeight() / srcH;
-    ALOGD_IF( GLOBAL_SCALING_DEBUG, "scaling factor of first layer is X:%f, Y %f, transform:%d", factorX, factorY, transform );
+    DTRACEIF( GLOBAL_SCALING_DEBUG, "scaling factor of first layer is X:%f, Y %f, transform:%d", factorX, factorY, transform );
 
     const float matchingScalingTolerance = 0.01f;
     for ( int32_t i = 1; i < layerCount; i++ )
     {
         const Layer& layer = layerStack.getLayer( i );
         transform = layer.getTransform();
-        ALOGD_IF( GLOBAL_SCALING_DEBUG, "checking scaling factor for Layer %d,transform:%d, srcW:%f, srcH:%f, dstW:%d,dstH:%d",
+        DTRACEIF( GLOBAL_SCALING_DEBUG, "checking scaling factor for Layer %d,transform:%d, srcW:%f, srcH:%f, dstW:%d,dstH:%d",
              i, transform, layer.getSrcWidth(), layer.getSrcHeight(), layer.getDstWidth(), layer.getDstHeight() );
         bTransposed = isTranspose( transform );
         srcW = bTransposed ? layer.getSrcHeight() : layer.getSrcWidth();
         srcH = bTransposed ? layer.getSrcWidth() : layer.getSrcHeight();
         if ( srcW < 1.0f || srcH < 1.0f )
         {
-            ALOGD_IF( GLOBAL_SCALING_DEBUG, "checking scaling factor for Layer %d : invalid src size (%f, %f), stop checking.", i, srcW, srcH);
+            DTRACEIF( GLOBAL_SCALING_DEBUG, "checking scaling factor for Layer %d : invalid src size (%f, %f), stop checking.", i, srcW, srcH);
             bHasGlobalScaling = false;
             break;
         }
@@ -740,7 +761,7 @@ bool GlobalScalingFilter::checkGlobalScalingFactor( const Content::LayerStack& l
         if ( fabs( factorX - layer.getDstWidth() / srcW ) > matchingScalingTolerance ||
              fabs( factorY - layer.getDstHeight() / srcH ) > matchingScalingTolerance )
         {
-            ALOGD_IF( GLOBAL_SCALING_DEBUG, "Layer %d has different scaling factor, dstW:%d,srcW:%f, dstH:%d, srcH:%f.",
+            DTRACEIF( GLOBAL_SCALING_DEBUG, "Layer %d has different scaling factor, dstW:%d,srcW:%f, dstH:%d, srcH:%f.",
                     i, layer.getDstWidth(), layer.getSrcWidth(), layer.getDstHeight(), layer.getSrcHeight() );
             bHasGlobalScaling = false;
             break;
@@ -765,7 +786,7 @@ bool GlobalScalingFilter::checkGlobalScalingFactor( const Content::LayerStack& l
         inputW = finalFrameW / globalScalingFactorX + 0.5f;
         inputH = finalFrameH / globalScalingFactorY + 0.5f;
         // Final frame remains full screen.
-        ALOGD_IF( GLOBAL_SCALING_DEBUG,
+        DTRACEIF( GLOBAL_SCALING_DEBUG,
                   "has global scaling factor: x:%f, y:%f from inputW/H %ux%u to finalFrame %u,%u %ux%u",
                   globalScalingFactorX, globalScalingFactorY,
                   inputW, inputH, finalFrameX, finalFrameY, finalFrameW, finalFrameH );
@@ -789,11 +810,11 @@ void GlobalScalingFilter::fixupFractionalFrame( uint32_t inputW, uint32_t inputH
     // =>
     //    inputW * finalFrameH == inputH * finalFrameW
 
-    ALOG_ASSERT( dx == 0 );
-    ALOG_ASSERT( dy == 0 );
+    HWCASSERT( dx == 0 );
+    HWCASSERT( dy == 0 );
 
     int32_t err = (inputW * dh) - (inputH * dw);
-    ALOGD_IF( GLOBAL_SCALING_DEBUG,
+    DTRACEIF( GLOBAL_SCALING_DEBUG,
               "Scaling input %dx%d -> dest %dx%d err=%d",
               inputW, inputH, dw, dh, err );
 
@@ -804,7 +825,7 @@ void GlobalScalingFilter::fixupFractionalFrame( uint32_t inputW, uint32_t inputH
         uint32_t adj = (abs(err)+dh-1)/dh;          // Adjustment 1:N pixels.
         dw -= adj;                                  // Adjust width.
         dx = (adj+1)/2;                             // Centre with left offset 1:N pixels.
-        ALOGD_IF( GLOBAL_SCALING_DEBUG,
+        DTRACEIF( GLOBAL_SCALING_DEBUG,
                   "inputW too small - err %d => adj %u => dx %d",
                   err, adj, dx );
     }
@@ -815,17 +836,18 @@ void GlobalScalingFilter::fixupFractionalFrame( uint32_t inputW, uint32_t inputH
         uint32_t adj = (abs(err)+dw-1)/dw;          // Adjustment 1:N pixels.
         dh -= adj;                                  // Adjust height.
         dy = (adj+1)/2;                             // Centre with top offset 1:N pixels.
-        ALOGD_IF( GLOBAL_SCALING_DEBUG,
+        DTRACEIF( GLOBAL_SCALING_DEBUG,
                   "inputH too small - err %d => adj %u => dy %d",
                   err, adj, dy );
     }
     else
     {
         // Final frame remains full screen.
-        ALOGD_IF( GLOBAL_SCALING_DEBUG, "inputW/H matches final frame AR precisely" );
+        DTRACEIF( GLOBAL_SCALING_DEBUG, "inputW/H matches final frame AR precisely" );
     }
 }
 
+#ifdef uncomment
 bool GlobalScalingFilter::isSupporttedByGlobalScalingHW(AbstractPhysicalDisplay& phys,
                                                         int32_t dispW, int32_t dispH,
                                                         uint32_t inputW, uint32_t inputH,
@@ -862,7 +884,7 @@ bool GlobalScalingFilter::isSupporttedByGlobalScalingHW(AbstractPhysicalDisplay&
     // Early-out for displays that don't support global scaling.
     if ( !(globalScalingCaps.getFlags() & DisplayCaps::GlobalScalingCaps::GLOBAL_SCALING_CAP_SUPPORTED ) )
     {
-        ALOGD_IF( GLOBAL_SCALING_DEBUG, "D%d display global scaling not supported\n", phyIndex );
+        DTRACEIF( GLOBAL_SCALING_DEBUG, "D%d display global scaling not supported\n", phyIndex );
         return false;
     }
 
@@ -885,10 +907,10 @@ bool GlobalScalingFilter::isSupporttedByGlobalScalingHW(AbstractPhysicalDisplay&
     const uint32_t esh = inputH;
 
     // All sizes must be specified (non-zero).
-    ALOG_ASSERT( esw );
-    ALOG_ASSERT( esh );
-    ALOG_ASSERT( dw );
-    ALOG_ASSERT( dh );
+    HWCASSERT( esw );
+    HWCASSERT( esh );
+    HWCASSERT( dw );
+    HWCASSERT( dh );
 
     const uint32_t gso = mOptionGlobalScaling;
     const bool bEnabled            = ( ( gso & GLOBAL_SCALING_OPTION_ENABLE ) != 0 )
@@ -913,7 +935,7 @@ bool GlobalScalingFilter::isSupporttedByGlobalScalingHW(AbstractPhysicalDisplay&
     const bool bUnderscan = bOutX || bOutY;                     // Is destination outside the display in either axis?
     const bool bWindow    = bOverscan || bUnderscan;            // Is destination NOT fullscreen?
 
-    ALOGD_IF( GLOBAL_SCALING_DEBUG,
+    DTRACEIF( GLOBAL_SCALING_DEBUG,
         "D%d display %ux%u\n"
         " esw %u esh %u dx %d dy %d dw %u dh %u scalex %.2f scaley %.2f\n"
         " srcAR %.2f dstAR %.2f presAR %d pillar %d letter %d over %d under %d window %d\n"
@@ -931,7 +953,7 @@ bool GlobalScalingFilter::isSupporttedByGlobalScalingHW(AbstractPhysicalDisplay&
 
     if ( !bEnabled )
     {
-        ALOGD_IF( GLOBAL_SCALING_DEBUG,
+        DTRACEIF( GLOBAL_SCALING_DEBUG,
             "D%d Rejected due to not enabled\n",
             phyIndex );
         bOK = false;
@@ -944,7 +966,7 @@ bool GlobalScalingFilter::isSupporttedByGlobalScalingHW(AbstractPhysicalDisplay&
             if ( ( scalex < ( 0.01f * allowMinScale ) )
               || ( scaley < ( 0.01f * allowMinScale ) ) )
             {
-                ALOGD_IF( GLOBAL_SCALING_DEBUG,
+                DTRACEIF( GLOBAL_SCALING_DEBUG,
                     "D%d Rejected due to options minimum scaling limit",
                     phyIndex );
                 bOK = false;
@@ -955,7 +977,7 @@ bool GlobalScalingFilter::isSupporttedByGlobalScalingHW(AbstractPhysicalDisplay&
             if ( ( scalex > ( 0.01f * allowMaxScale ) )
               || ( scaley > ( 0.01f * allowMaxScale ) ) )
             {
-                ALOGD_IF( GLOBAL_SCALING_DEBUG,
+                DTRACEIF( GLOBAL_SCALING_DEBUG,
                     "D%d Rejected due to options maximum scaling limit",
                     phyIndex );
                 bOK = false;
@@ -967,7 +989,7 @@ bool GlobalScalingFilter::isSupporttedByGlobalScalingHW(AbstractPhysicalDisplay&
     {
         if ( bRestrictMatchingAR && !bPreservedAR )
         {
-            ALOGD_IF( GLOBAL_SCALING_DEBUG,
+            DTRACEIF( GLOBAL_SCALING_DEBUG,
                 "D%d Rejected due to unmatched aspect-ratios\n",
                 phyIndex );
             bOK = false;
@@ -980,7 +1002,7 @@ bool GlobalScalingFilter::isSupporttedByGlobalScalingHW(AbstractPhysicalDisplay&
                             ( DisplayCaps::GlobalScalingCaps::GLOBAL_SCALING_CAP_PILLARBOX
                             | DisplayCaps::GlobalScalingCaps::GLOBAL_SCALING_CAP_WINDOW ) ) )
         {
-            ALOGD_IF( GLOBAL_SCALING_DEBUG,
+            DTRACEIF( GLOBAL_SCALING_DEBUG,
                 "D%d Rejected due to display-specific destination restrictions [pillarbox]",
                 phyIndex );
             bOK = false;
@@ -989,7 +1011,7 @@ bool GlobalScalingFilter::isSupporttedByGlobalScalingHW(AbstractPhysicalDisplay&
                             ( DisplayCaps::GlobalScalingCaps::GLOBAL_SCALING_CAP_LETTERBOX
                             | DisplayCaps::GlobalScalingCaps::GLOBAL_SCALING_CAP_WINDOW ) ) )
         {
-            ALOGD_IF( GLOBAL_SCALING_DEBUG,
+            DTRACEIF( GLOBAL_SCALING_DEBUG,
                 "D%d Rejected due to display-specific destination restrictions [letterbox]",
                 phyIndex );
             bOK = false;
@@ -998,7 +1020,7 @@ bool GlobalScalingFilter::isSupporttedByGlobalScalingHW(AbstractPhysicalDisplay&
                         && !(globalScalingCaps.getFlags() &
                             DisplayCaps::GlobalScalingCaps::GLOBAL_SCALING_CAP_WINDOW ) )
         {
-            ALOGD_IF( GLOBAL_SCALING_DEBUG,
+            DTRACEIF( GLOBAL_SCALING_DEBUG,
                 "D%d Rejected due to display-specific destination restrictions [window]",
                 phyIndex );
             bOK = false;
@@ -1006,7 +1028,7 @@ bool GlobalScalingFilter::isSupporttedByGlobalScalingHW(AbstractPhysicalDisplay&
         if ( bOverscan && !(globalScalingCaps.getFlags() &
                             DisplayCaps::GlobalScalingCaps::GLOBAL_SCALING_CAP_OVERSCAN ) )
         {
-            ALOGD_IF( GLOBAL_SCALING_DEBUG,
+            DTARCEIF( GLOBAL_SCALING_DEBUG,
                 "D%d Rejected due to display-specific destination restrictions [overscan]",
                 phyIndex );
             bOK = false;
@@ -1014,7 +1036,7 @@ bool GlobalScalingFilter::isSupporttedByGlobalScalingHW(AbstractPhysicalDisplay&
         if ( bUnderscan && !(globalScalingCaps.getFlags() &
                             DisplayCaps::GlobalScalingCaps::GLOBAL_SCALING_CAP_UNDERSCAN ) )
         {
-            ALOGD_IF( GLOBAL_SCALING_DEBUG,
+            DTRACEIF( GLOBAL_SCALING_DEBUG,
                 "D%d Rejected due to display-specific destination restrictions [underscan]",
                 phyIndex );
             bOK = false;
@@ -1027,7 +1049,7 @@ bool GlobalScalingFilter::isSupporttedByGlobalScalingHW(AbstractPhysicalDisplay&
           && ( ( scalex > globalScalingCaps.getMaxScale() )
             || ( scaley > globalScalingCaps.getMaxScale() ) ) )
         {
-            ALOGD_IF( GLOBAL_SCALING_DEBUG,
+            DTRACEIF( GLOBAL_SCALING_DEBUG,
                 "D%d Rejected due to display-specific supported scaling range [max scale]",
                 phyIndex );
             bOK = false;
@@ -1036,7 +1058,7 @@ bool GlobalScalingFilter::isSupporttedByGlobalScalingHW(AbstractPhysicalDisplay&
           && ( ( scalex < globalScalingCaps.getMinScale() )
             || ( scaley < globalScalingCaps.getMinScale() ) ) )
         {
-            ALOGD_IF( GLOBAL_SCALING_DEBUG,
+            DTRACEIF( GLOBAL_SCALING_DEBUG,
                 "D%d Rejected due to display-specific supported scaling range [min scale]",
                 phyIndex );
             bOK = false;
@@ -1048,7 +1070,7 @@ bool GlobalScalingFilter::isSupporttedByGlobalScalingHW(AbstractPhysicalDisplay&
         if ( ( globalScalingCaps.getMinSourceWidth() > 0.0f )
           && ( esw < globalScalingCaps.getMinSourceWidth() ) )
         {
-            ALOGD_IF( GLOBAL_SCALING_DEBUG,
+            DTRACEIF( GLOBAL_SCALING_DEBUG,
                 "D%d Rejected due to display-specific supported source size [min source width]",
                 phyIndex );
             bOK = false;
@@ -1056,7 +1078,7 @@ bool GlobalScalingFilter::isSupporttedByGlobalScalingHW(AbstractPhysicalDisplay&
         if ( ( globalScalingCaps.getMaxSourceWidth() > 0.0f )
           && ( esw > globalScalingCaps.getMaxSourceWidth() ) )
         {
-            ALOGD_IF( GLOBAL_SCALING_DEBUG,
+            DTRACEIF( GLOBAL_SCALING_DEBUG,
                 "D%d Rejected due to display-specific supported source size [max source width]",
                 phyIndex );
             bOK = false;
@@ -1064,7 +1086,7 @@ bool GlobalScalingFilter::isSupporttedByGlobalScalingHW(AbstractPhysicalDisplay&
         if ( ( globalScalingCaps.getMinSourceHeight() > 0.0f )
           && ( esh < globalScalingCaps.getMinSourceHeight() ) )
         {
-            ALOGD_IF( GLOBAL_SCALING_DEBUG,
+            DTRACEIF( GLOBAL_SCALING_DEBUG,
                 "D%d Rejected due to display-specific supported source size [min source height]",
                 phyIndex );
             bOK = false;
@@ -1072,7 +1094,7 @@ bool GlobalScalingFilter::isSupporttedByGlobalScalingHW(AbstractPhysicalDisplay&
         if ( ( globalScalingCaps.getMaxSourceHeight() > 0.0f )
           && ( esh > globalScalingCaps.getMaxSourceHeight() ) )
         {
-            ALOGD_IF( GLOBAL_SCALING_DEBUG,
+            DTRACEIF( GLOBAL_SCALING_DEBUG,
                 "D%d Rejected due to display-specific supported source size [max source height]",
                 phyIndex );
             bOK = false;
@@ -1081,7 +1103,7 @@ bool GlobalScalingFilter::isSupporttedByGlobalScalingHW(AbstractPhysicalDisplay&
 
     if ( bOK )
     {
-        ALOGD_IF( GLOBAL_SCALING_DEBUG,
+        DTRACEIF( GLOBAL_SCALING_DEBUG,
                 "D%d passed global scaling hw check.", phyIndex);
     }
 
@@ -1111,7 +1133,7 @@ bool GlobalScalingFilter::acquireGlobalScalingHW(AbstractPhysicalDisplay& phys, 
     bool bAcquired = phys.acquireGlobalScaling( sw, sh, dstClippedLeft, dstClippedTop, dstClippedRight - dstClippedLeft, dstClippedBottom - dstClippedTop );
     if ( bAcquired )
     {
-        ALOGD_IF( GLOBAL_SCALING_DEBUG,
+        DTRACEIF( GLOBAL_SCALING_DEBUG,
                   "RPD%d Acquired global scaling for src:%ux%u dst:%d,%d %ux%u",
                   phys.getDisplayManagerIndex(), sw, sh, dstClippedLeft, dstClippedTop, dstClippedRight - dstClippedLeft, dstClippedBottom - dstClippedTop );
     }
@@ -1123,16 +1145,16 @@ void GlobalScalingFilter::releaseGlobalScalingHW(AbstractPhysicalDisplay& phys)
 {
     phys.releaseGlobalScaling();
 }
-
+#endif
 void GlobalScalingFilter::transformContentsToVirtualResolution(DisplayInfo& displayInfo, uint32_t phyIndex, Content::Display& contentDisplay,
                                                             uint32_t srcW, uint32_t srcH, float scalingFactorX, float scalingFactorY)
 {
-    ALOGD_IF( GLOBAL_SCALING_DEBUG,
+    DTRACEIF( GLOBAL_SCALING_DEBUG,
         "transform layers to virtual resolution : RPD%d, srcW:%d, srcH:%d, scalingFactorX:%f, scalingFactorY:%f.",
         phyIndex, srcW, srcH, scalingFactorX, scalingFactorY );
 
-    ALOG_ASSERT( scalingFactorX != 0.0f );
-    ALOG_ASSERT( scalingFactorY != 0.0f );
+    HWCASSERT( scalingFactorX != 0.0f );
+    HWCASSERT( scalingFactorY != 0.0f );
 
     Content::LayerStack& layerStack = contentDisplay.editLayerStack();
     uint32_t layerCount = layerStack.size();
@@ -1144,7 +1166,7 @@ void GlobalScalingFilter::transformContentsToVirtualResolution(DisplayInfo& disp
         if (displayInfo.mLayers.size() < layerCount)
         {
             // Note, as long as we always use mLayers.size() as a counter, this error condition is relatively harmless
-            ALOGE("Failed to allocate new layer list. Corruption may occur");
+            DTRACE("Failed to allocate new layer list. Corruption may occur");
             return;
         }
     }
@@ -1159,25 +1181,27 @@ void GlobalScalingFilter::transformContentsToVirtualResolution(DisplayInfo& disp
         displayInfo.mLayers[i].onUpdateFrameState(layerStack.getLayer(i));
 
         // transform layer's dst to the source space (virtual resolution)
-        hwc_rect_t& dst = displayInfo.mLayers[i].editDst();
-        const hwc_frect_t& src = displayInfo.mLayers[i].getSrc();
+        HwcRect<int>& dst = displayInfo.mLayers[i].editDst();
+        const HwcRect<float>& src = displayInfo.mLayers[i].getSrc();
         dst.left   = dst.left   / scalingFactorX + 0.5f;
         dst.top    = dst.top    / scalingFactorY + 0.5f;
         dst.right  = dst.right  / scalingFactorX + 0.5f;
         dst.bottom = dst.bottom / scalingFactorY + 0.5f;
 
+#ifdef uncomment
         // transform layer's visibleRegions to the source space (virtual resolution)
-        Vector<hwc_rect_t>& visRegions = displayInfo.mLayers[i].editVisibleRegions();
+        std::vector<HwcRect<int>>& visRegions = displayInfo.mLayers[i].editVisibleRegions();
         for (uint32_t r = 0; r < visRegions.size(); r++)
         {
-            hwc_rect_t& visRect = visRegions.editItemAt(r);
+            HwcRect<int>& visRect = visRegions.editItemAt(r);
             visRect.left   = visRect.left   / scalingFactorX + 0.5f;
             visRect.top    = visRect.top    / scalingFactorY + 0.5f;
             visRect.right  = visRect.right  / scalingFactorX + 0.5f;
             visRect.bottom = visRect.bottom / scalingFactorY + 0.5f;
         }
+#endif
 
-        ALOGD_IF( GLOBAL_SCALING_DEBUG,
+        DTRACEIF( GLOBAL_SCALING_DEBUG,
             "transform to virtual resolution:phyIndex:%d, layer:%d, src:(%f, %f, %f, %f), dst:(%d, %d, %d, %d).\n",
             phyIndex, i,
             src.left, src.top, src.right, src.bottom,
@@ -1185,8 +1209,10 @@ void GlobalScalingFilter::transformContentsToVirtualResolution(DisplayInfo& disp
 
         // update layer flags
         displayInfo.mLayers[i].onUpdateFlags();
+#ifdef uncomment
         // replace with our modified layer
         layerStack.setLayer( i, &displayInfo.mLayers[i] );
+#endif
     }
     layerStack.updateLayerFlags();
 
@@ -1204,7 +1230,7 @@ void GlobalScalingFilter::calculateScalingFactorFromScalingMode(DisplayInfo& dis
     // we only support stretching to full screen
     if (scalingMode != HWCS_SCALE_STRETCH) return;
 
-    hwc_rect_t boundaryRect;
+    HwcRect<int> boundaryRect;
     // get the boundary of layers
     getBoundaryOfLayerStack(contentDisplay.getLayerStack(), boundaryRect);
 
@@ -1215,7 +1241,7 @@ void GlobalScalingFilter::calculateScalingFactorFromScalingMode(DisplayInfo& dis
     // check if the boundary is full screen
     if (dispW == boundaryW && dispH == boundaryH)
     {
-        ALOGD_IF( GLOBAL_SCALING_DEBUG, "calculateScalingFactorFromScalingMode: Already full screen.");
+        DTRACEIF( GLOBAL_SCALING_DEBUG, "calculateScalingFactorFromScalingMode: Already full screen.");
         return;
     }
 
@@ -1225,10 +1251,10 @@ void GlobalScalingFilter::calculateScalingFactorFromScalingMode(DisplayInfo& dis
                                  dispW, dispH, scalingModeFactorW, scalingModeFactorH);
 }
 
-void GlobalScalingFilter::getBoundaryOfLayerStack(const Content::LayerStack& layerStack, hwc_rect_t& boundaryRect)
+void GlobalScalingFilter::getBoundaryOfLayerStack(const Content::LayerStack& layerStack, HwcRect<int>& boundaryRect)
 {
     int32_t layerCount = layerStack.size();
-    ALOG_ASSERT(layerCount);
+    HWCASSERT(layerCount);
 
     boundaryRect.right = 0;
     boundaryRect.bottom = 0;
@@ -1238,8 +1264,8 @@ void GlobalScalingFilter::getBoundaryOfLayerStack(const Content::LayerStack& lay
     for ( int32_t i = 0; i < layerCount; i++ )
     {
         const Layer& layer = layerStack.getLayer( i );
-        const hwc_rect_t& layerDst = layer.getDst();
-        ALOGD_IF( GLOBAL_SCALING_DEBUG, "Scanning boundary for Layer %d, left:%d, top:%d, right:%d, bottom:%d",
+        const HwcRect<int>& layerDst = layer.getDst();
+        DTRACEIF( GLOBAL_SCALING_DEBUG, "Scanning boundary for Layer %d, left:%d, top:%d, right:%d, bottom:%d",
              i, layerDst.left, layerDst.top, layerDst.right, layerDst.bottom );
         // the 0x0 layer(full screen dst) is added at the beginning of video playback then disaper after several seconds,
         // this will cause the SCALE_STRETCH scaling mode not applied and then applied again, we will see a small video for several seconds and then STRETCH to full screen width/height.
@@ -1247,7 +1273,7 @@ void GlobalScalingFilter::getBoundaryOfLayerStack(const Content::LayerStack& lay
         // TODO: need to further check if we need handle the SKIP flag or buffer handled by SF?
         if ( (layer.getBufferWidth() == 0) && (layer.getBufferHeight() == 0) )
         {
-            ALOGD_IF( GLOBAL_SCALING_DEBUG, "0x0 layer(flag:%d), skip this layer.", layer.getFlags());
+            DTRACEIF( GLOBAL_SCALING_DEBUG, "0x0 layer(flag:%d), skip this layer.", layer.getFlags());
             continue;
         }
 
@@ -1277,10 +1303,12 @@ void GlobalScalingFilter::getBoundaryOfLayerStack(const Content::LayerStack& lay
         }
     }
 
-    ALOGD_IF( GLOBAL_SCALING_DEBUG, "boundary of Layerstack, left:%d, top:%d, right:%d, bottom:%d",
+    DTRACEIF( GLOBAL_SCALING_DEBUG, "boundary of Layerstack, left:%d, top:%d, right:%d, bottom:%d",
              boundaryRect.left, boundaryRect.top, boundaryRect.right, boundaryRect.bottom );
 }
 
-}; // namespace hwc
-}; // namespace ufo
-}; // namespace intel
+};
+
+//}; // namespace hwc
+//}; // namespace ufo
+//}; // namespace intel

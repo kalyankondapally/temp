@@ -14,14 +14,15 @@
 // limitations under the License.
 */
 
-#ifndef INTEL_UFO_HWC_ABSTRACTFILTER_H
-#define INTEL_UFO_HWC_ABSTRACTFILTER_H
+#ifndef INTEL_COMMON_HWC_ABSTRACTFILTER_H
+#define INTEL_COMMON_HWC_ABSTRACTFILTER_H
 
 #include "Content.h"
 
-namespace intel {
-namespace ufo {
-namespace hwc {
+//namespace intel {
+//namespace ufo {
+//namespace hwc {
+namespace hwcomposer {
 
 class Hwc;
 
@@ -52,7 +53,7 @@ public:
 
     // This is for the class to return some kind of status information for Dumpsys.
     // Note, dumpsys has a strict size limit, so be brief
-    virtual String8 dump() = 0;
+    virtual HWCString dump() = 0;
 
 #if INTEL_HWC_INTERNAL_BUILD
     // NOTE:
@@ -64,8 +65,9 @@ public:
 #endif
 };
 
-}; // namespace hwc
-}; // namespace ufo
-}; // namespace intel
+};
+//}; // namespace hwc
+//}; // namespace ufo
+//}; // namespace intel
 
-#endif // INTEL_UFO_HWC_ABSTRACTFILTER_H
+#endif // INTEL_COMMON_HWC_ABSTRACTFILTER_H

@@ -14,20 +14,25 @@
 // limitations under the License.
 */
 
-#ifndef INTEL_UFO_HWC_FILTERMANAGER_H
-#define INTEL_UFO_HWC_FILTERMANAGER_H
+#ifndef INTEL_COMMON_HWC_FILTERMANAGER_H
+#define INTEL_COMMON_HWC_FILTERMANAGER_H
 
 #include "Content.h"
-#include "Layer.h"
-#include "AbstractFilter.h"
-#include "FilterPosition.h"
-#include "Singleton.h"
+#include "layer.h"
+#include "abstractfilter.h"
+#include "filterposition.h"
+#include "singleton.h"
+#ifdef uncomment
 #include <utils/SortedVector.h>
 #include <utils/Mutex.h>
+#endif
 
-namespace intel {
-namespace ufo {
-namespace hwc {
+#include <mutex>
+
+//namespace intel {
+//namespace ufo {
+//namespace hwc {
+namespace hwcomposer {
 
 class Hwc;
 
@@ -53,12 +58,11 @@ public:
     void                    onOpen( Hwc& hwc );
 
     // Dump a little info about all the filter
-    String8                 dump();
+    HWCString                 dump();
 
 private:
     friend class Singleton<FilterManager>;
-
-    Mutex                   mLock;
+    std::mutex                   mLock;
 
     class Entry
     {
@@ -68,7 +72,8 @@ private:
         AbstractFilter* mpFilter;
         FilterPosition  mPosition;
     };
-    Vector<Entry> mFilters;
+
+    std::vector<Entry> mFilters;
 
     // Sorting comparison function.
     static int compareFilterPositions( const FilterManager::Entry* lhs, const FilterManager::Entry* rhs );
@@ -94,7 +99,7 @@ private:
 
 
 }; // namespace hwc
-}; // namespace ufo
-}; // namespace intel
+//}; // namespace ufo
+//}; // namespace intel
 
-#endif // INTEL_UFO_HWC_FILTERMANAGER_H
+#endif // INTEL_COMMON_HWC_FILTERMANAGER_H

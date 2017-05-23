@@ -14,12 +14,13 @@
 // limitations under the License.
 */
 
-#ifndef INTEL_UFO_HWC_FILTERPOSITION_H
-#define INTEL_UFO_HWC_FILTERPOSITION_H
+#ifndef INTEL_COMMON_HWC_FILTERPOSITION_H
+#define INTEL_COMMON_HWC_FILTERPOSITION_H
 
-namespace intel {
-namespace ufo {
-namespace hwc {
+//namespace intel {
+//namespace ufo {
+//namespace hwc {
+namespace hwcomposer {
 
 // List of standard filter positions. Space should be left between these in order
 // to add addition filters at specific places in the list
@@ -52,9 +53,9 @@ enum class FilterPosition : uint32_t
     Invalid                 = 9999999,
 };
 
+};
+//}; // namespace hwc
+//}; // namespace ufo
+//}; // namespace intel
 
-}; // namespace hwc
-}; // namespace ufo
-}; // namespace intel
-
-#endif // INTEL_UFO_HWC_FILTERPOSITION_H
+#endif // INTEL_COMMON_HWC_FILTERPOSITION_H

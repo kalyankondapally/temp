@@ -14,20 +14,22 @@
 // limitations under the License.
 */
 
-#include "Common.h"
-#include "Layer.h"
-#include "Log.h"
+#include "hwcutils.h"
+#include "log.h"
+#ifdef uncomment
 #include "Transform.h"
+#endif
+#include "layer.h"
+#include "visiblerectfilter.h"
+#include "filtermanager.h"
 
-#include "VisibleRectFilter.h"
-#include "FilterManager.h"
+using namespace hwcomposer;
 
-using namespace intel::ufo::hwc;
+//namespace intel {
+//namespace ufo {
+//namespace hwc {
 
-namespace intel {
-namespace ufo {
-
-namespace hwc {
+namespace hwcomposer {
 
 // Factory instance
 VisibleRectFilter gVisibleRectFilter;
@@ -48,6 +50,7 @@ const Content& VisibleRectFilter::onApply(const Content& ref)
 {
     bool bModified = false;
     mReference = ref;
+#ifdef uncomment
     for (uint32_t d = 0; d < mReference.size(); d++)
     {
         Content::Display& display = mReference.editDisplay(d);
@@ -71,7 +74,7 @@ const Content& VisibleRectFilter::onApply(const Content& ref)
                     ly++;
                     continue;
                 }
-                ALOGD_IF ( VISIBLERECTFILTER_DEBUG, "\nBegin to clip layer in D%d: \n%s", d, layer.dump("").string());
+                DTRACEIF ( VISIBLERECTFILTER_DEBUG, "\nBegin to clip layer in D%d: \n%s", d, layer.dump("").string());
 
                 // Copy layer
                 displayState.mLayers[ly] = layer;
@@ -81,12 +84,12 @@ const Content& VisibleRectFilter::onApply(const Content& ref)
                 //    case 1: visible region is zero, remove this layer
                 //    case 2: visible region is non-zero, clip dst and src rect to match visible region
                 isVisibleLayer = clipLayerToDestRect( &displayState.mLayers[ly], visibleRect );
-                ALOGD_IF ( VISIBLERECTFILTER_DEBUG, "Clipped layer to visible region: \n%s", displayState.mLayers[ly].dump("").string());
+                DTRACEIF ( VISIBLERECTFILTER_DEBUG, "Clipped layer to visible region: \n%s", displayState.mLayers[ly].dump("").string());
                 if( isVisibleLayer )
                 {
                    layerStack.setLayer(ly, &displayState.mLayers[ly]);
                    ly++;
-                   ALOGD_IF ( VISIBLERECTFILTER_DEBUG,"Clip layer to visible region.");
+                   DTRACEIF ( VISIBLERECTFILTER_DEBUG,"Clip layer to visible region.");
                 }
                 else
                 {
@@ -94,14 +97,14 @@ const Content& VisibleRectFilter::onApply(const Content& ref)
                     // If this layer is not removed, the src/dst rect can be set zero rect, and it would not sent to composer
                     // but to waste some CPU resources, so it is better to remove this layer
                     layerStack.removeLayer( ly );
-                    ALOGD_IF ( VISIBLERECTFILTER_DEBUG,"Remove zero visible region layer.");
+                    DTRACEIF ( VISIBLERECTFILTER_DEBUG,"Remove zero visible region layer.");
                  }
                  layerStack.updateLayerFlags();
                  bModified = true;
             }
         }
-
     }
+#endif
 
     if ( bModified == false )
     {
@@ -118,9 +121,9 @@ const Content& VisibleRectFilter::onApply(const Content& ref)
     return mReference;
 }
 
-String8 VisibleRectFilter::dump()
+HWCString VisibleRectFilter::dump()
 {
-    String8 output("VisibleRectFilter: ");
+    HWCString output("VisibleRectFilter: ");
 
     return output;
 }
@@ -134,7 +137,7 @@ bool VisibleRectFilter::displayStatePrepare( uint32_t d, uint32_t layerCount)
         displayState.mLayers.resize(layerCount);
         if (displayState.mLayers.size() < layerCount)
         {
-            ALOGE("Error in VisibleRectFilter: Failed to allocate new layer list, skip this filter!");
+            DTRACE("Error in VisibleRectFilter: Failed to allocate new layer list, skip this filter!");
             return false;
         }
     }
@@ -142,13 +145,13 @@ bool VisibleRectFilter::displayStatePrepare( uint32_t d, uint32_t layerCount)
 }
 
 // Figure out the smallest box that can cover all visible rects of this layer
-hwc_rect_t VisibleRectFilter::getVisibleRegionBoundingBox(const Layer& layer)
+HwcRect<int> VisibleRectFilter::getVisibleRegionBoundingBox(const Layer& layer)
 {
-    const Vector<hwc_rect_t>& visibleRegions = layer.getVisibleRegions();
-    hwc_rect_t visibleRect = visibleRegions[0];
+    const std::vector<HwcRect<int>>& visibleRegions = layer.getVisibleRegions();
+    HwcRect<int> visibleRect = visibleRegions[0];
     for (uint32_t r = 1; r < visibleRegions.size(); r++)
     {
-         const hwc_rect_t& rect = visibleRegions[r];
+         const HwcRect<int>& rect = visibleRegions[r];
          visibleRect.left   = min( visibleRect.left,   rect.left );
          visibleRect.top    = min( visibleRect.top,    rect.top );
          visibleRect.right  = max( visibleRect.right,  rect.right );
@@ -157,6 +160,8 @@ hwc_rect_t VisibleRectFilter::getVisibleRegionBoundingBox(const Layer& layer)
     return visibleRect;
 }
 
-}; // namespace hwc
-}; // namespace ufo
-}; // namespace intel
+};
+
+//}; // namespace hwc
+//}; // namespace ufo
+//}; // namespace intel

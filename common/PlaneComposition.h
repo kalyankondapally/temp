@@ -19,7 +19,7 @@
 
 #include "AbstractComposition.h"
 #include "AbstractComposer.h"
-#include "Layer.h"
+#include "layer.h"
 
 namespace intel {
 namespace ufo {

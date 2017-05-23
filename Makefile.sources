@@ -11,6 +11,7 @@ common_SOURCES =              \
     common/core/overlaylayer.cpp \
     common/core/timeline.cpp \
     common/core/layer.cpp \
+    common/Content.cpp \
     common/display/display.cpp \
     common/display/displaycaps.cpp \
     common/display/displayqueue.cpp \
@@ -31,6 +32,14 @@ common_SOURCES =              \
     common/utils/option.cpp \
     common/utils/optionmanager.cpp \
     common/utils/log/log.cpp \
+    common/filter/debugfilter.cpp \
+    common/filter/emptyfilter.cpp \
+    common/filter/filtermanager.cpp \
+    common/filter/transparencyfilter.cpp\
+    common/filter/videomodedetectionfilter.cpp\
+    common/filter/visiblerectfilter.cpp\
+    common/filter/rotate180filter.cpp\
+    common/filter/globalscalingfilter.cpp\
     os/linux/gbmbufferhandler.cpp \
     os/linux/platformdefines.cpp \
     os/linux/sharedbuffer.cpp \

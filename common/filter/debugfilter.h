@@ -14,15 +14,16 @@
 // limitations under the License.
 */
 
-#ifndef INTEL_UFO_HWC_DEBUGFILTER_H
-#define INTEL_UFO_HWC_DEBUGFILTER_H
+#ifndef INTEL_COMMON_HWC_DEBUGFILTER_H
+#define INTEL_COMMON_HWC_DEBUGFILTER_H
 
-#include "AbstractFilter.h"
-#include "Singleton.h"
+#include "abstractfilter.h"
+#include "singleton.h"
 
-namespace intel {
-namespace ufo {
-namespace hwc {
+//namespace intel {
+//namespace ufo {
+//namespace hwc {
+namespace hwcomposer {
 
 class DebugFilter : public AbstractFilter, Singleton<DebugFilter>
 {
@@ -35,8 +36,7 @@ public:
     // This returns the name of the filter.
     const char* getName() const { return "DebugFilter"; }
     const Content& onApply(const Content& ref);
-
-    String8 dump();
+    HWCString dump();
 
     // Public API
     void enableDisplay(uint32_t d);
@@ -49,10 +49,8 @@ public:
 
 private:
     friend class Singleton<DebugFilter>;
-
     // Private reference to hold modified state
     Content    mReference;
-
     // Helper class to contain per display debug state
     class DisplayDebug
     {
@@ -68,11 +66,12 @@ private:
     };
 
     // Handle up to 32 layers
-    Vector<DisplayDebug> mDebugDisplay;
+    std::vector<DisplayDebug> mDebugDisplay;
 };
 
-}; // namespace hwc
-}; // namespace ufo
-}; // namespace intel
+};
+//}; // namespace hwc
+//}; // namespace ufo
+//}; // namespace intel
 
 #endif // INTEL_UFO_HWC_DEBUGFILTER_H

@@ -14,14 +14,15 @@
 // limitations under the License.
 */
 
-#include "Common.h"
-#include "DebugFilter.h"
-#include "FilterManager.h"
-#include "Log.h"
+#include "hwcutils.h"
+#include "debugfilter.h"
+#include "filtermanager.h"
+#include "log.h"
 
-namespace intel {
-namespace ufo {
-namespace hwc {
+//namespace intel {
+//namespace ufo {
+//namespace hwc {
+namespace hwcomposer {
 
 DebugFilter::DebugFilter()
 {
@@ -48,6 +49,7 @@ const Content& DebugFilter::onApply(const Content& ref)
     // Run through each display
     for (uint32_t d = 0; d < ref.size() && d < mDebugDisplay.size(); d++)
     {
+#ifdef uncomment
         Content::Display& display = mReference.editDisplay(d);
 
         // If anything changed since last frame, propagate a geometry change through the stack
@@ -94,17 +96,19 @@ const Content& DebugFilter::onApply(const Content& ref)
                 --mDebugDisplay.editItemAt(d).mDumpFrames;
             }
 
-            String8 prefix = String8::format( "df_frame%u_d%u_i%u_in", display.getFrameIndex(), d, mDebugDisplay[d].mDumpFrameIdx );
+            HWCString prefix = HWCString::format( "df_frame%u_d%u_i%u_in", display.getFrameIndex(), d, mDebugDisplay[d].mDumpFrameIdx );
             Log::alogd( true, "Dumping %s", prefix.string() );
             display.dumpContentToTGA( prefix );
             mDebugDisplay.editItemAt(d).mDumpHardwareFrame = display.getFrameIndex();
         }
+#endif
     }
     return mReference;
 }
 
 void DebugFilter::enableDisplay(uint32_t d)
 {
+#ifdef uncomment
     if (mDebugDisplay.size() <= d)
         mDebugDisplay.insertAt(mDebugDisplay.size(), d + 1 - mDebugDisplay.size());
 
@@ -113,10 +117,12 @@ void DebugFilter::enableDisplay(uint32_t d)
     dd.mbDisableDisplay = false;
     dd.mbBlankDisplay = false;
     dd.mMask = 0;
+#endif
 }
 
 void DebugFilter::disableDisplay(uint32_t d, bool bBlank)
 {
+#ifdef uncomment
     if (mDebugDisplay.size() <= d)
         mDebugDisplay.insertAt(mDebugDisplay.size(), d + 1 - mDebugDisplay.size());
 
@@ -126,11 +132,13 @@ void DebugFilter::disableDisplay(uint32_t d, bool bBlank)
         dd.mbBlankDisplay = true;
     else
         dd.mbDisableDisplay = true;
+#endif
 
 }
 
 void DebugFilter::maskLayer(uint32_t d, uint32_t layer, bool bHide)
 {
+#ifdef uncomment
     if (mDebugDisplay.size() < d + 1)
         mDebugDisplay.insertAt(mDebugDisplay.size(), d + 1 - mDebugDisplay.size());
 
@@ -140,10 +148,12 @@ void DebugFilter::maskLayer(uint32_t d, uint32_t layer, bool bHide)
         dd.mMask |= 1 << layer;
     else
         dd.mMask &= ~(1 << layer);
+#endif
 }
 
 void DebugFilter::dumpFrames(uint32_t d, int32_t frames)
 {
+#ifdef uncomment
     if (mDebugDisplay.size() < d + 1)
         mDebugDisplay.insertAt(mDebugDisplay.size(), d + 1 - mDebugDisplay.size());
 
@@ -152,6 +162,7 @@ void DebugFilter::dumpFrames(uint32_t d, int32_t frames)
     dd.mDumpFrames = frames;
     dd.mDumpFrameIdx = 0;
     dd.mDumpHardwareFrame = 0;
+#endif
 }
 
 void DebugFilter::dumpHardwareFrame(uint32_t d, const Content::Display& out)
@@ -159,21 +170,23 @@ void DebugFilter::dumpHardwareFrame(uint32_t d, const Content::Display& out)
     if (mDebugDisplay.size() < d + 1)
         return;
 
+#ifdef uncomment
     DisplayDebug& dd = mDebugDisplay.editItemAt(d);
     if ( dd.mDumpHardwareFrame == out.getFrameIndex() )
     {
-        String8 prefix = String8::format( "df_frame%u_d%u_i%u_out", out.getFrameIndex(), d, dd.mDumpFrameIdx );
+        HWCString prefix = String8::format( "df_frame%u_d%u_i%u_out", out.getFrameIndex(), d, dd.mDumpFrameIdx );
         Log::alogd( true, "Dumping %s", prefix.string() );
         out.dumpContentToTGA( prefix );
     }
+#endif
 }
 
-String8 DebugFilter::dump()
+HWCString DebugFilter::dump()
 {
     if (!sbInternalBuild)
         return String8();
 
-    String8 output;
+    HWCString output;
 
     for (uint32_t d = 0; d < mDebugDisplay.size(); d++)
     {
@@ -185,6 +198,8 @@ String8 DebugFilter::dump()
     return output;
 }
 
-}; // namespace hwc
-}; // namespace ufo
-}; // namespace intel
+};
+
+//}; // namespace hwc
+//}; // namespace ufo
+//}; // namespace intel

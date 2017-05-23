@@ -14,28 +14,32 @@
 // limitations under the License.
 */
 
-#include "Common.h"
-#include "Layer.h"
-#include "Log.h"
+#include "hwcutils.h"
+#include "layer.h"
+#ifdef uncomment
+#include "abstractbuffermanager.h"
+#endif
 
-#include "EmptyFilter.h"
-#include "FilterManager.h"
-#include "AbstractBufferManager.h"
+#include "emptyfilter.h"
+#include "filtermanager.h"
 
-using namespace intel::ufo::hwc;
+//namespace intel {
+//namespace ufo {
+//namespace hwc {
 
-namespace intel {
-namespace ufo {
-
-namespace hwc {
+namespace hwcomposer {
 
 const uint32_t cMaxBufferAge = 10; // Arbitrary guess for now.
 
 // Factory instance
 EmptyFilter gEmptyFilter;
 
+#ifdef uncomment
 EmptyFilter::EmptyFilter() :
     mBM( AbstractBufferManager::get() )
+#else
+EmptyFilter::EmptyFilter()
+#endif
 {
     // Add this filter to the filter list
     FilterManager::getInstance().add(*this, FilterPosition::Empty);
@@ -66,7 +70,7 @@ const Content& EmptyFilter::onApply(const Content& ref)
                 mReference = ref;
                 modified = true;
             }
-
+#ifdef uncomment
             Content::Display& disp = mReference.editDisplay(d);
             Content::LayerStack& layerStack = disp.editLayerStack();
             bool modifiedLayers = false;
@@ -74,14 +78,13 @@ const Content& EmptyFilter::onApply(const Content& ref)
             {
                 // Insert the blank layer
                 dispState.mBlankLayer.onUpdateAll(getBlankBuffer(disp.getWidth(), disp.getHeight()));
-                hwc_rect_t rect;
+                HwcRect<int> rect;
                 rect.left = rect.top = 0;
                 rect.right = disp.getWidth();
                 rect.bottom = disp.getHeight();
                 dispState.mBlankLayer.setSrc(rect);
                 dispState.mBlankLayer.setDst(rect);
                 dispState.mBlankLayer.onUpdateFlags();
-
                 layerStack.resize(layerStack.size()+1);
                 layerStack.setLayer(layerStack.size()-1, &dispState.mBlankLayer);
                 layerStack.updateLayerFlags();
@@ -93,15 +96,16 @@ const Content& EmptyFilter::onApply(const Content& ref)
                 layerStack.setGeometryChanged(true);
             }
             dispState.mbWasModified = modifiedLayers;
+#endif
         }
         else
         {
             dispState.mbWasModified = false;
         }
     }
-
+#ifdef uncomment
     ageBlankBuffers();
-
+#endif
     if (!modified)
     {
         // No work to do so return the unmodified content.
@@ -117,9 +121,9 @@ const Content& EmptyFilter::onApply(const Content& ref)
     return mReference;
 }
 
-String8 EmptyFilter::dump()
+HWCString EmptyFilter::dump()
 {
-    String8 output;
+    HWCString output;
 
     bool bBlanking = false;
     for (uint32_t d = 0; d < cMaxSupportedSFDisplays; ++d)
@@ -140,6 +144,7 @@ String8 EmptyFilter::dump()
     return output;
 }
 
+#ifdef uncomment
 buffer_handle_t EmptyFilter::getBlankBuffer(uint32_t width, uint32_t height)
 {
     // Look for the biggest accomodating buffer.
@@ -187,7 +192,7 @@ void EmptyFilter::ageBlankBuffers()
             ++i;
     }
 }
-
+#endif
 }; // namespace hwc
-}; // namespace ufo
-}; // namespace intel
+//}; // namespace ufo
+//}; // namespace intel
