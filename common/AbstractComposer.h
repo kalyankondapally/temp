@@ -17,7 +17,7 @@
 #ifndef INTEL_UFO_HWC_ABSTRACTCOMPOSER_H
 #define INTEL_UFO_HWC_ABSTRACTCOMPOSER_H
 
-#include "Layer.h"
+#include "layer.h"
 
 namespace intel {
 namespace ufo {

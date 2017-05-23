@@ -17,7 +17,7 @@
 #ifndef INTEL_UFO_HWC_TIMER_H
 #define INTEL_UFO_HWC_TIMER_H
 
-#include "Common.h"
+#include "hwcutils.h"
 #include "base.h"
 
 namespace intel {

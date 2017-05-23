@@ -39,6 +39,7 @@ common_SOURCES =              \
     common/filter/videomodedetectionfilter.cpp\
     common/filter/visiblerectfilter.cpp\
     common/filter/rotate180filter.cpp\
+    common/filter/globalscalingfilter.cpp\
     os/linux/gbmbufferhandler.cpp \
     os/linux/platformdefines.cpp \
     os/linux/sharedbuffer.cpp \

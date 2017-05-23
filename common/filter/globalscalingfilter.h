@@ -14,22 +14,31 @@
 // limitations under the License.
 */
 
-#ifndef INTEL_UFO_HWC_GLOBAL_SCALLING_FILTER_H
-#define INTEL_UFO_HWC_GLOBAL_SCALLING_FILTER_H
+#ifndef INTEL_COMMON_HWC_GLOBAL_SCALLING_FILTER_H
+#define INTEL_COMMON_HWC_GLOBAL_SCALLING_FILTER_H
 
-#include "AbstractFilter.h"
+#include "abstractfilter.h"
+#ifdef uncomment
 #include "HwcServiceApi.h"
-#include "PhysicalDisplayManager.h"
-#include "Option.h"
+#include "physicaldisplaymanager.h"
+#endif
+#include "option.h"
 
-namespace intel {
-namespace ufo {
-namespace hwc {
+#include<mutex>
+
+//namespace intel {
+//namespace ufo {
+//namespace hwc {
+namespace hwcomposer {
 
 class GlobalScalingFilter : public AbstractFilter
 {
 public:
+#ifdef uncomment
     GlobalScalingFilter(PhysicalDisplayManager& pdm);
+#else
+    GlobalScalingFilter();
+#endif
     virtual ~GlobalScalingFilter();
 
     // Flags for global scaling option.
@@ -47,7 +56,7 @@ public:
     bool outputsPhysicalDisplays() const { return true; }
     const Content& onApply(const Content& ref);
 
-    String8 dump();
+    HWCString dump();
 
     // Public API
     // set the actual output resolution of the display. this is needed for ProxyDisplay case
@@ -92,14 +101,18 @@ private:
     bool handleDisplaySettingsChanged(DisplayInfo& displayInfo);
 
     EHwcsScalingMode getScalingMode(DisplayInfo& displayInfo);
+#ifdef uncomment
     // apply scaling by overscan and proxy display, return true if the contentDisplay is changed
     bool applyAllScalings(DisplayInfo& displayInfo, AbstractPhysicalDisplay& phys, Content::Display& contentDisplay);
+#endif
     // calculate scaling factor for different output resolution
     void calculateOutputScalingFactor(EHwcsScalingMode scalingMode, uint32_t inW, uint32_t inH, uint32_t outputW, uint32_t outputH,
                                       float& outputScalingFactorW, float& outputScalingFactorH);
 
+#ifdef uncomment
     // enable HW to achieve the global scaling
     bool enableGlobalScalingHW(DisplayInfo& displayInfo, AbstractPhysicalDisplay& phys, Content::Display& display);
+#endif
     // check if scaling in X/Y is near aspect preserving.
     bool nearAspectPreserving( float globalScalingFactorX, float globalScalingFactorY );
     // check if there is global scaling and return the scaling factors, input size and final frame if there is
@@ -112,6 +125,7 @@ private:
     void fixupFractionalFrame( uint32_t inputW, uint32_t inputH,
                                int32_t& dx, int32_t& dy,
                                int32_t& dw, int32_t& dh );
+#ifdef uncomment
     // check if the global scaling can be supported by display HW
     bool isSupporttedByGlobalScalingHW(AbstractPhysicalDisplay& phys,
                                        int32_t dispW, int32_t dispH,
@@ -121,20 +135,23 @@ private:
     bool acquireGlobalScalingHW(AbstractPhysicalDisplay& phys, Content::Display& contentDisplay, uint32_t sw, uint32_t sh,
                                         int32_t dx, int32_t dy, int32_t dw, int32_t dh);
     void releaseGlobalScalingHW(AbstractPhysicalDisplay& phys);
+#endif
     // transform display content to virtual resolution[0, 0, srcW, srcH]
     void transformContentsToVirtualResolution(DisplayInfo& displayInfo, uint32_t phyIndex, Content::Display& contentDisplay,
                                            uint32_t srcW, uint32_t srcH, float scalingFactorX, float scalingFactorY);
     // calculate scaling factor for applying scaling mode
     void calculateScalingFactorFromScalingMode(DisplayInfo& displayInfo, const Content::Display& contentDisplay, float& scalingModeFactorW, float& scalingModeFactorH);
     // get the boundary of layers.
-    void getBoundaryOfLayerStack(const Content::LayerStack& layerStack, hwc_rect_t& boundaryRect);
+    void getBoundaryOfLayerStack(const Content::LayerStack& layerStack, HwcRect<int>& boundaryRect);
 
     DisplayInfo mDisplayInfo[cMaxSupportedPhysicalDisplays];
 
 
     Content                     mContent;                   //< private copy of the content.
-    Mutex                       mLock;                      //< Lock for async filter updates.
+    std::mutex                  mLock;                      //< Lock for async filter updates.
+#ifdef uncomment
     PhysicalDisplayManager&     mPhysicalDisplayManager;    //< Physical display manager.
+#endif
 
     Option mOptionGlobalScaling;       //< Global scaling flags (see EGlobalScalingFlags).
     Option mOptionGlobalScalingMin;    //< Global scaling down-scale limit as a percentage (or zero if no limit).
@@ -143,8 +160,9 @@ private:
     Option mOptionGlobalScalingVideoOnly;   //< only enabling global scaling HW when we have full height or width single plane video
 };
 
-}; // namespace hwc
-}; // namespace ufo
-}; // namespace intel
+};
+//}; // namespace hwc
+//}; // namespace ufo
+//}; // namespace intel
 
-#endif // INTEL_UFO_HWC_GLOBAL_SCALLING_FILTER_H
+#endif // INTEL_COMMON_HWC_GLOBAL_SCALLING_FILTER_H
