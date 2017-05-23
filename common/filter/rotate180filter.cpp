@@ -14,15 +14,16 @@
 // limitations under the License.
 */
 
-#include "Common.h"
-#include "AbstractFilter.h"
-#include "Layer.h"
-#include "FilterManager.h"
+#include "hwcutils.h"
+#include "layer.h"
+#include "abstractfilter.h"
+#include "filtermanager.h"
 #include <vector>
 
-namespace intel {
-namespace ufo {
-namespace hwc {
+//namespace intel {
+//namespace ufo {
+//namespace hwc {
+namespace hwcomposer {
 
 class Rotate180Filter : public AbstractFilter
 {
@@ -32,7 +33,7 @@ public:
 
     const char* getName() const { return "Rotate180Filter"; }
     const Content& onApply(const Content& ref);
-    String8 dump();
+    HWCString dump();
 private:
     Option              mOptionRotate180;
     Content             mContent;
@@ -63,6 +64,7 @@ const Content& Rotate180Filter::onApply(const Content& ref)
     mContent = ref;
     for (uint32_t d = 0; d < ref.size() && d < cMaxSupportedSFDisplays; d++)
     {
+#ifdef uncomment
         Content::Display& display = mContent.editDisplay(d);
         if ( !display.isEnabled() )
             continue;
@@ -94,14 +96,15 @@ const Content& Rotate180Filter::onApply(const Content& ref)
                 layerStack.setLayer(ly, &layer);
             }
         }
+#endif
     }
 
     return mContent;
 }
 
-String8 Rotate180Filter::dump()
+HWCString Rotate180Filter::dump()
 {
-    String8 output;
+    HWCString output;
 
     if (mOptionRotate180)
         output.appendFormat("Rotating %x", mOptionRotate180.get());
@@ -110,6 +113,7 @@ String8 Rotate180Filter::dump()
     return output;
 }
 
-}; // namespace hwc
-}; // namespace ufo
-}; // namespace intel
+};
+//};// namespace hwc
+//}; // namespace ufo
+//}; // namespace intel

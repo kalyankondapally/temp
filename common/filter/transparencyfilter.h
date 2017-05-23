@@ -14,16 +14,23 @@
 // limitations under the License.
 */
 
-#ifndef INTEL_UFO_HWC_TRANSPARENCYFILTER_H
-#define INTEL_UFO_HWC_TRANSPARENCYFILTER_H
+#ifndef INTEL_COMMON_HWC_TRANSPARENCYFILTER_H
+#define INTEL_COMMON_HWC_TRANSPARENCYFILTER_H
 
-#include "AbstractFilter.h"
-#include "AbstractBufferManager.h"
+#include <hwcdefs.h>
+
+#include "abstractfilter.h"
+#ifdef uncomment
+#include "abstractbuffermanager.h"
+#endif
+
+#include <memory>
 
 
-namespace intel {
-namespace ufo {
-namespace hwc {
+//namespace intel {
+//namespace ufo {
+//namespace hwc {
+namespace hwcomposer {
 
 #define MAX_DETECT_LAYERS 4
 
@@ -35,7 +42,7 @@ public:
 
     const char* getName() const { return "TransparencyFilter"; }
     const Content& onApply(const Content& ref);
-    String8 dump();
+    HWCString dump();
 
 private:
     class DetectionThread;
@@ -47,19 +54,25 @@ private:
         virtual ~DetectionItem();
         void reset();
         void updateRepeatCounts(const Layer& ly);
-        void initiateDetection(const Layer& layer, hwc_frect_t videoRect);
+        void initiateDetection(const Layer& layer, HwcRect<float> videoRect);
         void filterLayers(Content& ref);
         void garbageCollect(void);
-        String8 dump();
+        HWCString dump();
     private:
+#ifdef uncomment
         AbstractBufferManager&  mBM;
         buffer_handle_t         mCurrentHandle;     // Handle of the currently repeating frame
         hwc_rect                mBlackMask;
+#endif
         uint32_t                mRepeatCount;
         bool                    mbEnabled;
-        sp<GraphicBuffer>       mpLinearBuffer;
+#ifdef uncomment
+       std::sp<GraphicBuffer>       mpLinearBuffer;
+#endif
         uint32_t                mFramesBeforeCheck;
-        sp<DetectionThread>     mpDetectionThread;
+#ifdef uncomment
+        std::sp<DetectionThread>     mpDetectionThread;
+#endif
         bool                    mbFirstEnabledFrame;
         bool                    mbFirstDisabledFrame;
     };
@@ -68,12 +81,12 @@ private:
 
     DetectionItem       mDetection[MAX_DETECT_LAYERS];
     uint32_t            mDetectionNum;
-
     Content             mReference;
 };
 
-}; // namespace hwc
-}; // namespace ufo
-}; // namespace intel
+};
+//}; // namespace hwc
+//}; // namespace ufo
+//}; // namespace intel
 
-#endif // INTEL_UFO_HWC_TRANSPARENCYFILTER_H
+#endif // INTEL_COMMON_HWC_TRANSPARENCYFILTER_H

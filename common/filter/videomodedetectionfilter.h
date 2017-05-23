@@ -14,19 +14,21 @@
 // limitations under the License.
 */
 
-#ifndef INTEL_UFO_HWC_VIDEOMODEDETECTIONFILTER_H
-#define INTEL_UFO_HWC_VIDEOMODEDETECTIONFILTER_H
+#ifndef INTEL_COMMON_HWC_VIDEOMODEDETECTIONFILTER_H
+#define INTEL_COMMON_HWC_VIDEOMODEDETECTIONFILTER_H
 
-#include "AbstractFilter.h"
+#include "abstractfilter.h"
 
-namespace intel {
-namespace ufo {
-namespace hwc {
+//namespace intel {
+//namespace ufo {
+//namespace hwc {
+namespace hwcomposer {
 
 
 
-}; // namespace hwc
-}; // namespace ufo
-}; // namespace intel
+};
+//}; // namespace hwc
+//}; // namespace ufo
+//}; // namespace intel
 
-#endif // INTEL_UFO_HWC_VIDEOMODEDETECTIONFILTER_H
+#endif // INTEL_COMMON_HWC_VIDEOMODEDETECTIONFILTER_H

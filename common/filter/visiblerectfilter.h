@@ -14,32 +14,34 @@
 // limitations under the License.
 */
 
-#ifndef INTEL_UFO_HWC_EMPTYFILTER_H
-#define INTEL_UFO_HWC_EMPTYFILTER_H
+#ifndef INTEL_COMMON_HWC_VISIBLERECTFILTER_H
+#define INTEL_COMMON_HWC_VISIBLERECTFILTER_H
 
+#ifdef uncomment
 #include <utils/List.h>
-#include "AbstractBufferManager.h"
-#include "AbstractFilter.h"
+#include <ui/GraphicBuffer.h>
+#endif
+#include "abstractfilter.h"
 
-namespace intel {
-namespace ufo {
-namespace hwc {
+//namespace intel {
+//namespace ufo {
+//namespace hwc {
+namespace hwcomposer {
 
-class EmptyFilter : public AbstractFilter
+class VisibleRectFilter : public AbstractFilter
 {
 public:
-    EmptyFilter();
-    virtual ~EmptyFilter();
+    VisibleRectFilter();
+    virtual ~VisibleRectFilter();
 
-    const char* getName() const { return "EmptyFilter"; }
+    const char* getName() const { return "VisibleRectFilter"; }
     const Content& onApply(const Content& ref);
-    String8 dump();
-
+    HWCString dump();
 protected:
-    buffer_handle_t getBlankBuffer(uint32_t width, uint32_t height);
-    void ageBlankBuffers();
+    bool displayStatePrepare( uint32_t d, uint32_t layerCount);
 
-    AbstractBufferManager& mBM;
+    // Figure out the smallest box that can cover all visible rects of this layer
+    HwcRect<int> getVisibleRegionBoundingBox(const Layer& layer);
 
     // Private reference to hold modified state
     Content mReference;
@@ -49,22 +51,14 @@ protected:
     {
         DisplayState() : mbWasModified(false) {}
         bool mbWasModified;
-        Layer mBlankLayer;
+        std::vector<Layer>  mLayers;   // layer list for this display
     };
     DisplayState mDisplayState[cMaxSupportedSFDisplays];
-
-    // Helper struct to contain per buffer state
-    struct BufferState
-    {
-        BufferState() : mFramesSinceLastUsed(0) {}
-        sp<GraphicBuffer> mpBuffer;
-        uint32_t mFramesSinceLastUsed;
-    };
-    List<BufferState> mBufferList;
 };
 
-}; // namespace hwc
-}; // namespace ufo
-}; // namespace intel
+};
+//}; // namespace hwc
+//}; // namespace ufo
+//}; // namespace intel
 
-#endif // INTEL_UFO_HWC_EMPTYFILTER_H
+#endif // INTEL_COMMON_HWC_VISIBLERECTFILTER_H

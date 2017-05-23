@@ -14,20 +14,21 @@
 // limitations under the License.
 */
 
-#include "Common.h"
-#include "Layer.h"
-#include "Log.h"
+#include "hwcutils.h"
+#include "layer.h"
+#include "log.h"
 
-#include "VideoModeDetectionFilter.h"
-#include "FilterManager.h"
+#include "videomodedetectionfilter.h"
+#include "filtermanager.h"
 
-using namespace intel::ufo::hwc;
+using namespace hwcomposer;
 
-namespace intel {
-namespace ufo {
-namespace hwc {
+//namespace intel {
+//namespace ufo {
+//namespace hwc {
+namespace hwcomposer {
 
 
 }; // namespace hwc
-}; // namespace ufo
-}; // namespace intel
+//}; // namespace ufo
+//}; // namespace intel

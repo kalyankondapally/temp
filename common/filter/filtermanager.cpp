@@ -14,14 +14,15 @@
 // limitations under the License.
 */
 
-#include "Common.h"
-#include "FilterManager.h"
-#include "Log.h"
+#include "hwcutils.h"
+#include "filtermanager.h"
+#include "log.h"
 
 
-namespace intel {
-namespace ufo {
-namespace hwc {
+//namespace intel {
+//namespace ufo {
+//namespace hwc {
+namespace hwcomposer {
 
 const Content& FilterManager::onApply(const Content& ref, FilterPosition first, FilterPosition last)
 {
@@ -29,9 +30,9 @@ const Content& FilterManager::onApply(const Content& ref, FilterPosition first, 
     validateGeometryChange( "FilterManager Entry SF", ref, mOldContent, mOldContentLayers );
 #endif
 
-    Mutex::Autolock _l(mLock);
+    mLock.lock();
 
-    ALOGD_IF(FILTER_DEBUG, "%s", ref.dump("FilterManager::onApply").string());
+    DTRACEIF(FILTER_DEBUG, "%s", ref.dump("FilterManager::onApply").string());
     // Apply all the filters to the input
     const Content* pRef = &ref;
     for (uint32_t f = 0; f < mFilters.size(); f++)
@@ -46,7 +47,7 @@ const Content& FilterManager::onApply(const Content& ref, FilterPosition first, 
         const Content* pNewRef = &pFilter->onApply(*pRef);
 
 #if INTEL_HWC_INTERNAL_BUILD
-        validateGeometryChange( String8::format( "F%d %s%s",
+        validateGeometryChange( HWCString::format( "F%d %s%s",
                                                   f,
                                                   pFilter->getName(),
                                                   pFilter->outputsPhysicalDisplays() ? "P" : "SF" ).string(),
@@ -55,16 +56,18 @@ const Content& FilterManager::onApply(const Content& ref, FilterPosition first, 
 
         if (pNewRef != pRef)
         {
+#ifdef uncomment
             // If the reference changed, then log the change
-            Log::add(*pNewRef, String8::format( "%s %s",
+            Log::add(*pNewRef, HWCString::format( "%s %s",
                                                 pFilter->getName(),
                                                 pFilter->outputsPhysicalDisplays() ? "P" : "SF" ).string() );
-            ALOGD_IF(FILTER_DEBUG, "Filter:%s", pNewRef->dump(pFilter->getName()).string());
+#endif
+            DTRACEIF(FILTER_DEBUG, "Filter:%s", pNewRef->dump(pFilter->getName()).string());
             pRef = pNewRef;
         }
 
     }
-
+    mLock.unlock();
     return *pRef;
 }
 
@@ -75,8 +78,9 @@ int FilterManager::compareFilterPositions( const FilterManager::Entry* lhs, cons
 
 void FilterManager::add(AbstractFilter& filter, FilterPosition position)
 {
-    Mutex::Autolock _l(mLock);
+    mLock.lock();
     Entry e(filter, position);
+#ifdef uncomment
     LOG_FATAL_IF( ( position < FilterPosition::DisplayManager ) && filter.outputsPhysicalDisplays( ),
                   "Filters < FilterPosition::DisplayManager must be in SF display space [POS:%u PHY:%d v GS:%u]",
                   position, filter.outputsPhysicalDisplays( ), FilterPosition::DisplayManager );
@@ -85,45 +89,51 @@ void FilterManager::add(AbstractFilter& filter, FilterPosition position)
                   position, filter.outputsPhysicalDisplays( ), FilterPosition::DisplayManager );
     mFilters.add(e);
     mFilters.sort( compareFilterPositions );
+#endif
+    mLock.unlock();
 }
 
 void FilterManager::remove(AbstractFilter& filter)
 {
-    Mutex::Autolock _l(mLock);
-    ALOGD_IF(FILTER_DEBUG, "Remove Filter: %s(%p)", filter.getName(), &filter);
+    mLock.lock();
+    DTRACEIF(FILTER_DEBUG, "Remove Filter: %s(%p)", filter.getName(), &filter);
 
     for (uint32_t f = 0; f < mFilters.size(); f++)
     {
         if (mFilters[f].mpFilter == &filter)
         {
-            ALOGD_IF(FILTER_DEBUG, "Filter:%d %s(%p) Removing", f, mFilters[f].mpFilter->getName(), &mFilters[f].mpFilter);
+            DTRACEIF(FILTER_DEBUG, "Filter:%d %s(%p) Removing", f, mFilters[f].mpFilter->getName(), &mFilters[f].mpFilter);
+#ifdef uncomment
             mFilters.removeAt(f);
+#endif
             break;
         }
     }
+    mLock.unlock();
 }
 
 void FilterManager::onOpen( Hwc& hwc )
 {
-    Mutex::Autolock _l(mLock);
+    mLock.lock();
     for (uint32_t f = 0; f < mFilters.size(); f++)
     {
         mFilters[f].mpFilter->onOpen( hwc );
     }
+    mLock.unlock();
 }
 
 
-String8 FilterManager::dump()
+HWCString FilterManager::dump()
 {
     if (!sbInternalBuild)
-        return String8();
+        return HWCString();
 
-    String8 output;
-    Mutex::Autolock _l(mLock);
+    HWCString output;
+    mLock.lock();
     for (const Entry& f : mFilters)
     {
-        ALOGD_IF(FILTER_DEBUG, "dumping filter %s", f.mpFilter->getName());
-        String8 fdump = f.mpFilter->dump();
+        DTRACEIF(FILTER_DEBUG, "dumping filter %s", f.mpFilter->getName());
+        HWCString fdump = f.mpFilter->dump();
         if ( fdump.size() )
         {
             output += f.mpFilter->getName();
@@ -132,7 +142,7 @@ String8 FilterManager::dump()
             output.append("\n");
         }
     }
-
+    mLock.unlock();
     return output;
 }
 
@@ -198,9 +208,10 @@ bool FilterManager::validateGeometryChange( const char* pchPrefix,
 
     return ( !bError && !bWarning );
 }
-
 #endif
 
-}; // namespace hwc
-}; // namespace ufo
-}; // namespace intel
+};
+
+//}; // namespace hwc
+//}; // namespace ufo
+//}; // namespace intel

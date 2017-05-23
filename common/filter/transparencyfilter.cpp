@@ -14,20 +14,26 @@
 // limitations under the License.
 */
 
-#include "Common.h"
-#include "TransparencyFilter.h"
-#include "FilterManager.h"
-#include "CompositionManager.h"
-#include "Layer.h"
+#include <hwcdefs.h>
+
+#include "hwcutils.h"
+#include "transparencyfilter.h"
+#include "filtermanager.h"
+#include "layer.h"
+
+#ifdef uncomment
+#include "compositionmanager.h"
 #include <ui/GraphicBufferMapper.h>
 #include <ui/Rect.h>
 #include <utils/Thread.h>
-#include "AbstractBufferManager.h"
-#include <Utils.h>
+#include "abstractbuffermanager.h"
+#endif
+#include <utils.h>
 
-namespace intel {
-namespace ufo {
-namespace hwc {
+//namespace intel {
+//namespace ufo {
+//namespace hwc {
+namespace hwcomposer {
 
 #define TRANSPARENCY_FILTER_DEBUG 0
 #define FRAMES_BEFORE_CHECK_BASE  30
@@ -36,13 +42,15 @@ namespace hwc {
 // Factory class will self register
 TransparencyFilter gTransparencyFilter;
 
+#ifdef uncomment
 class TransparencyFilter::DetectionThread : public Thread
 {
 public:
-    DetectionThread(sp<GraphicBuffer> pLinearBuffer, hwc_frect_t activeRect);
+    DetectionThread(std::sp<GraphicBuffer> pLinearBuffer, HwcRect<float> activeRect);
     virtual ~DetectionThread();
 
     const char* getName() const                     { return "TransparencyFilter"; }
+
     const Content& onApply(const Content& ref);
 
     const Layer& getLayer()                         { return mDetectionLayer; }
@@ -59,9 +67,9 @@ private:
 private:
     // Private reference to hold modified state
     sp<GraphicBuffer>   mpLinearBuffer;     // Linear copy of the buffer for rapid processing
-    hwc_frect_t         mActiveRect;
+    HwcRect<float>         mActiveRect;
     Layer               mDetectionLayer;    // Layer currently being detected
-    hwc_rect_t          mBlackMask;
+    HwcRect<int>          mBlackMask;
     bool                mbFinished;
     bool                mbResult;
 };
@@ -79,42 +87,43 @@ TransparencyFilter::DetectionThread::DetectionThread(sp<GraphicBuffer> pLinearBu
 
 TransparencyFilter::DetectionThread::~DetectionThread()
 {
-    ALOGD_IF(TRANSPARENCY_FILTER_DEBUG, "TransparencyFilter::TransparencyFilter::~DetectionThread");
+    DTRACEIF(TRANSPARENCY_FILTER_DEBUG, "TransparencyFilter::TransparencyFilter::~DetectionThread");
 }
 
 bool TransparencyFilter::DetectionThread::threadLoop()
 {
-    ALOGD_IF(TRANSPARENCY_FILTER_DEBUG, "TransparencyFilter: threadLoop");
+    DTRACEIF(TRANSPARENCY_FILTER_DEBUG, "TransparencyFilter: threadLoop");
     mDetectionLayer.waitRendering(ms2ns( 1000 ));
 
     // Look for a some kind of transparent window possibly with a black outline
     // Abort the entire check if we find any non black, non transparent pixel
-
+#ifdef uncomment
     GraphicBufferMapper& mapper = GraphicBufferMapper::get();
     void* pvBuffer = NULL;
     status_t r = mapper.lock(mDetectionLayer.getHandle(), GRALLOC_USAGE_SW_READ_OFTEN, Rect(0, 0, mDetectionLayer.getBufferWidth(), mDetectionLayer.getBufferHeight()), &pvBuffer);
     if (r != OK)
     {
-        ALOGD_IF(TRANSPARENCY_FILTER_DEBUG, "TransparencyFilter: Failed to lock surface");
+        DTRACEIF(TRANSPARENCY_FILTER_DEBUG, "TransparencyFilter: Failed to lock surface");
         return false;
     }
+#endif
 
     detect((uint32_t*)pvBuffer);
 
-    ALOGD_IF (TRANSPARENCY_FILTER_DEBUG, "Detect result: %d", mbResult);
+    DTRACEIF (TRANSPARENCY_FILTER_DEBUG, "Detect result: %d", mbResult);
 
 #ifdef DUMP_UNTRANSPARENT_LAYER
     if (!mbResult)
     {
         static int count = 0;
-        mDetectionLayer.dumpContentToTGA(String8::format("NotTransparent%d", count));
+        mDetectionLayer.dumpContentToTGA(HWCString::format("NotTransparent%d", count));
         count++;
     }
 #endif
 
     mapper.unlock(mDetectionLayer.getHandle());
     mpLinearBuffer = NULL;
-    ALOGD_IF(TRANSPARENCY_FILTER_DEBUG, "TransparencyFilter: threadLoop Finished");
+    DTRACEIF(TRANSPARENCY_FILTER_DEBUG, "TransparencyFilter: threadLoop Finished");
     mbFinished = true;
     return false;
 }
@@ -126,10 +135,11 @@ bool TransparencyFilter::DetectionThread::isDetected(hwc_rect* pBlackMask)
 
     return mbResult;
 }
+#endif
 
 static inline bool checkRegionForColor(uint32_t color, uint32_t* pBuffer, uint32_t strideInPixels, uint32_t x1, uint32_t y1, uint32_t x2, uint32_t y2)
 {
-    ATRACE_CALL_IF(DISPLAY_TRACE);
+    DTRACEIF(DISPLAY_TRACE);
     pBuffer += y1 * strideInPixels;
     for (uint32_t y = y1; y < y2; y++)
     {
@@ -137,7 +147,7 @@ static inline bool checkRegionForColor(uint32_t color, uint32_t* pBuffer, uint32
         {
             if (pBuffer[x] != color)
             {
-                ALOGD_IF(TRANSPARENCY_FILTER_DEBUG, "TransparencyFilter: checkRegionForColor %d, %d, %d, %d Failed at %d, %d", x1, y1, x2, y2, x, y);
+                DTRACEIF(TRANSPARENCY_FILTER_DEBUG, "TransparencyFilter: checkRegionForColor %d, %d, %d, %d Failed at %d, %d", x1, y1, x2, y2, x, y);
                 return false;
             }
         }
@@ -148,7 +158,7 @@ static inline bool checkRegionForColor(uint32_t color, uint32_t* pBuffer, uint32
 
 static inline bool checkRegionForColor(uint32_t color1, uint32_t color2, uint32_t* pBuffer, uint32_t strideInPixels, uint32_t x1, uint32_t y1, uint32_t x2, uint32_t y2)
 {
-    ATRACE_CALL_IF(DISPLAY_TRACE);
+    DTRACEIF(DISPLAY_TRACE);
     pBuffer += y1 * strideInPixels;
     for (uint32_t y = y1; y < y2; y++)
     {
@@ -156,7 +166,7 @@ static inline bool checkRegionForColor(uint32_t color1, uint32_t color2, uint32_
         {
             if (pBuffer[x] != color1 && pBuffer[x] != color2)
             {
-                ALOGD_IF(TRANSPARENCY_FILTER_DEBUG, "TransparencyFilter: checkRegionForColor %d, %d, %d, %d Failed at %d, %d", x1, y1, x2, y2, x, y);
+                DTRACEIF(TRANSPARENCY_FILTER_DEBUG, "TransparencyFilter: checkRegionForColor %d, %d, %d, %d Failed at %d, %d", x1, y1, x2, y2, x, y);
                 return false;
             }
         }
@@ -166,9 +176,9 @@ static inline bool checkRegionForColor(uint32_t color1, uint32_t color2, uint32_
 }
 
 
-static hwc_frect_t rotateRect (const hwc_frect_t& rect, ETransform transform)
+static HwcRect<float> rotateRect (const HwcRect<float>& rect, ETransform transform)
 {
-    hwc_frect_t rotatedRect = rect;
+    HwcRect<float> rotatedRect = rect;
     switch (transform)
     {
         case ETransform::NONE :
@@ -197,9 +207,10 @@ static hwc_frect_t rotateRect (const hwc_frect_t& rect, ETransform transform)
     return rotatedRect;
 }
 
+#ifdef uncomment
 void TransparencyFilter::DetectionThread::detect(uint32_t* pBuffer)
 {
-    ATRACE_CALL_IF(DISPLAY_TRACE);
+    DTRACEIF(DISPLAY_TRACE);
 
     const static int BLACK = 0xFF000000;
     const static int TRANSPARENT = 0x00000000;
@@ -207,10 +218,10 @@ void TransparencyFilter::DetectionThread::detect(uint32_t* pBuffer)
     uint32_t w = mDetectionLayer.getBufferWidth();
     uint32_t h = mDetectionLayer.getBufferHeight();
     uint32_t s = mDetectionLayer.getBufferPitch() / 4;
-    ALOGD_IF(TRANSPARENCY_FILTER_DEBUG, "TransparencyFilter: detect %dx%d %d", w, h, s);
+    DTRACEIF(TRANSPARENCY_FILTER_DEBUG, "TransparencyFilter: detect %dx%d %d", w, h, s);
 
     // Now we only detect the layers which intersacted with video
-    hwc_rect_t overlappedRect;
+    HwcRect<int> overlappedRect;
     if (!computeOverlap (floatToIntRect(mActiveRect), mDetectionLayer.getDst(), &overlappedRect))
     {
         ALOGD_IF(TRANSPARENCY_FILTER_DEBUG, "Not intersacted with video layer, skip it");
@@ -219,17 +230,17 @@ void TransparencyFilter::DetectionThread::detect(uint32_t* pBuffer)
     mActiveRect = intToFloatRect(overlappedRect);
 
     // Compute the transparent area based on video rect
-    hwc_frect_t inCordSpace = rotateRect(intToFloatRect(mDetectionLayer.getDst()), mDetectionLayer.getTransform());
-    hwc_frect_t outCordSpace = mDetectionLayer.getSrc();
-    hwc_frect_t activeSrcRect = rotateRect(mActiveRect, mDetectionLayer.getTransform());
-    hwc_frect_t activeDstRect;
+    HwcRect<float> inCordSpace = rotateRect(intToFloatRect(mDetectionLayer.getDst()), mDetectionLayer.getTransform());
+    HwcRect<float> outCordSpace = mDetectionLayer.getSrc();
+    HwcRect<float> activeSrcRect = rotateRect(mActiveRect, mDetectionLayer.getTransform());
+    HwcRect<float> activeDstRect;
     computeRelativeRect ( inCordSpace, outCordSpace, activeSrcRect, activeDstRect );
 
-    ALOGD_IF(TRANSPARENCY_FILTER_DEBUG, "UI DST: %d %d %d %d, InCordSpace: %f %f %f %f, OutCordSpace: %f %f %f %f",
+    DTRACEIF(TRANSPARENCY_FILTER_DEBUG, "UI DST: %d %d %d %d, InCordSpace: %f %f %f %f, OutCordSpace: %f %f %f %f",
                                         mDetectionLayer.getDst().left, mDetectionLayer.getDst().top, mDetectionLayer.getDst().right, mDetectionLayer.getDst().bottom,
                                         inCordSpace.left, inCordSpace.top, inCordSpace.right, inCordSpace.bottom,
                                         outCordSpace.left, outCordSpace.top, outCordSpace.right, outCordSpace.bottom);
-    ALOGD_IF(TRANSPARENCY_FILTER_DEBUG, "Video SRC: %f %f %f %f, Video SRC rotate: %f %f %f %f, Video DST: %f, %f, %f, %f, Transform: %d",
+    DTRACEIF(TRANSPARENCY_FILTER_DEBUG, "Video SRC: %f %f %f %f, Video SRC rotate: %f %f %f %f, Video DST: %f, %f, %f, %f, Transform: %d",
                                         mActiveRect.left, mActiveRect.top, mActiveRect.right, mActiveRect.bottom,
                                         activeSrcRect.left, activeSrcRect.top, activeSrcRect.right, activeSrcRect.bottom,
                                         activeDstRect.left, activeDstRect.top, activeDstRect.right, activeDstRect.bottom,
@@ -238,20 +249,20 @@ void TransparencyFilter::DetectionThread::detect(uint32_t* pBuffer)
     uint32_t bt = activeDstRect.top;
     uint32_t br = activeDstRect.right;
     uint32_t bb = activeDstRect.bottom;
-    ALOGD_IF(TRANSPARENCY_FILTER_DEBUG, "Blackmask %d %d %d %d", bl, bt, br, bb);
+    DTRACEIF(TRANSPARENCY_FILTER_DEBUG, "Blackmask %d %d %d %d", bl, bt, br, bb);
 
     // Perform a complete check of a the whole layer.
     // For the case that the layer is full transparent, we need check black and transparent simultaneously for non-video region
     if (!checkRegionForColor(BLACK, TRANSPARENT, pBuffer, s, 0,  bb, w,  h )) return;   // Bottom
-    ALOGD_IF(TRANSPARENCY_FILTER_DEBUG, "Bottom check pass, %d %d %d %d", 0, bb, w, h);
+    DTRACEIF(TRANSPARENCY_FILTER_DEBUG, "Bottom check pass, %d %d %d %d", 0, bb, w, h);
     if (!checkRegionForColor(BLACK, TRANSPARENT, pBuffer, s, 0,  0,  w,  bt)) return;   // Top
-    ALOGD_IF(TRANSPARENCY_FILTER_DEBUG, "Top check pass, %d %d %d %d", 0, 0, w, bt);
+    DTRACEIF(TRANSPARENCY_FILTER_DEBUG, "Top check pass, %d %d %d %d", 0, 0, w, bt);
     if (!checkRegionForColor(BLACK, TRANSPARENT, pBuffer, s, 0,  bt, bl, bb)) return;   // Left
-    ALOGD_IF(TRANSPARENCY_FILTER_DEBUG, "Left check pass, %d %d %d %d", 0, bt, bl, bb);
+    DTRACEIF(TRANSPARENCY_FILTER_DEBUG, "Left check pass, %d %d %d %d", 0, bt, bl, bb);
     if (!checkRegionForColor(BLACK, TRANSPARENT, pBuffer, s, br, bt, w,  bb)) return;   // Right
-    ALOGD_IF(TRANSPARENCY_FILTER_DEBUG, "Right check pass, %d %d %d %d", br, bt, w, bb);
+    DTRACEIF(TRANSPARENCY_FILTER_DEBUG, "Right check pass, %d %d %d %d", br, bt, w, bb);
     if (!checkRegionForColor(TRANSPARENT, pBuffer, s, bl, bt, br, bb)) return;   // Middle
-    ALOGD_IF(TRANSPARENCY_FILTER_DEBUG, "Middle check pass, %d %d %d %d", bl, bt, br, bb);
+    DTARCEIF(TRANSPARENCY_FILTER_DEBUG, "Middle check pass, %d %d %d %d", bl, bt, br, bb);
 
     // Setup the detected blackmask region.
     mBlackMask.left = bl;
@@ -261,19 +272,28 @@ void TransparencyFilter::DetectionThread::detect(uint32_t* pBuffer)
 
     mbResult = true;
 }
+#endif
 
 TransparencyFilter::DetectionItem::DetectionItem() :
+#ifdef uncomment
     mBM( AbstractBufferManager::get() ),
     mCurrentHandle(0),
+#endif
     mRepeatCount(0),
     mbEnabled(0),
+#ifdef uncomment
     mpLinearBuffer(NULL),
+#endif
     mFramesBeforeCheck(0),
+#ifdef uncomment
     mpDetectionThread(NULL),
+#endif
     mbFirstEnabledFrame(0),
     mbFirstDisabledFrame(0)
 {
+#ifdef uncomment
     memset(&mBlackMask, 0, sizeof(mBlackMask));
+#endif
 }
 
 TransparencyFilter::DetectionItem::~DetectionItem()
@@ -283,7 +303,9 @@ TransparencyFilter::DetectionItem::~DetectionItem()
 void TransparencyFilter::DetectionItem::reset()
 {
     mRepeatCount = 0;
+#ifdef uncomment
     mCurrentHandle = 0;
+#endif
 }
 
 void TransparencyFilter::DetectionItem::updateRepeatCounts(const Layer& ly)
@@ -295,6 +317,7 @@ void TransparencyFilter::DetectionItem::updateRepeatCounts(const Layer& ly)
         // invalidate on any geometry change, however this can cause a lot of costly extra
         // gpu composition and checking, so we only reset if we havnt yet checked the buffer contents
         // TODO: Hook into gralloc delete callback to invalidate instead.
+#ifdef uncomment
         if (ly.getHandle() != mCurrentHandle)
         {
             mCurrentHandle = ly.getHandle();
@@ -304,23 +327,27 @@ void TransparencyFilter::DetectionItem::updateRepeatCounts(const Layer& ly)
         {
             mRepeatCount++;
         }
+#endif
     }
     else
     {
         mRepeatCount = 0;
+#ifdef uncomment
         mCurrentHandle = 0;
+#endif
     }
 }
 
-void TransparencyFilter::DetectionItem::initiateDetection(const Layer& layer, hwc_frect_t activeRect)
+void TransparencyFilter::DetectionItem::initiateDetection(const Layer& layer, HwcRect<float> activeRect)
 {
-    ATRACE_CALL_IF(DISPLAY_TRACE);
-    ALOGD_IF(TRANSPARENCY_FILTER_DEBUG, "TransparencyFilter: initiateDetection");
+    DTRACEIF(DISPLAY_TRACE);
+    DTRACEIF(TRANSPARENCY_FILTER_DEBUG, "TransparencyFilter: initiateDetection");
 
+#ifdef uncomment
     // Double check to ensure that detection isnt already running.
     if (mpDetectionThread != NULL)
     {
-        ALOGD_IF(TRANSPARENCY_FILTER_DEBUG, "TransparencyFilter: Already running");
+        DTRACEIF(TRANSPARENCY_FILTER_DEBUG, "TransparencyFilter: Already running");
         return;
     }
 
@@ -333,18 +360,17 @@ void TransparencyFilter::DetectionItem::initiateDetection(const Layer& layer, hw
 						  DRM_FORMAT_ABGR8888,
                                                   GRALLOC_USAGE_SW_READ_OFTEN | GRALLOC_USAGE_HW_RENDER | GRALLOC_USAGE_HW_COMPOSER );
 
-        ALOGD_IF(TRANSPARENCY_FILTER_DEBUG, "Re-allocate linear buffer, origin size: %d %d, requested size: %d %d, handle: %p",
+        DTRACEIF(TRANSPARENCY_FILTER_DEBUG, "Re-allocate linear buffer, origin size: %d %d, requested size: %d %d, handle: %p",
                  mpLinearBuffer->getWidth(), mpLinearBuffer->getHeight(), layer.getBufferWidth(), layer.getBufferHeight(), mpLinearBuffer->handle);
     }
 
     if (mpLinearBuffer == NULL)
     {
-        ALOGD_IF(TRANSPARENCY_FILTER_DEBUG, "TransparencyFilter: Failed to allocate linear buffer");
+        DTRACEIF(TRANSPARENCY_FILTER_DEBUG, "TransparencyFilter: Failed to allocate linear buffer");
         return;
     }
 
     mpDetectionThread = new DetectionThread(mpLinearBuffer, activeRect);
-
     // we only need copy the whole bufer but don't want to use other original info like src rect, dst rect, rotation flag....
     Layer clonedLayer[1];
     clonedLayer[0].onUpdateAll(layer.getHandle());
@@ -357,6 +383,7 @@ void TransparencyFilter::DetectionItem::initiateDetection(const Layer& layer, hw
 
     // Start the low priority detection thread
     mpDetectionThread->run("Detect_thread", PRIORITY_BACKGROUND);
+#endif
 }
 
 void TransparencyFilter::DetectionItem::filterLayers(Content& ref)
@@ -371,6 +398,7 @@ void TransparencyFilter::DetectionItem::filterLayers(Content& ref)
         {
             for (uint32_t i = 1; i < numLayers; i++)
             {
+#ifdef uncomment
                 if (layers[i].getHandle() == mCurrentHandle)
                 {
                     Content::LayerStack& layers = ref.editDisplay(d).editLayerStack();
@@ -382,6 +410,7 @@ void TransparencyFilter::DetectionItem::filterLayers(Content& ref)
                     layers.updateLayerFlags();
                     --numLayers;
                }
+#endif
             }
         }
     }
@@ -389,20 +418,23 @@ void TransparencyFilter::DetectionItem::filterLayers(Content& ref)
 
 void TransparencyFilter::DetectionItem::garbageCollect(void)
 {
+#ifdef uncomment
     if (mpLinearBuffer != NULL)
     {
         Log::alogd(TRANSPARENCY_FILTER_DEBUG, "TransparencyFilter : Garbage collect linear buffer %p", mpLinearBuffer->handle );
         mpLinearBuffer = NULL;
     }
+#endif
 }
 
-String8 TransparencyFilter::DetectionItem::dump()
+HWCString TransparencyFilter::DetectionItem::dump()
 {
     if (!sbInternalBuild)
-        return String8();
-
-    return String8::format("DetectionItem %s (%d,%d,%d,%d)", mbEnabled ? "true" : "false",
+        return HWCString();
+#ifdef uncomment
+    return HWCString::format("DetectionItem %s (%d,%d,%d,%d)", mbEnabled ? "true" : "false",
                             mBlackMask.left, mBlackMask.top, mBlackMask.right, mBlackMask.bottom);
+#endif
 }
 
 TransparencyFilter::TransparencyFilter() :
@@ -450,7 +482,7 @@ const Content& TransparencyFilter::onApply(const Content& ref)
     }
 
     // Check if have video
-    hwc_frect_t activeRect;
+    HwcRect<float> activeRect;
     uint32_t videoIndex;
     bool bHaveVideo = false;
     for (uint32_t i = 0; i < layers.size(); i++)
@@ -476,7 +508,7 @@ const Content& TransparencyFilter::onApply(const Content& ref)
     bool bNeedChangeRef = false;
 
     uint32_t detectionNum = min(MAX_DETECT_LAYERS, (int)(layers.size()));
-    ALOGD_IF(TRANSPARENCY_FILTER_DEBUG && mDetectionNum != detectionNum, "TransparencyFilter: need detect %d layers", detectionNum);
+    DTRACEIF(TRANSPARENCY_FILTER_DEBUG && mDetectionNum != detectionNum, "TransparencyFilter: need detect %d layers", detectionNum);
 
     // Reset counters on any new layers since the last frame
     if (detectionNum > mDetectionNum)
@@ -498,16 +530,19 @@ const Content& TransparencyFilter::onApply(const Content& ref)
         // If we were enabled previously, and now we have a new frame,
         if (curD->mbEnabled && curD->mRepeatCount < curD->mFramesBeforeCheck)
         {
-            ALOGD_IF(TRANSPARENCY_FILTER_DEBUG, "TransparencyFilter: %dth layer, Last frame, Disable %d %d",
+            DTRACEIF(TRANSPARENCY_FILTER_DEBUG, "TransparencyFilter: %dth layer, Last frame, Disable %d %d",
                      i, curD->mbEnabled, curD->mRepeatCount);
             // Just need to provoke one final geometry change and disable for the next frame.
             curD->mbFirstDisabledFrame = true;
             bNeedChangeRef = true;
             curD->mbEnabled = false;
+#ifdef uncomment
             curD->mpDetectionThread = NULL;
+#endif
         }
 
         const Content::LayerStack& layers = ref.getDisplay(0).getLayerStack();
+#ifdef uncomment
         // If the repeat count matches, then we need to trigger a check for enable
         if (curD->mpDetectionThread == NULL && curD->mRepeatCount == curD->mFramesBeforeCheck)
         {
@@ -519,15 +554,14 @@ const Content& TransparencyFilter::onApply(const Content& ref)
                 if (!mDetection[j].mbEnabled)
                 {
                     combineRect(activeRect, intToFloatRect(layers[j].getDst()));
-                    ALOGD_IF(TRANSPARENCY_FILTER_DEBUG, "Combine with layer %d, Adjusted video rect to %f %f %f %f",
+                    DTRACEIF(TRANSPARENCY_FILTER_DEBUG, "Combine with layer %d, Adjusted video rect to %f %f %f %f",
                              j, activeRect.left, activeRect.top, activeRect.right, activeRect.bottom);
                 }
             }
 
-            ALOGD_IF(TRANSPARENCY_FILTER_DEBUG, "Start to detect %dth layer", i);
+            DTRACEIF(TRANSPARENCY_FILTER_DEBUG, "Start to detect %dth layer", i);
             curD->initiateDetection(layers[i], activeRect);
         }
-
         if (!curD->mbEnabled && curD->mpDetectionThread != NULL && curD->mpDetectionThread->isFinished())
         {
             if (curD->mpDetectionThread->isDetected(&curD->mBlackMask) && curD->mRepeatCount >= curD->mFramesBeforeCheck)
@@ -537,6 +571,7 @@ const Content& TransparencyFilter::onApply(const Content& ref)
             }
             curD->mpDetectionThread = NULL;
         }
+#endif
 
         if (curD->mbEnabled)
         {
@@ -580,17 +615,18 @@ String8 TransparencyFilter::dump()
     if (!sbInternalBuild)
         return String8();
 
-    String8 output;
+    HWCString output;
 
-    output += String8::format("Detect %d layers", mDetectionNum);
+    output += HWCString::format("Detect %d layers", mDetectionNum);
     for (uint32_t i = 0; i < mDetectionNum; i++)
     {
-        output += String8(" ") + mDetection[i].dump();
+        output += HWCString(" ") + mDetection[i].dump();
     }
 
     return output;
 }
 
-}; // namespace hwc
-}; // namespace ufo
-}; // namespace intel
+};
+//}; // namespace hwc
+//}; // namespace ufo
+//}; // namespace intel
