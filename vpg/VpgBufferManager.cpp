@@ -249,7 +249,7 @@ String8 VpgBufferManager::Buffer::dump( bool bExpand )
     if ( bExpand )
     {
         String8 formatTilingStr = String8::format( "%3u/%5s:%s",
-            mInfo.format, getHALFormatShortString( mInfo.format ),
+	    mInfo.format, getDRMFormatString( mInfo.format ),
             getTilingFormatString( mTilingFormat ) );
         expand = String8::format( " [%4ux%4u %11s 0x%08x]",
             mInfo.width, mInfo.height, formatTilingStr.string(), mInfo.usage );

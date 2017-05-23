@@ -57,13 +57,9 @@ public:
     bool            isPreferred() const     { return mFlags & Flag_Preferred; }
     bool            isInterlaced() const    { return mFlags & Flag_Interlaced; }
 
-#ifdef uncomment
     String8         dump() const;
     static   String8    dumpRatio(EAspectRatio t);
-#else
-    static   String8    dumpRatio(EAspectRatio t) { }
-    String8         dump() const { }
-#endif
+
 private:
     uint32_t        mWidth;
     uint32_t        mHeight;

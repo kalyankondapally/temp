@@ -577,7 +577,7 @@ enum {
 #ifdef uncomment
 // Utility function - returns human-readable string from a HAL format number.
 const char* getHALFormatString( int32_t halFormat );
-const char* getHALFormatShortString( int32_t halFormat );
+const char* getDRMFormatString( int32_t halFormat );
 // Utility function - returns human-readable string from a DRM format number.
 const char* getDRMFormatString( int32_t drmFormat );
 // Utility function - returns human-readable string from a Tiling format number.

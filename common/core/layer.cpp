@@ -551,7 +551,7 @@ String8 Layer::dump(const char* pPrefix) const
     output.appendFormat(":%1.2f", mPlaneAlpha);
 
     String8 format = String8::format("%s:%s",
-                        getHALFormatShortString(mBufferDetails.getFormat()),
+			getDRMFormatString(mBufferDetails.getFormat()),
                         getTilingFormatString(mBufferDetails.getTilingFormat()));
     output.appendFormat(" %-7.7s ", format.string());
 

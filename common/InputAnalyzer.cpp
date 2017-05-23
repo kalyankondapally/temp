@@ -108,12 +108,12 @@ void InputAnalyzer::Display::onPrepare(hwc_display_contents_1_t* pDisplayContent
             ref.setDisplayType( displayType );
         }
         displayFormat = pHwDisplay->getDefaultOutputFormat();
-        ALOGD_IF(CONTENT_DEBUG, "InputAnalyzer::Display::onPrepare format = %s (default output)", getHALFormatShortString( displayFormat ));
+	ALOGD_IF(CONTENT_DEBUG, "InputAnalyzer::Display::onPrepare format = %s (default output)", getDRMFormatString( displayFormat ));
     }
     else
     {
         ref.setDisplayType(eDTUnspecified);
-        ALOGD_IF(CONTENT_DEBUG, "InputAnalyzer::Display::onPrepare format = %s (INTEL_HWC_DEFAULT_HAL_PIXEL_FORMAT)", getHALFormatShortString(INTEL_HWC_DEFAULT_HAL_PIXEL_FORMAT));
+	ALOGD_IF(CONTENT_DEBUG, "InputAnalyzer::Display::onPrepare format = %s (INTEL_HWC_DEFAULT_HAL_PIXEL_FORMAT)", getDRMFormatString(INTEL_HWC_DEFAULT_HAL_PIXEL_FORMAT));
     }
 
     // Handle display geometry change requests
@@ -250,7 +250,7 @@ void InputAnalyzer::Display::onPrepare(hwc_display_contents_1_t* pDisplayContent
     {
         // Make sure a geometry change is issued if the display format changes
         ALOGD_IF(CONTENT_DEBUG, "Content::Display output format changed from %s to %s, forcing geometry change",
-                                getHALFormatShortString(ref.getFormat()), getHALFormatShortString(displayFormat));
+				getDRMFormatString(ref.getFormat()), getDRMFormatString(displayFormat));
 
         ref.setGeometryChanged(true);
         ref.setFormat(displayFormat);;

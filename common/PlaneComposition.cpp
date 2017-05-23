@@ -231,7 +231,7 @@ bool PlaneComposition::addFullScreenComposition(const DisplayCaps& caps, uint32_
     ALOG_ASSERT(overlayIndex < MAX_PLANES);
     ALOG_ASSERT(mpCompositionManager);
 
-    ALOGD_IF(COMPOSITION_DEBUG, "PlaneComposition::addFullScreenComposition ov:%d srcIndex:%d Num:%d to input format %s", overlayIndex, srcLayerIndex, numLayers, getHALFormatShortString(colorFormat));
+    ALOGD_IF(COMPOSITION_DEBUG, "PlaneComposition::addFullScreenComposition ov:%d srcIndex:%d Num:%d to input format %s", overlayIndex, srcLayerIndex, numLayers, getDRMFormatString(colorFormat));
 
     PlaneState& state = mPlaneState[overlayIndex];
     ALOG_ASSERT(state.mStartIndex < 0); // Should never initialise a layer twice
@@ -272,7 +272,7 @@ bool PlaneComposition::addSourcePreprocess(const DisplayCaps& caps, uint32_t ove
     ALOG_ASSERT(overlayIndex < MAX_PLANES);
     ALOG_ASSERT(mpCompositionManager);
 
-    ALOGD_IF(COMPOSITION_DEBUG, "PlaneComposition::addSourcePreprocess ov:%d srcIndex:%d Format:%s", overlayIndex, srcLayerIndex, getHALFormatShortString(colorFormat));
+    ALOGD_IF(COMPOSITION_DEBUG, "PlaneComposition::addSourcePreprocess ov:%d srcIndex:%d Format:%s", overlayIndex, srcLayerIndex, getDRMFormatString(colorFormat));
 
     PlaneState& state = mPlaneState[overlayIndex];
     ALOG_ASSERT(state.mStartIndex < 0); // Should never initialise a layer twice

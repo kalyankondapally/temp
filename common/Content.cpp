@@ -368,7 +368,7 @@ HWCString Content::Display::dumpHeader() const
                            mFrameIndex,
                            mFrameReceivedTime/1000000000, (mFrameReceivedTime%1000000000)/1000000,
                            getRetireFenceReturn(), getRetireFence(),
-                           mWidth, mHeight, mRefresh, getHALFormatShortString(mFormat),
+			   mWidth, mHeight, mRefresh, getDRMFormatString(mFormat),
                            mDmIndex == INVALID_DISPLAY_ID ? "Dm:invalid" : HWCString::format( "Dm:%u", mDmIndex ).string(),
                            isOutputScaled()   ? HWCString::format( "OutputScaled [%d,%d,%d,%d] ",
                                                 mOutputScaledDst.left, mOutputScaledDst.top,

@@ -159,7 +159,7 @@ void Buffer::reconfigure( uint32_t w, uint32_t h, int32_t format, uint32_t  usag
         reallocate( w, h, format, usage );
     }
     ETRACEIF( !allocationOK(), "BufferQueue failed to reconfigure [%ux%u fmt:%u/%s usage:0x%x]",
-            w, h, format, getHALFormatShortString(format), usage );
+	    w, h, format, getDRMFormatString(format), usage );
 }
 
 bool Buffer::matchesConfiguration(uint32_t w, uint32_t h, int32_t format, uint32_t  usage)
@@ -190,7 +190,7 @@ HWCString Buffer::dump( void )
 		    this, mpGraphicBuffer.get()->handle, mSizeBytes, mbShared ? " (shared)" : "",
 		     mBuffer.width, mBuffer.height,
 #ifdef uncomment
-		    getHALFormatShortString(mBuffer.format),
+		    getDRMFormatString(mBuffer.format),
 #else
 			     String8(),
 #endif
@@ -530,7 +530,7 @@ BufferQueue::BufferHandle BufferQueue::dequeue(uint32_t width, uint32_t height, 
     {
 #ifdef uncomment
 	DTRACEIF( BUFFERQUEUE_DEBUG, "BufferQueue::dequeue Using alpha equivalent format %d/%s for %d/%s",
-            altFormat, getHALFormatShortString( altFormat ), bufferFormat, getHALFormatShortString( bufferFormat ) );
+	    altFormat, getDRMFormatString( altFormat ), bufferFormat, getDRMFormatString( bufferFormat ) );
 #endif
         bufferFormat = altFormat;
     }

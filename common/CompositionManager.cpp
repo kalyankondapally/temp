@@ -227,7 +227,7 @@ bool CompositionManager::Composition::match(const Content::LayerStack& src, uint
     {
         ALOGD_IF(COMPOSITION_DEBUG, "Mismatched width %d=%d , height %d=%d, format %s=%s or compression %u=%u",
             width, mRenderTarget.getDstWidth(), height, mRenderTarget.getDstHeight(),
-            getHALFormatShortString(format), getHALFormatShortString(mCompositionFormat),
+	    getDRMFormatString(format), getDRMFormatString(mCompositionFormat),
             compression, mRenderTarget.getBufferCompression());
         return false;
     }
@@ -342,13 +342,13 @@ void CompositionManager::Composition::onUpdateAll(const Content::LayerStack& src
     {
         mRenderTarget.setBlending( EBlendMode::PREMULT );
         ALOGD_IF( COMPOSITION_DEBUG, "CompositionManager::onUpdateAll: Enable blending for requested alpha format %d/%s",
-            mCompositionFormat, getHALFormatShortString( mCompositionFormat ) );
+	    mCompositionFormat, getDRMFormatString( mCompositionFormat ) );
     }
     else
     {
         mRenderTarget.setBlending( EBlendMode::NONE );
         ALOGD_IF( COMPOSITION_DEBUG, "CompositionManager::onUpdateAll: Disable blending for requested opaque format %d/%s",
-            mCompositionFormat, getHALFormatShortString( mCompositionFormat ) );
+	    mCompositionFormat, getDRMFormatString( mCompositionFormat ) );
     }
     mRenderTarget.setPlaneAlpha(1.0f);
     mRenderTarget.setBufferFormat(format);
@@ -783,7 +783,7 @@ void CompositionManager::onEndOfFrame( uint32_t hwcFrameIndex )
 
 AbstractComposition* CompositionManager::requestComposition(const Content::LayerStack& src, uint32_t width, uint32_t height, uint32_t format, ECompressionType compression, AbstractComposer::Cost type)
 {
-    ALOGD_IF( COMPOSITION_DEBUG, "CompositionManager::requestComposition: Looking for composition to %dx%d %s. compositions known:%d %p", width, height, getHALFormatShortString(format), mCompositions.size(), this);
+    ALOGD_IF( COMPOSITION_DEBUG, "CompositionManager::requestComposition: Looking for composition to %dx%d %s. compositions known:%d %p", width, height, getDRMFormatString(format), mCompositions.size(), this);
     ALOGD_IF( COMPOSITION_DEBUG, "%s", src.dump().string());
 
     ALOGE_IF( src.isFrontBufferRendered(),

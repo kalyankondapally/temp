@@ -81,14 +81,14 @@ std::shared_ptr<HWCNativeHandlesp> BufferManager::createGraphicBuffer( const cha
 
     DTRACEIF( BUFFER_MANAGER_DEBUG,
               "createGraphicBuffer %s allocate GraphicBuffer [%ux%u fmt:%u/%s usage:0x%x]",
-              pchTag, w, h, format, getHALFormatShortString(format), usage );
+	      pchTag, w, h, format, getDRMFormatString(format), usage );
 
     std::shared_ptr<HWCNativeHandlesp> pGB(buffer_handler_->CreateGraphicsBuffer(w, h, format, usage));
     if ( ( pGB == NULL ) || ( pGB.get()->handle == NULL ) )
     {
 #ifdef uncomment
 	ETRACE( "createGraphicBuffer %s failed to allocate GraphicBuffer [%ux%u fmt:%u/%s usage:0x%x]",
-            pchTag, w, h, format, getHALFormatShortString(format), usage );
+	    pchTag, w, h, format, getDRMFormatString(format), usage );
 #endif
         pGB = NULL;
     }
@@ -112,13 +112,13 @@ std::shared_ptr<HWCNativeHandlesp> BufferManager::createGraphicBuffer( const cha
 
     DTRACEIF( BUFFER_MANAGER_DEBUG,
               "createGraphicBuffer %s allocate GraphicBuffer [%ux%u fmt:%u/%s usage:0x%x stride %u handle %p keep %d]",
-              pchTag, w, h, format, getHALFormatShortString(format), usage, stride, handle, keepOwnership );
+	      pchTag, w, h, format, getDRMFormatString(format), usage, stride, handle, keepOwnership );
 
     std::shared_ptr<HWCNativeHandlesp> pGB = buffer_handler_->CreateGraphicsBuffer(w, h, format, usage);
     if ( ( pGB == NULL ) || ( pGB->handle == NULL ) )
     {
 	ETRACE( "createGraphicBuffer %s failed to allocate GraphicBuffer [%ux%u fmt:%u/%s usage:0x%x stride %u handle %p keep %d]",
-            pchTag, w, h, format, getHALFormatShortString(format), usage, stride, handle, keepOwnership );
+	    pchTag, w, h, format, getDRMFormatString(format), usage, stride, handle, keepOwnership );
         pGB = NULL;
     }
     // Don't overwrite the original GRALLOC tag.
@@ -141,14 +141,14 @@ void BufferManager::reallocateGraphicBuffer( std::shared_ptr<HWCNativeHandlesp>&
 
     DTRACEIF( BUFFER_MANAGER_DEBUG,
               "reallocateGraphicBuffer %s allocate GraphicBuffer [%ux%u fmt:%u/%s usage:0x%x]",
-              pchTag, w, h, format, getHALFormatShortString(format), usage );
+	      pchTag, w, h, format, getDRMFormatString(format), usage );
 
     pGB.reset(buffer_handler_->ReAllocateGraphicsBuffer( w, h, format, usage, pGB.get() ));
     if ( ( pGB == NULL ) || ( pGB->handle == NULL ) )
     {
 #ifdef uncomment
 	ETRACE( "reallocateGraphicBuffer %s failed to allocate GraphicBuffer [%ux%u fmt:%u/%s usage:0x%x]",
-            pchTag, w, h, format, getHALFormatShortString(format), usage );
+	    pchTag, w, h, format, getDRMFormatString(format), usage );
 #endif
         pGB = NULL;
     }
