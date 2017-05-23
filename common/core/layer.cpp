@@ -16,8 +16,8 @@
 
 #include <inttypes.h>
 
-#include "Layer.h"
-#include "Utils.h"
+#include "layer.h"
+#include "utils.h"
 #include "log.h"
 #include "timeline.h"
 

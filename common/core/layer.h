@@ -23,7 +23,7 @@
 
 #include "timeline.h"
 #include "format.h"
-#include "Utils.h"
+#include "utils.h"
 
 namespace hwcomposer {
 
