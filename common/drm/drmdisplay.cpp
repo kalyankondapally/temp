@@ -236,7 +236,7 @@ status_t DrmDisplay::open(drmModeConnector *pConnector, bool bRegisterWithHwc)
     setCurrentConnectionModes( pConnector );
 
     // Log summary of connector state.
-    Log::DTRACE( sbLogViewerBuild, "DRM connector %u %s %s DynamicMode:%d SeamlessDRRS:%d PanelFitter:%d DPMS:%d",
+    Log::alogd( sbLogViewerBuild, "DRM connector %u %s %s DynamicMode:%d SeamlessDRRS:%d PanelFitter:%d DPMS:%d",
         mDrmConnectorID,
         dumpDisplayType( getDisplayType() ).string(),
         isDrmConnected() ? "CONNECTED" : "DISCONNECTED",
@@ -264,7 +264,7 @@ status_t DrmDisplay::start( uint32_t crtcID, uint32_t pipeIdx )
     }
 
     // Log summary of the connection and mode.
-    Log::DTRACE( true, "Selected mode for Connector:%d [%s] is Mode:%d %s",
+    Log::alogd( true, "Selected mode for Connector:%d [%s] is Mode:%d %s",
         getDrmConnectorID(), mCurrentConnection.dump().string(), getRequestedTimingIndex(),
         mDisplayTimings[ getRequestedTimingIndex() ].dump().string());
 
@@ -738,7 +738,7 @@ void DrmDisplay::considerReleasingBuffers( void )
         mBlankBufferFramesSinceLastUsed++;
         if (mBlankBufferFramesSinceLastUsed > FRAMES_TO_HOLD_BLANKING_BUFFER)
         {
-	    Log::DTRACE( DRM_DEBUG, DRMDISPLAY_ID_STR
+	    Log::alogd( DRM_DEBUG, DRMDISPLAY_ID_STR
                 " Unpurged blanking buffer not used for %d frames - deleting blanking buffer.",
                 DRMDISPLAY_ID_PARAMS, mBlankBufferFramesSinceLastUsed );
             mpBlankBuffer = NULL;
@@ -750,7 +750,7 @@ void DrmDisplay::considerReleasingBuffers( void )
 int DrmDisplay::onVSyncEnable( bool bEnable )
 {
     DRMDISPLAY_ASSERT_EXTERNAL_THREAD
-    Log::DTRACE( DRM_DISPLAY_DEBUG, "drm " DRMDISPLAY_ID_STR " set vsync %d", DRMDISPLAY_ID_PARAMS, bEnable );
+    Log::alogd( DRM_DISPLAY_DEBUG, "drm " DRMDISPLAY_ID_STR " set vsync %d", DRMDISPLAY_ID_PARAMS, bEnable );
     setVSync( bEnable );
     return OK;
 }
@@ -848,8 +848,12 @@ void DrmDisplay::allocateBlankingLayer( uint32_t width, uint32_t height )
 void DrmDisplay::vsyncEvent(unsigned int, unsigned int, unsigned int)
 {
     DRMDISPLAY_ASSERT_EXTERNAL_THREAD
+#ifdef uncomment
     ATRACE_NAME("DrmDisplay::vsyncEvent");
     nsecs_t time = systemTime(SYSTEM_TIME_MONOTONIC);
+#else
+	nsecs_t time = 0;
+#endif
     mPhysicalDisplayManager.notifyPhysicalVSync( this, time );
 }
 
@@ -971,13 +975,13 @@ Drm::UEvent DrmDisplay::onHotPlugEvent( void )
             if ( bTimingChanges )
             {
                 // If timings have changed then force a reconnect.
-		Log::DTRACE( HPLUG_DEBUG, DRMDISPLAY_ID_STR " HotPlug timing change [UEVENT_HOTPLUG_RECONNECT]", DRMDISPLAY_ID_PARAMS );
+		Log::alogd( HPLUG_DEBUG, DRMDISPLAY_ID_STR " HotPlug timing change [UEVENT_HOTPLUG_RECONNECT]", DRMDISPLAY_ID_PARAMS );
                 eEv = Drm::UEvent::HOTPLUG_RECONNECT;
             }
             else
             {
                 // Nothing to do.
-		Log::DTRACE( HPLUG_DEBUG, DRMDISPLAY_ID_STR " HotPlug still: %s",
+		Log::alogd( HPLUG_DEBUG, DRMDISPLAY_ID_STR " HotPlug still: %s",
                     DRMDISPLAY_ID_PARAMS, mCurrentConnection.dump().string() );
             }
         }
@@ -986,7 +990,7 @@ Drm::UEvent DrmDisplay::onHotPlugEvent( void )
             // This is a new connection *OR* we didn't acquire a pipe last time.
             // Either way, (re)try to acquire a pipe for the connection now.
             // Previous contention for a pipe may now be resolved.
-	    Log::DTRACE( HPLUG_DEBUG, DRMDISPLAY_ID_STR " HotPlug %stry plug [UEVENT_HOTPLUG_CONNECTED]", DRMDISPLAY_ID_PARAMS, bWasConnected ? "re" : "" );
+	    Log::alogd( HPLUG_DEBUG, DRMDISPLAY_ID_STR " HotPlug %stry plug [UEVENT_HOTPLUG_CONNECTED]", DRMDISPLAY_ID_PARAMS, bWasConnected ? "re" : "" );
             eEv = Drm::UEvent::HOTPLUG_CONNECTED;
         }
     }
@@ -997,12 +1001,12 @@ Drm::UEvent DrmDisplay::onHotPlugEvent( void )
             // This is a disconnection.
             if ( bHadPipe )
             {
-		Log::DTRACE( HPLUG_DEBUG, DRMDISPLAY_ID_STR " HotPlug unplug [UEVENT_HOTPLUG_DISCONNECTED]", DRMDISPLAY_ID_PARAMS );
+		Log::alogd( HPLUG_DEBUG, DRMDISPLAY_ID_STR " HotPlug unplug [UEVENT_HOTPLUG_DISCONNECTED]", DRMDISPLAY_ID_PARAMS );
                 eEv = Drm::UEvent::HOTPLUG_DISCONNECTED;
             }
             else
             {
-		Log::DTRACE( HPLUG_DEBUG, DRMDISPLAY_ID_STR " HotPlug unplug", DRMDISPLAY_ID_PARAMS );
+		Log::alogd( HPLUG_DEBUG, DRMDISPLAY_ID_STR " HotPlug unplug", DRMDISPLAY_ID_PARAMS );
             }
 
             // Reset current connection.
@@ -1011,7 +1015,7 @@ Drm::UEvent DrmDisplay::onHotPlugEvent( void )
         else
         {
             // Nothing to do.
-	    Log::DTRACE( HPLUG_DEBUG, DRMDISPLAY_ID_STR " HotPlug still: %s",
+	    Log::alogd( HPLUG_DEBUG, DRMDISPLAY_ID_STR " HotPlug still: %s",
                 DRMDISPLAY_ID_PARAMS, mCurrentConnection.dump().string() );
         }
     }
@@ -1037,7 +1041,7 @@ void DrmDisplay::issueHotPlug( void )
         // Set acquired pipe.
         mCurrentConnection.setPipe( crtcID, pipeIdx );
 
-	Log::DTRACE( HPLUG_DEBUG, DRMDISPLAY_ID_STR " HotPlug issuing plug", DRMDISPLAY_ID_PARAMS );
+	Log::alogd( HPLUG_DEBUG, DRMDISPLAY_ID_STR " HotPlug issuing plug", DRMDISPLAY_ID_PARAMS );
 
         // Update active displays and broadcast change.
         if ( mDrm.setActiveDisplay( getDrmDisplayID(), true ) )
@@ -1056,11 +1060,11 @@ void DrmDisplay::issueHotPlug( void )
         // plug/unplug/plug sequences.
         synchronizeEvent( );
 
-	Log::DTRACE( HPLUG_DEBUG, DRMDISPLAY_ID_STR " HotPlug plug complete", DRMDISPLAY_ID_PARAMS );
+	Log::alogd( HPLUG_DEBUG, DRMDISPLAY_ID_STR " HotPlug plug complete", DRMDISPLAY_ID_PARAMS );
     }
     else
     {
-	Log::DTRACE( HPLUG_DEBUG, DRMDISPLAY_ID_STR " HotPlug plug failed - no available pipes", DRMDISPLAY_ID_PARAMS );
+	Log::alogd( HPLUG_DEBUG, DRMDISPLAY_ID_STR " HotPlug plug failed - no available pipes", DRMDISPLAY_ID_PARAMS );
     }
 }
 
@@ -1069,7 +1073,7 @@ void DrmDisplay::issueHotUnplug( void )
     DRMDISPLAY_ASSERT_EXTERNAL_THREAD
     ATRACE_CALL_IF(DISPLAY_TRACE);
 
-    Log::DTRACE( HPLUG_DEBUG, DRMDISPLAY_ID_STR " HotPlug issuing unplug", DRMDISPLAY_ID_PARAMS );
+    Log::alogd( HPLUG_DEBUG, DRMDISPLAY_ID_STR " HotPlug issuing unplug", DRMDISPLAY_ID_PARAMS );
 
     // Shutdown display.
     queueShutdown( );
@@ -1083,7 +1087,7 @@ void DrmDisplay::issueHotUnplug( void )
     // An enforced synchronize is not strictly required here.
     mDrm.setActiveDisplay( getDrmDisplayID(), false );
 
-    Log::DTRACE( HPLUG_DEBUG, DRMDISPLAY_ID_STR " HotPlug unplug complete", DRMDISPLAY_ID_PARAMS );
+    Log::alogd( HPLUG_DEBUG, DRMDISPLAY_ID_STR " HotPlug unplug complete", DRMDISPLAY_ID_PARAMS );
 }
 
 void DrmDisplay::reconnect( void )
@@ -1165,12 +1169,12 @@ void DrmDisplay::onESDEvent( Drm::UEvent eEvent )
     // ESD recovery event.
     if( eEvent == Drm::UEvent::ESD_RECOVERY )
     {
-	Log::DTRACE( HPLUG_DEBUG, "DrmDisplay %d Connector:%d Crtc:%d ESD: Recovery.", getDrmDisplayID(), getDrmConnectorID(), getDrmCrtcID( ) );
+	Log::alogd( HPLUG_DEBUG, "DrmDisplay %d Connector:%d Crtc:%d ESD: Recovery.", getDrmDisplayID(), getDrmConnectorID(), getDrmCrtcID( ) );
         recover( );
     }
     else
     {
-	Log::DTRACE( true, "DrmDisplay %d Crtc:%d ESD: not recognised ESD event = %d.", getDrmDisplayID(), getDrmCrtcID( ), eEvent);
+	Log::alogd( true, "DrmDisplay %d Crtc:%d ESD: not recognised ESD event = %d.", getDrmDisplayID(), getDrmCrtcID( ), eEvent);
     }
     return;
 }
@@ -1217,7 +1221,7 @@ void DrmDisplay::doSetDisplayMode(uint32_t mode)
     // Just present our holding buffer initially.
     allocateBlankingLayer();
     uint32_t fb = getBlankingLayer().getBufferDeviceId();
-    Log::DTRACE( DRMDISPLAY_MODE_DEBUG, "Mode: %u, Blanking Layer: %s", mode, getBlankingLayer().dump().string());
+    Log::alogd( DRMDISPLAY_MODE_DEBUG, "Mode: %u, Blanking Layer: %s", mode, getBlankingLayer().dump().string());
     ETRACEIF( fb == 0, "" DRMDISPLAY_ID_STR " : Missing blanking buffer framebuffer", DRMDISPLAY_ID_PARAMS );
     int32_t status = -1;
 #if HWC_USE_ATOMIC_NUCLEAR
@@ -1328,7 +1332,7 @@ void DrmDisplay::setDisplay( int32_t overrideMode )
     // Apply current mode or override if specified.
     uint32_t applyMode = ( overrideMode < 0 ) ? getAppliedTimingIndex( ) : (uint32_t)overrideMode;
 
-    Log::DTRACE( DRMDISPLAY_MODE_DEBUG, DRMDISPLAY_ID_STR " Initializing display with mode timing index %u (override %u, applied %u)",
+    Log::alogd( DRMDISPLAY_MODE_DEBUG, DRMDISPLAY_ID_STR " Initializing display with mode timing index %u (override %u, applied %u)",
         DRMDISPLAY_ID_PARAMS, applyMode, overrideMode, getAppliedTimingIndex() );
 
     // Set mode.
@@ -1347,7 +1351,7 @@ void DrmDisplay::setDisplay( int32_t overrideMode )
     if ( defaultFrameRequired( ) )
     {
         // Set blanking (synchronous).
-	Log::DTRACE( DRM_DISPLAY_DEBUG, "Setting blanking as default frame" );
+	Log::alogd( DRM_DISPLAY_DEBUG, "Setting blanking as default frame" );
         setBlanking();
     }
 
@@ -1370,7 +1374,7 @@ void DrmDisplay::resetDisplay( void )
         return;
     }
 
-    Log::DTRACE( DRMDISPLAY_MODE_DEBUG, DRMDISPLAY_ID_STR " Uninitializing display", DRMDISPLAY_ID_PARAMS );
+    Log::alogd( DRMDISPLAY_MODE_DEBUG, DRMDISPLAY_ID_STR " Uninitializing display", DRMDISPLAY_ID_PARAMS );
 
     // Stop vsync generation.
     doSetVSync( false );
@@ -1390,7 +1394,7 @@ void DrmDisplay::resetDisplay( void )
 
 bool DrmDisplay::setNewConnection( Connection& newConnection )
 {
-    Log::DTRACE( DRMDISPLAY_MODE_DEBUG, DRMDISPLAY_ID_STR "DRM New Connection %s -> %s",
+    Log::alogd( DRMDISPLAY_MODE_DEBUG, DRMDISPLAY_ID_STR "DRM New Connection %s -> %s",
         DRMDISPLAY_ID_PARAMS, mActiveConnection.dump().string(), newConnection.dump().string() );
 
     HWCASSERT( newConnection.hasPipe() );
@@ -1439,7 +1443,7 @@ bool DrmDisplay::setNewConnection( Connection& newConnection )
     // Apply the initial mode immediately.
     setInitialTiming( initialMode );
 
-    Log::DTRACE( DRMDISPLAY_MODE_DEBUG, DRMDISPLAY_ID_STR "DRM Set Connection %s", DRMDISPLAY_ID_PARAMS, dump().string() );
+    Log::alogd( DRMDISPLAY_MODE_DEBUG, DRMDISPLAY_ID_STR "DRM Set Connection %s", DRMDISPLAY_ID_PARAMS, dump().string() );
     return true;
 }
 
@@ -1462,7 +1466,7 @@ void DrmDisplay::consumeStartup( Connection& newConnection, bool bNew )
     //  processPending. In this way we minimise a black screen (since we only set the mode once content is available.)
     setStatus( AVAILABLE_PENDING_START );
 
-    Log::DTRACE( DRMDISPLAY_MODE_DEBUG, DRMDISPLAY_ID_STR "Started %s", DRMDISPLAY_ID_PARAMS, dump().string() );
+    Log::alogd( DRMDISPLAY_MODE_DEBUG, DRMDISPLAY_ID_STR "Started %s", DRMDISPLAY_ID_PARAMS, dump().string() );
 
     // Notify availability.
     if ( bNew && mbRegisterWithHwc )
@@ -1494,7 +1498,7 @@ void DrmDisplay::consumeShutdown( uint32_t timelineIndex )
 {
     DRMDISPLAY_ASSERT_CONSUMER_THREAD
 
-    Log::DTRACE( DRMDISPLAY_MODE_DEBUG, DRMDISPLAY_ID_STR "Shutting down %s", DRMDISPLAY_ID_PARAMS, dump().string() );
+    Log::alogd( DRMDISPLAY_MODE_DEBUG, DRMDISPLAY_ID_STR "Shutting down %s", DRMDISPLAY_ID_PARAMS, dump().string() );
 
     // Reset display.
     // This will set blanking and SUSPENDED status.
@@ -1532,7 +1536,7 @@ void DrmDisplay::consumeShutdown( uint32_t timelineIndex )
     DTRACEIF ( DRMDISPLAY_MODE_DEBUG, "Release pipe %u", getDrmPipeIndex() );
 
     // Reset the conection pipe/crtc.
-    Log::DTRACE( DRMDISPLAY_MODE_DEBUG, "DRM Reset Connection %s", mActiveConnection.dump().string() );
+    Log::alogd( DRMDISPLAY_MODE_DEBUG, "DRM Reset Connection %s", mActiveConnection.dump().string() );
     mActiveConnection.reset();
 #if HWC_USE_ATOMIC_NUCLEAR
     mpNuclearHelper.reset();
@@ -1550,11 +1554,11 @@ void DrmDisplay::consumeSuspend( uint32_t timelineIndex, bool bUseDPMS, bool bDe
 
     if ( meStatus == AVAILABLE )
     {
-	Log::DTRACE( DRM_SUSPEND_DEBUG,
+	Log::alogd( DRM_SUSPEND_DEBUG,
                     "*************************** SUSPEND " DRMDISPLAY_ID_STR " DPMS:%d (Status:%u) *******************************",
                     DRMDISPLAY_ID_PARAMS, bUseDPMS, meStatus );
 
-	Log::DTRACE( DRM_SUSPEND_DEBUG, DRMDISPLAY_ID_STR " -> SUSPENDED", DRMDISPLAY_ID_PARAMS );
+	Log::alogd( DRM_SUSPEND_DEBUG, DRMDISPLAY_ID_STR " -> SUSPENDED", DRMDISPLAY_ID_PARAMS );
 
         // Reset display.
         // This will set blanking and SUSPENDED status.
@@ -1576,7 +1580,7 @@ void DrmDisplay::consumeSuspend( uint32_t timelineIndex, bool bUseDPMS, bool bDe
 
         if ( bUseDPMS )
         {
-	    Log::DTRACE( DRM_SUSPEND_DEBUG, DRMDISPLAY_ID_STR " SUSPENDED DPMS_OFF", DRMDISPLAY_ID_PARAMS );
+	    Log::alogd( DRM_SUSPEND_DEBUG, DRMDISPLAY_ID_STR " SUSPENDED DPMS_OFF", DRMDISPLAY_ID_PARAMS );
 #if VPG_DRM_HAVE_ASYNC_DPMS
             bool bOK = ( mDrm.setDPMSProperty( mDrmConnectorID, mPropDPMS, DRM_MODE_DPMS_ASYNC_OFF ) == Drm::SUCCESS );
             const uint32_t wait25Ms = 25000;
@@ -1630,7 +1634,7 @@ void DrmDisplay::consumeResume( void )
 
     if ( meStatus != AVAILABLE )
     {
-	Log::DTRACE( DRM_SUSPEND_DEBUG,
+	Log::alogd( DRM_SUSPEND_DEBUG,
                     "*************************** RESUME " DRMDISPLAY_ID_STR " (Status:%u) *******************************",
                     DRMDISPLAY_ID_PARAMS, meStatus );
 
@@ -1654,11 +1658,11 @@ void DrmDisplay::consumeResume( void )
             mbSuspendDeactivated = false;
         }
 
-	Log::DTRACE( DRM_SUSPEND_DEBUG, DRMDISPLAY_ID_STR " -> AVAILABLE", DRMDISPLAY_ID_PARAMS );
+	Log::alogd( DRM_SUSPEND_DEBUG, DRMDISPLAY_ID_STR " -> AVAILABLE", DRMDISPLAY_ID_PARAMS );
 
         if ( mbSuspendDPMS )
         {
-	    Log::DTRACE( DRM_SUSPEND_DEBUG, DRMDISPLAY_ID_STR " DPMS_ON", DRMDISPLAY_ID_PARAMS );
+	    Log::alogd( DRM_SUSPEND_DEBUG, DRMDISPLAY_ID_STR " DPMS_ON", DRMDISPLAY_ID_PARAMS );
 #if VPG_DRM_HAVE_ASYNC_DPMS
             bool bOK = ( mDrm.setDPMSProperty( mDrmConnectorID, mPropDPMS, DRM_MODE_DPMS_ASYNC_ON ) == Drm::SUCCESS );
             const uint32_t wait25Ms = 25000;
@@ -1844,13 +1848,13 @@ void DrmDisplay::processPending( void )
     // Complete start.
     if ( meStatus == AVAILABLE_PENDING_START )
     {
-	Log::DTRACE( DRM_DISPLAY_DEBUG, "Completing start" );
+	Log::alogd( DRM_DISPLAY_DEBUG, "Completing start" );
         setDisplay();
         // If setDisplay() flipped blanking itself then we MUST
         // sync here before trying to flip *this* frame.
         if ( defaultFrameRequired( ) )
         {
-	    Log::DTRACE( DRM_DISPLAY_DEBUG, "Syncing default frame" );
+	    Log::alogd( DRM_DISPLAY_DEBUG, "Syncing default frame" );
             mPageFlipHandler.sync( );
         }
     }
@@ -1881,7 +1885,7 @@ bool DrmDisplay::updateTiming( const DisplayQueue::Frame& frame )
                 if ( ( frame.getConfig().getWidth( ) == t.getWidth() )
                   && ( frame.getConfig().getHeight( ) == t.getHeight() ) )
                 {
-		    Log::DTRACE( DRMDISPLAY_MODE_DEBUG, DRMDISPLAY_ID_STR " timing change for new content size %ux%u (timing change %u %s)",
+		    Log::alogd( DRMDISPLAY_MODE_DEBUG, DRMDISPLAY_ID_STR " timing change for new content size %ux%u (timing change %u %s)",
                         DRMDISPLAY_ID_PARAMS,
                         frame.getConfig().getWidth( ), frame.getConfig().getHeight( ),
                         timingIndex,
@@ -1907,7 +1911,7 @@ bool DrmDisplay::updateTiming( const DisplayQueue::Frame& frame )
                     if ( copyDisplayTiming( getAppliedTimingIndex(), t ) )
                     {
                         mSeamlessRequestedRefresh = findBestRefresh(filterRequestedRefresh, t.getMinRefresh(),t.getRefresh());
-			Log::DTRACE( DRM_DISPLAY_DEBUG, DRMDISPLAY_ID_STR " seamless DRRS change to %u for content refresh change %u->%u",
+			Log::alogd( DRM_DISPLAY_DEBUG, DRMDISPLAY_ID_STR " seamless DRRS change to %u for content refresh change %u->%u",
                             DRMDISPLAY_ID_PARAMS, mSeamlessRequestedRefresh, mFilterAppliedRefresh, filterRequestedRefresh );
                     }
                 }
@@ -1926,7 +1930,7 @@ bool DrmDisplay::updateTiming( const DisplayQueue::Frame& frame )
                         }
                         if ((timingIndex >= 0) && ((uint32_t)timingIndex != mDynamicAppliedTimingIndex))
                         {
-			    Log::DTRACE( DRM_DISPLAY_DEBUG, DRMDISPLAY_ID_STR " timing change to %u from %u for content refresh change %u->%u",
+			    Log::alogd( DRM_DISPLAY_DEBUG, DRMDISPLAY_ID_STR " timing change to %u from %u for content refresh change %u->%u",
                                 DRMDISPLAY_ID_PARAMS, timingIndex, mDynamicAppliedTimingIndex, mFilterAppliedRefresh, filterRequestedRefresh );
                             mDynamicAppliedTimingIndex = timingIndex;
                             resetDisplay( );
@@ -1936,7 +1940,7 @@ bool DrmDisplay::updateTiming( const DisplayQueue::Frame& frame )
                 }
                 else
                 {
-		    Log::DTRACE( DRM_DISPLAY_DEBUG, DRMDISPLAY_ID_STR " unhandled content refresh change %u->%u",
+		    Log::alogd( DRM_DISPLAY_DEBUG, DRMDISPLAY_ID_STR " unhandled content refresh change %u->%u",
                         DRMDISPLAY_ID_PARAMS, mFilterAppliedRefresh, filterRequestedRefresh );
                 }
                 mFilterAppliedRefresh = filterRequestedRefresh;
@@ -1977,7 +1981,7 @@ void DrmDisplay::doSetVSync( bool bEnable )
             if ( mDrm.enableVSync( this ) )
             {
                 ATRACE_INT_IF( VSYNC_DEBUG, String8::format( "HWC:P%u(" DRMDISPLAY_ID_STR  ") HW VSYNC", getDisplayManagerIndex(), DRMDISPLAY_ID_PARAMS ).string(), 1 );
-		Log::DTRACE( VSYNC_DEBUG, "HWC:P%u(" DRMDISPLAY_ID_STR  ") HW VSYNC Enabled", getDisplayManagerIndex(), DRMDISPLAY_ID_PARAMS );
+		Log::alogd( VSYNC_DEBUG, "HWC:P%u(" DRMDISPLAY_ID_STR  ") HW VSYNC Enabled", getDisplayManagerIndex(), DRMDISPLAY_ID_PARAMS );
                 mbDrmVsyncEnabled = true;
                 bUseSoftwareVSync = false;
             }
@@ -2000,7 +2004,7 @@ void DrmDisplay::doSetVSync( bool bEnable )
         {
             mDrm.disableVSync( this, false );
             ATRACE_INT_IF( VSYNC_DEBUG, String8::format( "HWC:P%u(" DRMDISPLAY_ID_STR ") HW VSYNC", getDisplayManagerIndex(), DRMDISPLAY_ID_PARAMS ).string(), 0 );
-	    Log::DTRACE( VSYNC_DEBUG, "HWC:P%u(" DRMDISPLAY_ID_STR  ") HW VSYNC Disabled", getDisplayManagerIndex(), DRMDISPLAY_ID_PARAMS );
+	    Log::alogd( VSYNC_DEBUG, "HWC:P%u(" DRMDISPLAY_ID_STR  ") HW VSYNC Disabled", getDisplayManagerIndex(), DRMDISPLAY_ID_PARAMS );
             mbDrmVsyncEnabled = false;
         }
 #endif
@@ -2121,14 +2125,14 @@ int DrmDisplay::queueStartup( const Connection& newConnection, bool bNew )
         {
             meQueueState = QUEUE_STATE_STARTED;
         }
-	Log::DTRACE( DRM_DISPLAY_DEBUG, "drm " DRMDISPLAY_ID_STR " queue startup connection %s new %d %s[QUEUE:%s]",
+	Log::alogd( DRM_DISPLAY_DEBUG, "drm " DRMDISPLAY_ID_STR " queue startup connection %s new %d %s[QUEUE:%s]",
                     DRMDISPLAY_ID_PARAMS, newConnection.dump().string(), bNew,
                     ret == OK ? "" : "*FAILED* ",
                     queueStateDump().string() );
     }
     else
     {
-	Log::DTRACE( DRM_DISPLAY_DEBUG, "drm " DRMDISPLAY_ID_STR " not ready for startup [QUEUE:%s]",
+	Log::alogd( DRM_DISPLAY_DEBUG, "drm " DRMDISPLAY_ID_STR " not ready for startup [QUEUE:%s]",
                     DRMDISPLAY_ID_PARAMS, queueStateDump().string() );
     }
     return ( meQueueState == QUEUE_STATE_STARTED ) ? OK : -1;
@@ -2155,14 +2159,14 @@ int DrmDisplay::queueShutdown( void )
         {
             meQueueState = QUEUE_STATE_SHUTDOWN;
         }
-	Log::DTRACE( DRM_DISPLAY_DEBUG, "drm " DRMDISPLAY_ID_STR " queue shutdown Timeline %u %s[QUEUE:%s]",
+	Log::alogd( DRM_DISPLAY_DEBUG, "drm " DRMDISPLAY_ID_STR " queue shutdown Timeline %u %s[QUEUE:%s]",
                     DRMDISPLAY_ID_PARAMS, timelineIndex,
                     ret == OK ? "" : "*FAILED* ",
                     queueStateDump().string() );
     }
     else
     {
-	Log::DTRACE( DRM_DISPLAY_DEBUG, "drm " DRMDISPLAY_ID_STR " not ready for shutdown [QUEUE:%s]",
+	Log::alogd( DRM_DISPLAY_DEBUG, "drm " DRMDISPLAY_ID_STR " not ready for shutdown [QUEUE:%s]",
                     DRMDISPLAY_ID_PARAMS, queueStateDump().string() );
     }
     return ( meQueueState == QUEUE_STATE_SHUTDOWN ) ? OK : -1;
@@ -2187,14 +2191,14 @@ int DrmDisplay::queueSuspend( bool bUseDPMS, bool bDeactivateDisplay )
         {
             meQueueState = QUEUE_STATE_SUSPENDED;
         }
-	Log::DTRACE( DRM_DISPLAY_DEBUG, "drm " DRMDISPLAY_ID_STR " queue suspend Timeline %u UseDPMS %d DeactivateDisplay %d %s[QUEUE:%s]",
+	Log::alogd( DRM_DISPLAY_DEBUG, "drm " DRMDISPLAY_ID_STR " queue suspend Timeline %u UseDPMS %d DeactivateDisplay %d %s[QUEUE:%s]",
                     DRMDISPLAY_ID_PARAMS, timelineIndex, bUseDPMS, bDeactivateDisplay,
                     ret == OK ? "" : "*FAILED* ",
                     queueStateDump().string() );
     }
     else
     {
-	Log::DTRACE( DRM_DISPLAY_DEBUG, "drm " DRMDISPLAY_ID_STR " not ready for suspend [QUEUE:%s]",
+	Log::alogd( DRM_DISPLAY_DEBUG, "drm " DRMDISPLAY_ID_STR " not ready for suspend [QUEUE:%s]",
                     DRMDISPLAY_ID_PARAMS, queueStateDump().string() );
     }
     return ( meQueueState == QUEUE_STATE_SUSPENDED ) ? OK : -1;
@@ -2216,14 +2220,14 @@ int DrmDisplay::queueResume( void )
         {
             meQueueState = QUEUE_STATE_STARTED;
         }
-	Log::DTRACE( DRM_DISPLAY_DEBUG, "drm " DRMDISPLAY_ID_STR " queue resume %s[QUEUE:%s]",
+	Log::alogd( DRM_DISPLAY_DEBUG, "drm " DRMDISPLAY_ID_STR " queue resume %s[QUEUE:%s]",
                     DRMDISPLAY_ID_PARAMS,
                     ret == OK ? "" : "*FAILED* ",
                     queueStateDump().string() );
     }
     else
     {
-	Log::DTRACE( DRM_DISPLAY_DEBUG, "drm " DRMDISPLAY_ID_STR " not ready for resume [QUEUE:%s]",
+	Log::alogd( DRM_DISPLAY_DEBUG, "drm " DRMDISPLAY_ID_STR " not ready for resume [QUEUE:%s]",
                     DRMDISPLAY_ID_PARAMS, queueStateDump().string() );
     }
     return ( meQueueState == QUEUE_STATE_STARTED ) ? OK : -1;
@@ -2257,7 +2261,7 @@ int DrmDisplay::queueFrame( const Content::Display& display, uint32_t zorder, in
 
         DisplayQueue::FrameId frameId( timelineIndex, hwcFrameIndex, hwcFrameReceivedTime );
 
-	Log::DTRACE( DRM_DISPLAY_DEBUG, "drm " DRMDISPLAY_ID_STR " drop %s, retire fence %s [QUEUE:%s]",
+	Log::alogd( DRM_DISPLAY_DEBUG, "drm " DRMDISPLAY_ID_STR " drop %s, retire fence %s [QUEUE:%s]",
                     DRMDISPLAY_ID_PARAMS, frameId.dump( ).string( ),
                     Timeline::dumpFence(pRetireFenceFd).string( ),
                     queueStateDump().string() );
@@ -2283,7 +2287,7 @@ int DrmDisplay::queueFrame( const Content::Display& display, uint32_t zorder, in
     // Queue the frame for consumption.
     if ( DisplayQueue::queueFrame( stack, zorder, frameId, config ) == OK )
     {
-	Log::DTRACE( DRM_DISPLAY_DEBUG, "drm " DRMDISPLAY_ID_STR " queue %s, retire fence %s [QUEUE:%s]",
+	Log::alogd( DRM_DISPLAY_DEBUG, "drm " DRMDISPLAY_ID_STR " queue %s, retire fence %s [QUEUE:%s]",
                     DRMDISPLAY_ID_PARAMS, frameId.dump( ).string( ),
                     Timeline::dumpFence(pRetireFenceFd).string( ),
                     queueStateDump().string() );

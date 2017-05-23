@@ -22,6 +22,7 @@
 #include "drmpagefliphandler.h"
 #include "drmdisplaycaps.h"
 //#include "displayqueue.h"
+#include "layer.h"
 #include "option.h"
 #include "spinlock.h"
 
@@ -440,12 +441,11 @@ private:
     // Returns true if there is a seamless update required.
     bool getSeamlessMode( drmModeModeInfo &modeInfoOut );
     void applySeamlessMode( const drmModeModeInfo &modeInfo );
-#ifdef uncomment
     // Adapt the display mode if required with the specified fb.
     // We need to know the fb because setCrtc requires it.
     // This is called from the end of flip.
     void legacySeamlessAdaptMode( const Layer* pLayer );
-#endif
+
     // Set new status.
     // Notify ready (potentially) on a status change.
     void setStatus( EStatus eStatus ) { meStatus = eStatus; notifyReady(); }
