@@ -19,7 +19,9 @@
 
 #include <vector>
 
+#include "Content.h"
 #include "format.h"
+#include "layer.h"
 #include "option.h"
 
 namespace hwcomposer {
@@ -167,8 +169,7 @@ public:
             const char* getName() const                         { return mName; }
 
             // This defaults to false, but devices may override it and check the scale factor for a layer
-	   // FIXME:
-	    // virtual bool isScaleFactorSupported(const Layer&) const { return false; }
+	    virtual bool isScaleFactorSupported(const Layer&) const { return false; }
 
             // Get plane capabilities as human-readable string.
 	    HWCString capsString( void ) const;
@@ -186,8 +187,7 @@ public:
             // It will return true only if the layer is supported on this plane.
             // The base class checks tiling support.
             // If this is overridden then the base class must also be called.
-	   // FIXME:
-	    // virtual bool isSupported( const Layer& ) const;
+	    virtual bool isSupported( const Layer& ) const;
 
             // Return the compressions formats supported for a given display format.
             // Should be called with increasing value of index until COMPRESSION_NONE
@@ -376,8 +376,7 @@ public:
     // Test whole display content capabilities.
     // If the display has complex constraints then this *MUST* be implemented.
     // It must return true only if the suggested displayContent is supported.
-    // FIXME:
-    //virtual bool isSupported( const Content::Display& /*displayContent*/, uint32_t /*ZOrder*/ ) const { return true; }
+    virtual bool isSupported( const Content::Display& /*displayContent*/, uint32_t /*ZOrder*/ ) const { return true; }
 
 
     // TODO:

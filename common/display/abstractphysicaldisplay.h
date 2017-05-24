@@ -18,8 +18,7 @@
 #define COMMON_DISPLAY_ABSTRACTPHYSICALDISPLAY_H
 
 #include <vector>
-// FIXME:
-//#include "Content.h"
+#include "Content.h"
 #include "abstractdisplay.h"
 
 namespace hwcomposer {
@@ -103,8 +102,7 @@ public:
     // NOTE:
     //   Following onSet the PhysicalDisplayManager will close all acquire fences automatically.
     //   If the layer acquire fences are used but not processed synchronously then the display must dup them.
-    // FIXME:
-   // virtual void        onSet( const Content::Display& display, uint32_t zorder, int* pRetireFenceFd ) = 0;
+    virtual void        onSet( const Content::Display& display, uint32_t zorder, int* pRetireFenceFd ) = 0;
 
 
     // This is called by SW vsync thread when a software vsync event is generated.

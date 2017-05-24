@@ -186,8 +186,7 @@ void PhysicalDisplay::initUserConfig( void )
         mUserTimingIndex,
         mUserTiming.getWidth(), mUserTiming.getHeight(), mUserTiming.getRefresh(),
         Timing::dumpRatio(mUserTiming.getRatio()).string());
-    //FIXME:
-    /*
+#ifdef uncomment
     GlobalScalingFilter& globalScalingFilter = mDevice.getGlobalScalingFilter( );
 
     // Scaling mode.
@@ -208,7 +207,7 @@ void PhysicalDisplay::initUserConfig( void )
             globalScalingFilter.setUserOverscan( getDisplayManagerIndex(), xoverscan, yoverscan );
         }
     }
-    */
+#endif
 }
 
 void PhysicalDisplay::getUserOverscan(int32_t& xoverscan, int32_t& yoverscan) const

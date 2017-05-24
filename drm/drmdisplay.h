@@ -292,7 +292,7 @@ private:
     // DrmDisplay custom frame types.
     enum EFrameType
     {
-	eFT_BlankingFrame = 0 // FIXME: DisplayQueue::Frame::eFT_CUSTOM + 1
+	eFT_BlankingFrame = DisplayQueue::Frame::eFT_CUSTOM + 1
     };
 
     // Options for a default frame following a modeset.

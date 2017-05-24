@@ -22,7 +22,7 @@
 #include <xf86drm.h>
 #include <xf86drmMode.h>
 
-//#include "drmdisplay.h"
+#include "drmdisplay.h"
 #include "drmeventthread.h"
 #include "drmueventthread.h"
 #include "gpudevice.h"
@@ -146,8 +146,7 @@ bool Drm::broadcastNumActiveDisplays( void )
     bool bReceiver = false;
     // TODO:
     //  Make this a generic notification.
-    // FIXME:
-   /* for ( uint32_t d = 0; d < cMaxSupportedPhysicalDisplays; ++d )
+    for ( uint32_t d = 0; d < cMaxSupportedPhysicalDisplays; ++d )
     {
         DrmDisplay* pDisplay = getDrmDisplay( d );
         if (pDisplay == NULL)
@@ -156,7 +155,7 @@ bool Drm::broadcastNumActiveDisplays( void )
         {
             bReceiver = true;
         }
-    }*/
+    }
     return bReceiver;
 }
 
@@ -410,8 +409,7 @@ int Drm::probe(GpuDevice& device)
         }
 
 	DTRACEIF( DRM_PROBE_DEBUG, "Opening display %d", displayIndex);
-	// FIXME
-	/*DrmDisplay* pDisplay = new DrmDisplay( device, displayIndex );
+	DrmDisplay* pDisplay = new DrmDisplay( device, displayIndex );
         if (pDisplay == NULL)
         {
             freeConnector( pConnector );
@@ -439,7 +437,7 @@ int Drm::probe(GpuDevice& device)
         {
             delete pDisplay;
             freeConnector( pConnector );
-	}*/
+	}
     }
 
     // Register all devices.

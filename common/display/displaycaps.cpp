@@ -301,7 +301,6 @@ String8 DisplayCaps::PlaneCaps::cscFormatLUTString( void ) const
     return output;
 }
 
-/*
 bool DisplayCaps::PlaneCaps::isSupported( const Layer& ly ) const
 {
     if ( !isTilingFormatSupported( ly.getBufferTilingFormat() ) )
@@ -310,7 +309,7 @@ bool DisplayCaps::PlaneCaps::isSupported( const Layer& ly ) const
         return false;
     }
     return true;
-}*/
+}
 
 String8 DisplayCaps::GlobalScalingCaps::capsString() const
 {

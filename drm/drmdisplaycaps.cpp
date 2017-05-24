@@ -16,7 +16,7 @@
 
 #include "drm_internal.h"
 #include "drmdisplaycaps.h"
-#include "drmutils.h"
+#include "platformdefines.h"
 #include "log.h"
 #include "displaystate.h"
 
@@ -292,7 +292,7 @@ void DrmDisplayCaps::addSpritePlanes( DisplayCaps& caps )
 		    std::vector<int32_t> halFormats;
                     for (uint32_t i = 0; i < pDrmPlane->count_formats; i++)
                     {
-			int halFormat = 0;// FIXME: convertDrmFormatToPlatformFormat(pDrmPlane->formats[i]);
+			int halFormat = convertDrmFormatToPlatformFormat(pDrmPlane->formats[i]);
                         if (halFormat > 0)
 			    halFormats.emplace_back(halFormat);
 

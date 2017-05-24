@@ -30,6 +30,7 @@
 
 #include "string8.h"
 #include "hwcdefs_internal.h"
+#include "drmutils_linux.h"
 
 struct gbm_handle {
 #ifdef USE_MINIGBM

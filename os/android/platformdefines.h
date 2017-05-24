@@ -39,6 +39,7 @@
 #include <utils/Timers.h>
 
 #include "hwcdefs_internal.h"
+#include "drmutils_android.h"
 
 #ifdef _cplusplus
 extern "C" {
