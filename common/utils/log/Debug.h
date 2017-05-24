@@ -22,8 +22,8 @@ namespace hwcomposer {
 // Utility function - returns human-readable string from a DRM format number.
 const char* getDRMFormatString( int32_t drmFormat );
 
-extern String8 printLayer(hwc_layer_1_t& layer);
 #ifdef uncomment_hwc1
+extern String8 printLayer(hwc_layer_1_t& layer);
 extern void dumpDisplayContents(const char *pIdentifier, hwc_display_contents_1_t* pDisp, uint32_t frameIndex);
 extern void dumpDisplaysContents(const char *pIdentifier, size_t numDisplays, hwc_display_contents_1_t** displays, uint32_t frameIndex);
 #endif

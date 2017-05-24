@@ -17,7 +17,7 @@
 #include "displaycaps.h"
 
 #include <drm_fourcc.h>
-//#include "Layer.h"
+#include "Debug.h"
 #include "log.h"
 
 namespace hwcomposer {
@@ -270,9 +270,8 @@ String8 DisplayCaps::PlaneCaps::displayFormatLUTString( void ) const
         {
             if ( f )
                 str += "|";
-#ifdef uncomment
-            str += getHALFormatString( pDisplayFormats[ f ] );
-#endif
+
+	    str += getDRMFormatString( pDisplayFormats[ f ] );
         }
     }
     str += "  Tiling:";
@@ -294,12 +293,11 @@ String8 DisplayCaps::PlaneCaps::displayFormatLUTString( void ) const
 String8 DisplayCaps::PlaneCaps::cscFormatLUTString( void ) const
 {
     String8 output;
- #ifdef uncomment
-    output.appendFormat("RGBX:%s ",  getHALFormatString( mCSCFormat[ CSC_CLASS_RGBX ] ) );
-    output.appendFormat("RGBA:%s ",  getHALFormatString( mCSCFormat[ CSC_CLASS_RGBA ] ) );
-    output.appendFormat("YUY8:%s ",  getHALFormatString( mCSCFormat[ CSC_CLASS_YUV8 ] ) );
-    output.appendFormat("YUY16:%s ", getHALFormatString( mCSCFormat[ CSC_CLASS_YUV16 ] ) );
-#endif
+    output.appendFormat("RGBX:%s ",  getDRMFormatString( mCSCFormat[ CSC_CLASS_RGBX ] ) );
+    output.appendFormat("RGBA:%s ",  getDRMFormatString( mCSCFormat[ CSC_CLASS_RGBA ] ) );
+    output.appendFormat("YUY8:%s ",  getDRMFormatString( mCSCFormat[ CSC_CLASS_YUV8 ] ) );
+    output.appendFormat("YUY16:%s ", getDRMFormatString( mCSCFormat[ CSC_CLASS_YUV16 ] ) );
+
     return output;
 }
 
@@ -503,12 +501,11 @@ String8 DisplayCaps::displayCapsString( void ) const
 
 void DisplayCaps::dump( void ) const
 {
-#ifdef uncomment
     LOG_DISPLAY_CAPS( ( "HWC Display %s Capabilities", mName ) );
     LOG_DISPLAY_CAPS( ( " Caps                         : %s", displayCapsString( ).string( ) ) );
     LOG_DISPLAY_CAPS( ( " ZOrders                      : %s", zOrdersString( ).string( ) ) );
     LOG_DISPLAY_CAPS( ( " GlobalScaling (panel fitter) : %s", globalScalingCapsString( ).string( ) ) );
-    LOG_DISPLAY_CAPS( ( " DefaultOutput                : %s", getHALFormatString( mDefaultOutputFormat ) ) );
+    LOG_DISPLAY_CAPS( ( " DefaultOutput                : %s", getDRMFormatString( mDefaultOutputFormat ) ) );
     LOG_DISPLAY_CAPS( ( " BitsPerChannel               : %d", mBitsPerChannel ) );
     LOG_DISPLAY_CAPS( ( " SeamlessRateChange           : %d", mbSeamlessRateChange ) );
     LOG_DISPLAY_CAPS( ( " NativeBufferReq              : %d", mbNativeBuffersReq ) );
@@ -520,7 +517,6 @@ void DisplayCaps::dump( void ) const
         LOG_DISPLAY_CAPS( ( "  Formats    : %s", planeDisplayFormatLUTString( p ).string( ) ) );
         LOG_DISPLAY_CAPS( ( "  CSC        : %s", planeCscFormatLUTString( p ).string( ) ) );
     }
-#endif
 }
 
 }; // namespace hwcomposer
