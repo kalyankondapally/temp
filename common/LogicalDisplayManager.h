@@ -17,9 +17,9 @@
 #ifndef INTEL_UFO_HWC_DISPLAY_MANAGER_H
 #define INTEL_UFO_HWC_DISPLAY_MANAGER_H
 
-#include "LogicalDisplay.h"
+#include "logicaldisplay.h"
 #include "AbstractFilter.h"
-#include "AbstractDisplayManager.h"
+#include "abstractdisplaymanager.h"
 #include "PhysicalDisplayManager.h"
 #include "Option.h"
 

@@ -22,15 +22,9 @@
 #include "PlaneComposition.h"
 #include "Timer.h"
 #include "option.h"
-#ifdef uncomment
-#include <utils/BitSet.h>
-#endif
 
-namespace intel {
-namespace ufo {
-namespace hwc {
+namespace hwcomposer {
 
-class Hwc;
 class Content;
 class DisplayCaps;
 class CompositionManager;

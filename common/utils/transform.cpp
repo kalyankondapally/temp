@@ -14,21 +14,17 @@
 // limitations under the License.
 */
 
-#include "Common.h"
-#include "Transform.h"
-#include "Utils.h"
+#include "transform.h"
+#include "utils.h"
 #include <math.h>
 
-namespace intel {
-namespace ufo   {
-namespace hwc   {
-
+namespace hwcomposer {
 
 void clipLayerToDisplay( Layer* pLayer, const uint32_t dispW, const uint32_t dispH )
 {
-    ALOG_ASSERT( pLayer );
-    hwc_frect_t& src = pLayer->editSrc();
-    hwc_rect_t& dst = pLayer->editDst();
+    HWCASSERT( pLayer );
+    HwcRect<float>& src = pLayer->editSrc();
+    HwcRect<int>& dst = pLayer->editDst();
 
     // clip dst to display
     clipToDisplay( &src.left, &src.top,
@@ -39,10 +35,10 @@ void clipLayerToDisplay( Layer* pLayer, const uint32_t dispW, const uint32_t dis
                    dispW, dispH );
 
     // clip visibleRegions to display
-    Vector<hwc_rect_t>& visRegions = pLayer->editVisibleRegions();
+    std::vector<HwcRect<int>>& visRegions = pLayer->editVisibleRegions();
     for ( uint32_t r = 0; r < visRegions.size(); r++ )
     {
-        hwc_rect_t& visRect = visRegions.editItemAt(r);
+	HwcRect<int>& visRect = visRegions.at(r);
         float sx1 = 0.0;
         float sy1 = 0.0;
         float sx2 = (float)( visRect.right - visRect.left );
@@ -62,16 +58,16 @@ bool clipToDestRect( float* psx1, float* psy1,
                     const ETransform transform,
                     int32_t* pdx1, int32_t* pdy1,
                     int32_t* pdx2, int32_t* pdy2,
-                    const hwc_rect_t& destRect )
+		    const HwcRect<int>& destRect )
 {
-    ALOG_ASSERT( psx1 );
-    ALOG_ASSERT( psy1 );
-    ALOG_ASSERT( psx2 );
-    ALOG_ASSERT( psy2 );
-    ALOG_ASSERT( pdx1 );
-    ALOG_ASSERT( pdy1 );
-    ALOG_ASSERT( pdx2 );
-    ALOG_ASSERT( pdy2 );
+    HWCASSERT( psx1 );
+    HWCASSERT( psy1 );
+    HWCASSERT( psx2 );
+    HWCASSERT( psy2 );
+    HWCASSERT( pdx1 );
+    HWCASSERT( pdy1 );
+    HWCASSERT( pdx2 );
+    HWCASSERT( pdy2 );
 
     const int32_t visibleX1 = destRect.left;
     const int32_t visibleY1 = destRect.top;
@@ -273,7 +269,7 @@ bool clipToDisplay( float* psx1, float* psy1,
                     int32_t* pdx2, int32_t* pdy2,
                     const uint32_t dispW, const uint32_t dispH )
 {
-    hwc_rect_t destRect;
+    HwcRect<int> destRect;
     destRect.left   = 0;
     destRect.top    = 0;
     destRect.right  = dispW;
@@ -287,11 +283,11 @@ bool clipToDisplay( float* psx1, float* psy1,
                    destRect );
 }
 
-bool clipLayerToDestRect( Layer* pLayer, const hwc_rect_t& destRect )
+bool clipLayerToDestRect( Layer* pLayer, const HwcRect<int>& destRect )
 {
-    ALOG_ASSERT( pLayer );
-    hwc_frect_t& src = pLayer->editSrc();
-    hwc_rect_t&  dst = pLayer->editDst();
+    HWCASSERT( pLayer );
+    HwcRect<float>& src = pLayer->editSrc();
+    HwcRect<int>&  dst = pLayer->editDst();
 
     return clipToDestRect( &src.left, &src.top,
                    &src.right, &src.bottom,
@@ -301,6 +297,4 @@ bool clipLayerToDestRect( Layer* pLayer, const hwc_rect_t& destRect )
                    destRect );
 }
 
-};  // namespace hwc.
-};  // namespace ufo.
-};  // namespace intel.
+};  // namespace hwcomposer.

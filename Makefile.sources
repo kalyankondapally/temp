@@ -35,6 +35,7 @@ common_SOURCES =              \
     common/utils/option.cpp \
     common/utils/optionmanager.cpp \
     common/utils/Timer.cpp \
+    common/utils/transform.cpp \
     common/utils/log/log.cpp \
     common/utils/log/Debug.cpp \
     common/filter/debugfilter.cpp \
