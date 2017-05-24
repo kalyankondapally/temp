@@ -412,7 +412,7 @@ private:
     // This is called from the DisplayQueue worker to ensure the most recent Drm flip has completed.
     virtual void syncFlip( void );
 
-    // Implements DisplayQueue::getHwc( ).
+    // Implements DisplayQueue::getGpuDevice( ).
     virtual GpuDevice& getGpuDevice( void ) { return mDevice; }
 
     // Function to update our list of timings to the current connector.

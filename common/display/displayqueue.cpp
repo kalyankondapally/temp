@@ -30,7 +30,7 @@
 
 namespace hwcomposer {
 
-DisplayQueue::DisplayQueue(uint32_t gpu_fd, uint32_t crtc_id,
+DisplayQueue_old::DisplayQueue_old(uint32_t gpu_fd, uint32_t crtc_id,
                            OverlayBufferManager* buffer_manager)
     : frame_(0),
       dpms_prop_(0),
@@ -75,7 +75,7 @@ DisplayQueue::DisplayQueue(uint32_t gpu_fd, uint32_t crtc_id,
   needs_color_correction_ = true;
 }
 
-DisplayQueue::~DisplayQueue() {
+DisplayQueue_old::~DisplayQueue_old() {
   if (blob_id_)
     drmModeDestroyPropertyBlob(gpu_fd_, blob_id_);
 
@@ -83,7 +83,7 @@ DisplayQueue::~DisplayQueue() {
     drmModeDestroyPropertyBlob(gpu_fd_, old_blob_id_);
 }
 
-bool DisplayQueue::Initialize(uint32_t width, uint32_t height, uint32_t pipe,
+bool DisplayQueue_old::Initialize(uint32_t width, uint32_t height, uint32_t pipe,
                               uint32_t connector,
                               const drmModeModeInfo& mode_info) {
   frame_ = 0;
@@ -91,7 +91,7 @@ bool DisplayQueue::Initialize(uint32_t width, uint32_t height, uint32_t pipe,
   previous_plane_state_.clear();
 
   if (!display_plane_manager_->Initialize(pipe, width, height)) {
-    ETRACE("Failed to initialize DisplayQueue Manager.");
+    ETRACE("Failed to initialize DisplayQueue_old Manager.");
     return false;
   }
 
@@ -131,7 +131,7 @@ bool DisplayQueue::Initialize(uint32_t width, uint32_t height, uint32_t pipe,
   return true;
 }
 
-bool DisplayQueue::GetFence(drmModeAtomicReqPtr property_set,
+bool DisplayQueue_old::GetFence(drmModeAtomicReqPtr property_set,
                             int32_t* out_fence) {
   int ret = drmModeAtomicAddProperty(property_set, crtc_id_,
                                      out_fence_ptr_prop_, (uintptr_t)out_fence);
@@ -143,7 +143,7 @@ bool DisplayQueue::GetFence(drmModeAtomicReqPtr property_set,
   return true;
 }
 
-bool DisplayQueue::ApplyPendingModeset(drmModeAtomicReqPtr property_set) {
+bool DisplayQueue_old::ApplyPendingModeset(drmModeAtomicReqPtr property_set) {
   if (old_blob_id_) {
     drmModeDestroyPropertyBlob(gpu_fd_, old_blob_id_);
     old_blob_id_ = 0;
@@ -173,7 +173,7 @@ bool DisplayQueue::ApplyPendingModeset(drmModeAtomicReqPtr property_set) {
   return true;
 }
 
-bool DisplayQueue::SetPowerMode(uint32_t power_mode) {
+bool DisplayQueue_old::SetPowerMode(uint32_t power_mode) {
   switch (power_mode) {
     case kOff:
       HandleExit();
@@ -200,7 +200,7 @@ bool DisplayQueue::SetPowerMode(uint32_t power_mode) {
   return true;
 }
 
-void DisplayQueue::GetCachedLayers(const std::vector<OverlayLayer>& layers,
+void DisplayQueue_old::GetCachedLayers(const std::vector<OverlayLayer>& layers,
                                    DisplayPlaneStateList* composition,
                                    bool* render_layers) {
   CTRACE();
@@ -242,7 +242,7 @@ void DisplayQueue::GetCachedLayers(const std::vector<OverlayLayer>& layers,
   *render_layers = needs_gpu_composition;
 }
 
-bool DisplayQueue::QueueUpdate(std::vector<HwcLayer*>& source_layers,
+bool DisplayQueue_old::QueueUpdate(std::vector<HwcLayer*>& source_layers,
                                int32_t* retire_fence) {
   CTRACE();
   size_t size = source_layers.size();
@@ -396,14 +396,14 @@ bool DisplayQueue::QueueUpdate(std::vector<HwcLayer*>& source_layers,
   return true;
 }
 
-void DisplayQueue::HandleCommitUpdate(
+void DisplayQueue_old::HandleCommitUpdate(
     const std::vector<const OverlayBuffer*>& buffers) {
   spin_lock_.lock();
   buffer_manager_->UnRegisterBuffers(buffers);
   spin_lock_.unlock();
 }
 
-void DisplayQueue::HandleExit() {
+void DisplayQueue_old::HandleExit() {
   kms_fence_handler_->ExitThread();
 
   ScopedDrmAtomicReqPtr pset(drmModeAtomicAlloc());
@@ -429,7 +429,7 @@ void DisplayQueue::HandleExit() {
   compositor_.Reset();
 }
 
-void DisplayQueue::GetDrmObjectProperty(const char* name,
+void DisplayQueue_old::GetDrmObjectProperty(const char* name,
                                         const ScopedDrmObjectPropertyPtr& props,
                                         uint32_t* id) const {
   uint32_t count_props = props->count_props;
@@ -444,11 +444,11 @@ void DisplayQueue::GetDrmObjectProperty(const char* name,
     ETRACE("Could not find property %s", name);
 }
 
-bool DisplayQueue::CheckPlaneFormat(uint32_t format) {
+bool DisplayQueue_old::CheckPlaneFormat(uint32_t format) {
   return display_plane_manager_->CheckPlaneFormat(format);
 }
 
-void DisplayQueue::GetDrmObjectPropertyValue(
+void DisplayQueue_old::GetDrmObjectPropertyValue(
     const char* name, const ScopedDrmObjectPropertyPtr& props,
     uint64_t* value) const {
   uint32_t count_props = props->count_props;
@@ -463,7 +463,7 @@ void DisplayQueue::GetDrmObjectPropertyValue(
     ETRACE("Could not find property value %s", name);
 }
 
-void DisplayQueue::ApplyPendingLUT(struct drm_color_lut* lut) const {
+void DisplayQueue_old::ApplyPendingLUT(struct drm_color_lut* lut) const {
   if (lut_id_prop_ == 0)
     return;
 
@@ -480,14 +480,14 @@ void DisplayQueue::ApplyPendingLUT(struct drm_color_lut* lut) const {
   drmModeDestroyPropertyBlob(gpu_fd_, lut_blob_id);
 }
 
-void DisplayQueue::SetGamma(float red, float green, float blue) {
+void DisplayQueue_old::SetGamma(float red, float green, float blue) {
   gamma_.red = red;
   gamma_.green = green;
   gamma_.blue = blue;
   needs_color_correction_ = true;
 }
 
-void DisplayQueue::SetContrast(uint32_t red, uint32_t green, uint32_t blue) {
+void DisplayQueue_old::SetContrast(uint32_t red, uint32_t green, uint32_t blue) {
   red &= 0xFF;
   green &= 0xFF;
   blue &= 0xFF;
@@ -495,7 +495,7 @@ void DisplayQueue::SetContrast(uint32_t red, uint32_t green, uint32_t blue) {
   needs_color_correction_ = true;
 }
 
-void DisplayQueue::SetBrightness(uint32_t red, uint32_t green, uint32_t blue) {
+void DisplayQueue_old::SetBrightness(uint32_t red, uint32_t green, uint32_t blue) {
   red &= 0xFF;
   green &= 0xFF;
   blue &= 0xFF;
@@ -503,7 +503,7 @@ void DisplayQueue::SetBrightness(uint32_t red, uint32_t green, uint32_t blue) {
   needs_color_correction_ = true;
 }
 
-float DisplayQueue::TransformContrastBrightness(float value, float brightness,
+float DisplayQueue_old::TransformContrastBrightness(float value, float brightness,
                                                 float contrast) const {
   float result;
   result = (value - 0.5) * contrast + 0.5 + brightness;
@@ -515,7 +515,7 @@ float DisplayQueue::TransformContrastBrightness(float value, float brightness,
   return result;
 }
 
-float DisplayQueue::TransformGamma(float value, float gamma) const {
+float DisplayQueue_old::TransformGamma(float value, float gamma) const {
   float result;
 
   result = pow(value, gamma);
@@ -527,7 +527,7 @@ float DisplayQueue::TransformGamma(float value, float gamma) const {
   return result;
 }
 
-void DisplayQueue::SetColorCorrection(struct gamma_colors gamma,
+void DisplayQueue_old::SetColorCorrection(struct gamma_colors gamma,
                                       uint32_t contrast_c,
                                       uint32_t brightness_c) const {
   struct drm_color_lut* lut;
@@ -599,7 +599,7 @@ void DisplayQueue::SetColorCorrection(struct gamma_colors gamma,
   free(lut);
 }
 
-bool DisplayQueue::SetBroadcastRGB(const char* range_property) {
+bool DisplayQueue_old::SetBroadcastRGB(const char* range_property) {
   int64_t p_value = -1;
 
   if (!strcmp(range_property, "Full")) {
@@ -621,7 +621,7 @@ bool DisplayQueue::SetBroadcastRGB(const char* range_property) {
   return true;
 }
 
-void DisplayQueue::SetExplicitSyncSupport(bool disable_explicit_sync) {
+void DisplayQueue_old::SetExplicitSyncSupport(bool disable_explicit_sync) {
   if (disable_explicit_sync == true) {
     disable_overlay_usage_ = true;
   } else {

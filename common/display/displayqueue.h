@@ -46,11 +46,11 @@ class DisplayPlaneManager;
 struct HwcLayer;
 class OverlayBufferManager;
 
-class DisplayQueue {
+class DisplayQueue_old {
  public:
-  DisplayQueue(uint32_t gpu_fd, uint32_t crtc_id,
+  DisplayQueue_old(uint32_t gpu_fd, uint32_t crtc_id,
                OverlayBufferManager* buffer_manager);
-  ~DisplayQueue();
+  ~DisplayQueue_old();
 
   bool Initialize(uint32_t width, uint32_t height, uint32_t pipe,
                   uint32_t connector, const drmModeModeInfo& mode_info);

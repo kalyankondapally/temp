@@ -30,11 +30,11 @@
 
 namespace hwcomposer {
 
-class DisplayQueue;
+class DisplayQueue_old;
 
 class KMSFenceEventHandler : public HWCThread {
  public:
-  KMSFenceEventHandler(DisplayQueue* display_queue);
+  KMSFenceEventHandler(DisplayQueue_old* display_queue);
   ~KMSFenceEventHandler() override;
 
   bool Initialize();
@@ -52,7 +52,7 @@ class KMSFenceEventHandler : public HWCThread {
   std::vector<const OverlayBuffer*> buffers_;
   uint32_t kms_fence_;
   uint32_t kms_ready_fence_;
-  DisplayQueue* display_queue_;
+  DisplayQueue_old* display_queue_;
 };
 
 }  // namespace hwcomposer

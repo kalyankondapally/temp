@@ -17,6 +17,7 @@ common_SOURCES =              \
     common/display/display.cpp \
     common/display/displaycaps.cpp \
     common/display/displayqueue.cpp \
+    common/display/DisplayQueue.cpp \
     common/display/displayplane.cpp \
     common/display/displayplanemanager.cpp \
     common/display/headless.cpp \

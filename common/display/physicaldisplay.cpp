@@ -15,8 +15,7 @@
 */
 
 #include "physicaldisplay.h"
-// FIXME:
-//#include "utils.h"
+#include "utils.h"
 #include "hwcutils.h"
 #include "hwctrace.h"
 #include "log.h"

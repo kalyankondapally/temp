@@ -51,7 +51,7 @@ Display::~Display() {
 
 bool Display::Initialize(OverlayBufferManager *buffer_manager) {
   vblank_handler_.reset(new VblankEventHandler());
-  display_queue_.reset(new DisplayQueue(gpu_fd_, crtc_id_, buffer_manager));
+  display_queue_.reset(new DisplayQueue_old(gpu_fd_, crtc_id_, buffer_manager));
 
   return true;
 }

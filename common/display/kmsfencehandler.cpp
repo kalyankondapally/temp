@@ -22,7 +22,7 @@
 
 namespace hwcomposer {
 
-KMSFenceEventHandler::KMSFenceEventHandler(DisplayQueue* display_queue)
+KMSFenceEventHandler::KMSFenceEventHandler(DisplayQueue_old* display_queue)
     : HWCThread(-8, "KMSFenceEventHandler"),
       kms_fence_(0),
       kms_ready_fence_(0),

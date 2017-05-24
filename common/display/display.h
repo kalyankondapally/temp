@@ -34,7 +34,7 @@
 namespace hwcomposer {
 class DisplayPlaneState;
 class DisplayPlaneManager;
-class DisplayQueue;
+class DisplayQueue_old;
 class OverlayBufferManager;
 class GpuDevice;
 class NativeSync;
@@ -127,7 +127,7 @@ class Display : public NativeDisplay {
   float refresh_;
   bool is_connected_;
   std::unique_ptr<VblankEventHandler> vblank_handler_;
-  std::unique_ptr<DisplayQueue> display_queue_;
+  std::unique_ptr<DisplayQueue_old> display_queue_;
 };
 
 }  // namespace hwcomposer
