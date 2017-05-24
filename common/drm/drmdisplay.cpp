@@ -354,7 +354,7 @@ void DrmDisplay::updateDisplayTimings( void )
             Timing t(m->hdisplay, m->vdisplay, m->vrefresh, m->clock, m->htotal, m->vtotal, getDrmModeAspectRatio(m), flags);
             if (m->type & DRM_MODE_TYPE_PREFERRED)
             {
-		//mDisplayTimings.insert(mDisplayTimings.begin(), t, preferredModes);
+		mDisplayTimings.insert(mDisplayTimings.begin(), t);
 		mTimingToConnectorMode.insert(mTimingToConnectorMode.begin() + preferredModes, i);
                 ++preferredModes;
             }
