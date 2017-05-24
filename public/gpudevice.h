@@ -77,6 +77,13 @@ class GpuDevice {
   // If timeoutNs is 0 this is blocking.
   void synchronize( nsecs_t timeoutNs = 5000000000 ) { }
 
+  // Force a geometry change on the next onPrepare and redraw.
+  void forceGeometryChangeAndRedraw() {  }
+
+  // Notify plug change has completed, so that make sure plug event can be
+  // fully serialized and synchronized.
+  void notifyPlugChangeCompleted( ) { }
+
  private:
   class DisplayManager;
   // Order is important here as we need fd_ to be valid

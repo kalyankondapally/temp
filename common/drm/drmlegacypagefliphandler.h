@@ -38,9 +38,7 @@ protected:
 
     // Flip the next frame to the display.
     // Returns true if the flip event request is successfully issued.
-#ifdef uncomment
     virtual bool doFlip( DisplayQueue::Frame* pNewFrame, bool bMainBlanked, uint32_t flipEvData );
-#endif
 
 private:
 
@@ -69,12 +67,12 @@ private:
 
         // Get drm object ID.
         uint32_t getDrmObjectID( void ) const;
-#ifdef uncomment
+
         // Flip a new layer to this plane.
         // FLIPEVENT will be requested if a callback is provided.
         // If a new buffer is succesfully flipped with FLIPEVENT then pbRequestedFlip will be set to true.
         void flip( const Layer* pLayer, uint32_t flipEventData, bool* pbRequestedFlip );
-#endif
+
         // Call from the page flip event to complete the previous flip.
         void completeFlip( void );
 
@@ -95,9 +93,7 @@ private:
         bool     mbDirtyDecrypt:1;      //< State needs to be applied for decrypt.
 
         bool     mbEnabled:1;           //< Is plane currently enabeld?
-#ifdef uncomment
         Layer    mLayer;                //< Current state if enabled.
-#endif
     };
 
 

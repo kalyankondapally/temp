@@ -16,9 +16,7 @@
 
 #include "drmpagefliphandler.h"
 #include "drm_internal.h"
-#ifdef uncomment
 #include "drmdisplay.h"
-#endif
 #include "displaycaps.h"
 #include "log.h"
 #include "drmeventthread.h"
@@ -54,11 +52,9 @@ DrmPageFlipHandler::DrmPageFlipHandler( DrmDisplay& display ) :
     mbInit( false ),
     mNumPlanes( 0 ),
     mMainPlaneIndex( -1 ),
-    mLastPageFlipTime( 0ULL )
-#ifdef uncomment
+    mLastPageFlipTime( 0ULL ),
     mpLastFlippedFrame( NULL ),
     mpCurrentFrame( NULL )
-#endif
 {
 }
 
@@ -207,7 +203,7 @@ bool DrmPageFlipHandler::readyForFlip( void )
     }
     return !isOutstandingFlipWork( );
 }
-#ifdef uncomment
+
 bool DrmPageFlipHandler::flip( DisplayQueue::Frame* pNewFrame )
 {
     HWC_ASSERT_LOCK_NOT_HELD( mLock );
@@ -287,7 +283,11 @@ bool DrmPageFlipHandler::flip( DisplayQueue::Frame* pNewFrame )
             bFlipped = mpImpl->doFlip( pNewFrame, bMainBlanked, eventData );
             if ( bFlipped )
             {
+#ifdef uncomment
                 mLastPageFlipTime = systemTime(SYSTEM_TIME_MONOTONIC);
+#else
+		mLastPageFlipTime = 0;
+#endif
                 mpLastFlippedFrame = pNewFrame;
             }
         }
@@ -329,7 +329,7 @@ void DrmPageFlipHandler::doRetire( DisplayQueue::Frame* pNewFrame )
     Log::alogd( DRM_PAGEFLIP_DEBUG, " Drm " DRMDISPLAY_ID_STR " advancing immediately for skipped frame [timeline:%u]", DRMDISPLAY_ID_PARAMS, releaseTo );
     mTimeline.advanceTo( releaseTo );
 }
-#endif
+
 void DrmPageFlipHandler::pageFlipEvent( void )
 {
     HWC_ASSERT_LOCK_NOT_HELD( mLock );
@@ -363,7 +363,6 @@ void DrmPageFlipHandler::sync( void )
 
 void DrmPageFlipHandler::doSync( void )
 {
-#ifdef uncomment
     HWC_ASSERT_LOCK_NOT_HELD( mLock );
     DTRACEIF( DRM_PAGEFLIP_DEBUG, DRM_PFH_NAME " " DRMDISPLAY_ID_STR " Sync", DRMDISPLAY_ID_PARAMS );
 
@@ -384,7 +383,6 @@ void DrmPageFlipHandler::doSync( void )
             }
         }
     }
-#endif
 }
 
 bool DrmPageFlipHandler::waitForFlipCompletion( void )
@@ -411,7 +409,7 @@ bool DrmPageFlipHandler::waitForFlipCompletion( void )
 
     return true;
 }
-#ifdef uncomment
+
 void DrmPageFlipHandler::retirePreviousFrames( DisplayQueue::Frame* pNewFrame )
 {
     HWC_ASSERT_LOCK_NOT_HELD( mLock );
@@ -443,7 +441,7 @@ void DrmPageFlipHandler::retirePreviousFrames( DisplayQueue::Frame* pNewFrame )
         }
     }
 }
-#endif
+
 void DrmPageFlipHandler::completeFlip( void )
 {
 #ifdef uncomment
@@ -499,7 +497,6 @@ void DrmPageFlipHandler::completeFlip( void )
 
 String8 DrmPageFlipHandler::getStatusString( void )
 {
-#ifdef uncomment
     HWC_ASSERT_LOCK_NOT_HELD( mLock );
     String8 str = String8::format(
         "Timeline:%u/%u Current:%s LastFlip:%s",
@@ -507,9 +504,6 @@ String8 DrmPageFlipHandler::getStatusString( void )
         mpCurrentFrame ? mpCurrentFrame->getFrameId().dump().string() : "N/A",
         mpLastFlippedFrame ? mpLastFlippedFrame->getFrameId().dump().string() : "N/A" );
     return str;
-#else
-    return String8();
- #endif
 }
 
 }; // namespace hwcomposer

@@ -108,7 +108,15 @@ HWCNativeHandle GbmBufferHandler::CreateGraphicsBuffer(uint32_t w, uint32_t h, i
   if (gbm_format == 0)
     gbm_format = GBM_FORMAT_XRGB8888;
 
-  struct gbm_bo *bo = gbm_bo_create(device_, w, h, gbm_format, usage);
+  int gbm_usage = 0;
+
+  if (usage & kHwcRender)
+    gbm_usage |= GBM_BO_USE_RENDERING;
+
+  if (usage & kHwcomposer)
+    gbm_usage |= GBM_BO_USE_SCANOUT;
+
+  struct gbm_bo *bo = gbm_bo_create(device_, w, h, gbm_format, gbm_usage);
 
   if (!bo) {
     bo = gbm_bo_create(device_, w, h, gbm_format, GBM_BO_USE_RENDERING);

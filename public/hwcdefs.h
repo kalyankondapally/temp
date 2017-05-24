@@ -77,5 +77,11 @@ enum DisplayPowerMode {
                     // updates from the client
 };
 
+enum HWCUsage {
+  kHwcNone = 0,
+  kHwcRender = 1 << 0,
+  kHwcomposer = 1 << 1,
+};
+
 }  // namespace hwcomposer
 #endif  // PUBLIC_HWCDEFS_H_

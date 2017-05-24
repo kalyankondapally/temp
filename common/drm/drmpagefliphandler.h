@@ -21,7 +21,7 @@
 #include "base.h"
 #include "drm_internal.h"
 #include "hwcutils.h"
-#include "displayqueue.h"
+#include "DisplayQueue.h"
 #include "timeline.h"
 #include "option.h"
 #include "spinlock.h"
@@ -43,9 +43,7 @@ public:
         virtual ~AbstractImpl() { };
         // Flip the next frame to the display.
         // Returns true if the flip event request is successfully issued.
-#ifdef uncomment
         virtual bool doFlip( DisplayQueue::Frame* pNewFrame, bool bMainBlanked, uint32_t pFlipEvData ) = 0;
-#endif
     };
 
 
@@ -93,13 +91,12 @@ public:
     // Flip the next frame to the display.
     // Returns true if the frame is flipped.
     // If the frame is not flipped then the caller must manage its release.
- #ifdef uncomment
+
     bool flip( DisplayQueue::Frame* pNewFrame );
 
     // Retire the next frame (instead of flipping it).
     // This will advance timeline to release all work up to and including this frame.
     void retire( DisplayQueue::Frame* pNewFrame );
-#endif
 
     // Waits for most recent flip to complete.
     void sync( void );
@@ -108,24 +105,21 @@ public:
     void pageFlipEvent( void );
 
 protected:
- #ifdef uncomment
     // Check if there is outstanding flip work.
     bool isOutstandingFlipWork( void ) { return ( mpLastFlippedFrame != NULL ); }
     // Retire the next frame (instead of flipping it).
     // This will advance timeline to release all work up to and including this frame.
     void doRetire( DisplayQueue::Frame* pNewFrame );
-#else
-	bool isOutstandingFlipWork( void ) { return false; }
-#endif
+
     // Waits for last flip to complete - force completion if necessary.
     void doSync( void );
 
     // Wait for last flip to complete.
     bool waitForFlipCompletion( void );
-#ifdef uncomment
+
     // Retire previous frames for a new frame on the display.
     void retirePreviousFrames( DisplayQueue::Frame* pNewFrame );
-#endif
+
     // Complete last flip.
     void completeFlip( void );
 
@@ -164,13 +158,13 @@ protected:
 #endif
     // Timeline for this display.
     Timeline                mTimeline;
- #ifdef uncomment
+
     // Most recently flipped frame (may not have reached display yet).
     DisplayQueue::Frame*    mpLastFlippedFrame;
 
     // Frame currently on display.
     DisplayQueue::Frame*    mpCurrentFrame;
-#endif
+
     // Timeout used for flip synchronisation.
     static const uint32_t   mTimeoutSyncMsec = 3000;
 };

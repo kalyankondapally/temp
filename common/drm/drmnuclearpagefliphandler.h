@@ -20,6 +20,7 @@
 
 #include "drmpagefliphandler.h"
 #include "timeline.h"
+#include "drmdisplaycaps.h"
 #include "drm_internal.h"
 
 #if HWC_USE_ATOMIC_NUCLEAR
@@ -51,10 +52,10 @@ public:
     DrmNuclearHelper(DrmDisplay& display);
 
     class Properties;
-#ifdef uncomment
+
     // Generate the properties to update a plane.
     void updatePlane(const Layer* pLayer, Properties& props, uint32_t drmPlaneId);
-#endif
+
     // Generate the properties to update a mode.
     void updateMode(bool active, uint32_t drmModeId, Properties& props);
 
@@ -62,18 +63,15 @@ public:
     int drmAtomic(uint32_t flags, const Properties& props, uint32_t user_data);
 
     String8 dump(const Properties& props) const;
-#ifdef uncomment
+
     // Nuclear equivalent of setCrtc
     int setCrtcNuclear( const drmModeModeInfoPtr pModeInfo, const Layer* pLayer );
-#endif
 private:
     // Get property if it is valid.
     uint32_t getPropertyIDIfValid(const char *name);
-#ifdef uncomment
     // Get blend func and color.
     uint32_t getBlendFunc(const Layer & layer);
     uint64_t getBlendColor(const Layer & layer);
-#endif
 private:
 
     // Do drrs via atomic apis.
@@ -121,9 +119,7 @@ protected:
 
     // Flip the next frame to the display.
     // Returns true if the flip event request is successfully issued.
-#ifdef uncomment
     virtual bool doFlip( DisplayQueue::Frame* pNewFrame, bool bMainBlanked, uint32_t flipEvData );
-#endif
 private:
 
     // Do drrs via atomic apis.

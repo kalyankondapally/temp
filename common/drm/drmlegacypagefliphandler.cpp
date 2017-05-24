@@ -16,9 +16,7 @@
 
 #include "drmlegacypagefliphandler.h"
 #include "drm_internal.h"
-#ifdef uncomment
 #include "drmdisplay.h"
-#endif
 #include "displaycaps.h"
 #include "log.h"
 
@@ -74,7 +72,7 @@ uint32_t DrmLegacyPageFlipHandler::Plane::getDrmObjectID( void ) const
 {
     return mDrmObjID;
 }
-#ifdef uncomment
+
 void DrmLegacyPageFlipHandler::Plane::flip( const Layer* pLayer, uint32_t flipEventData, bool* pbRequestedFlip )
 {
     DTRACEIF( DRM_PAGEFLIP_DEBUG, DRM_PFH_NAME " Crtc %u Flip %s %u",
@@ -125,8 +123,8 @@ void DrmLegacyPageFlipHandler::Plane::flip( const Layer* pLayer, uint32_t flipEv
 
     if ( pLayer && pLayer->isEnabled( ) )
     {
-        const hwc_frect_t& src = pLayer->getSrc();
-        const hwc_rect_t&  dst = pLayer->getDst();
+	const HwcRect<float>& src = pLayer->getSrc();
+	const HwcRect<int>&  dst = pLayer->getDst();
 
         // Enabled.
         if ( mbDirty )
@@ -243,7 +241,7 @@ void DrmLegacyPageFlipHandler::Plane::flip( const Layer* pLayer, uint32_t flipEv
         }
     }
 }
-#endif
+
 // *****************************************************************************
 // DrmLegacyPageFlipHandler
 // *****************************************************************************
@@ -325,7 +323,6 @@ void DrmLegacyPageFlipHandler::doUninit( void )
     }
 }
 
-#ifdef uncomment
 bool DrmLegacyPageFlipHandler::doFlip( DisplayQueue::Frame* pNewFrame, bool bMainBlanked, uint32_t flipEvData )
 {
     if ( maPlanes == NULL )
@@ -440,6 +437,5 @@ bool DrmLegacyPageFlipHandler::doFlip( DisplayQueue::Frame* pNewFrame, bool bMai
 
     return bRequestedFlip;
 }
-#endif
 
 }; // namespace hwcomposer

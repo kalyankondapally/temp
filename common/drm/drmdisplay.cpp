@@ -23,6 +23,7 @@
 #include "drmnuclearpagefliphandler.h"
 //#include "HwcService.h"
 #include "displaystate.h"
+#include "gpudevice.h"
 #include <drm_fourcc.h>
 #include <math.h>
 
@@ -284,7 +285,7 @@ void DrmDisplay::startupDisplay( Connection& newConnection, bool bNew )
     if ( mDrm.setActiveDisplay( getDrmDisplayID(), true ) )
     {
         // Synchronize required.
-        mHwc.synchronize();
+	mDevice.synchronize();
     }
 
     // Set DisplayQueue name.
@@ -317,7 +318,7 @@ inline Timing::EAspectRatio getDrmModeAspectRatio(drmModeModeInfoPtr m)
 // mode set routines.
 void DrmDisplay::updateDisplayTimings( void )
 {
-    INTEL_UFO_HWC_ASSERT_MUTEX_NOT_HELD( mDisplayTimingsLock );
+    HWC_ASSERT_LOCK_NOT_HELD3(mDisplayTimingsLock);
 
     // Reset applied mode to 'unknown'.
     setAppliedTiming( UnknownDisplayTiming );
@@ -325,7 +326,7 @@ void DrmDisplay::updateDisplayTimings( void )
 
     // Update timings.
     {
-        Mutex::Autolock _l( mDisplayTimingsLock );
+	ScopedSpinLock _l( mDisplayTimingsLock );
 
         mDisplayTimings.clear();
         mTimingToConnectorMode.clear();
@@ -353,14 +354,14 @@ void DrmDisplay::updateDisplayTimings( void )
             Timing t(m->hdisplay, m->vdisplay, m->vrefresh, m->clock, m->htotal, m->vtotal, getDrmModeAspectRatio(m), flags);
             if (m->type & DRM_MODE_TYPE_PREFERRED)
             {
-                mDisplayTimings.insertAt(t, preferredModes);
-                mTimingToConnectorMode.insertAt(i, preferredModes, 1);
+		//mDisplayTimings.insert(mDisplayTimings.begin(), t, preferredModes);
+		mTimingToConnectorMode.insert(mTimingToConnectorMode.begin() + preferredModes, i);
                 ++preferredModes;
             }
             else
             {
-                mDisplayTimings.push_back(t);
-                mTimingToConnectorMode.push_back(i);
+		mDisplayTimings.emplace_back(t);
+		mTimingToConnectorMode.emplace_back(i);
             }
 	    DTRACEIF( MODE_DEBUG, "DrmDisplay updateDisplayTimings %s", t.dump().string());
         }
@@ -697,7 +698,7 @@ static uint32_t findBestRefresh(uint32_t refresh, uint32_t min, uint32_t max)
     }
     return result;
 }
-#ifdef uncomment
+
 void DrmDisplay::onSet(const Content::Display& display, uint32_t zorder, int* pRetireFenceFd)
 {
     DRMDISPLAY_ASSERT_PRODUCER_THREAD
@@ -707,7 +708,7 @@ void DrmDisplay::onSet(const Content::Display& display, uint32_t zorder, int* pR
     // Sanity check our display is aligned with scaling requirements.
     if ( display.isOutputScaled() )
     {
-        const hwc_rect_t& dst = display.getOutputScaledDst();
+	const HwcRect<int>& dst = display.getOutputScaledDst();
         HWC_UNUSED( dst );
 	HWCASSERT( mGlobalScalingRequested.mbEnabled );
 	HWCASSERT( mGlobalScalingRequested.mSrcW == display.getWidth() );
@@ -724,7 +725,7 @@ void DrmDisplay::onSet(const Content::Display& display, uint32_t zorder, int* pR
 
     queueFrame( display, zorder, pRetireFenceFd );
 }
-#endif
+
 void DrmDisplay::considerReleasingBuffers( void )
 {
 
@@ -829,12 +830,12 @@ void DrmDisplay::allocateBlankingLayer( uint32_t width, uint32_t height )
 
             AbstractBufferManager& bm = AbstractBufferManager::get();
             mpBlankBuffer = bm.createPurgedGraphicBuffer( "BLANKING", width, height, INTEL_HWC_DEFAULT_HAL_PIXEL_FORMAT,
-                    GRALLOC_USAGE_HW_COMPOSER | GRALLOC_USAGE_HW_RENDER, &mbBlankBufferPurged );
+		    HWCUsage::kHwcomposer | HWCUsage::kHwcRender, &mbBlankBufferPurged );
 
             if ( mpBlankBuffer != NULL )
             {
                 // This is an opaque layer
-                mBlankLayer.onUpdateAll(mpBlankBuffer->handle, true /* bOpaque */);
+		mBlankLayer.onUpdateAll(mpBlankBuffer.get(), true /* bOpaque */);
             }
         }
         else
@@ -851,10 +852,10 @@ void DrmDisplay::vsyncEvent(unsigned int, unsigned int, unsigned int)
 #ifdef uncomment
     ATRACE_NAME("DrmDisplay::vsyncEvent");
     nsecs_t time = systemTime(SYSTEM_TIME_MONOTONIC);
+    mPhysicalDisplayManager.notifyPhysicalVSync( this, time );
 #else
 	nsecs_t time = 0;
 #endif
-    mPhysicalDisplayManager.notifyPhysicalVSync( this, time );
 }
 
 void DrmDisplay::dropAllFrames( void )
@@ -877,22 +878,22 @@ void DrmDisplay::synchronizeEvent( void )
     DTRACEIF( HPLUG_DEBUG, "DRMDisplay " DRMDISPLAY_ID_STR " synchronizeEvent flush", DRMDISPLAY_ID_PARAMS );
     flush( 0, 0 );
     // Enforce a full update (this is to cater for syncs across changes that require re-analysis).
-    mHwc.forceGeometryChangeAndRedraw();
+    mDevice.forceGeometryChangeAndRedraw();
     // Blocking sync with HWC to ensure SF has a chance to pick up and process the
     // trailing unplug notification before handling any more events.
     DTRACEIF( HPLUG_DEBUG, "DRMDisplay " DRMDISPLAY_ID_STR " synchronizeEvent HWC synchronize", DRMDISPLAY_ID_PARAMS );
-    mHwc.synchronize( 0 );
+    mDevice.synchronize( 0 );
     DTRACEIF( HPLUG_DEBUG, "DRMDisplay " DRMDISPLAY_ID_STR " synchronizeEvent HWC synchronize complete", DRMDISPLAY_ID_PARAMS );
 
     // Forward notification of plug change completed.
-    mHwc.notifyPlugChangeCompleted();
+    mDevice.notifyPlugChangeCompleted();
 }
 
 void DrmDisplay::synchronizeFromConsumer( void )
 {
     DRMDISPLAY_ASSERT_CONSUMER_THREAD
     consumerBlocked();
-    mHwc.synchronize();
+    mDevice.synchronize();
     consumerUnblocked();
 }
 
@@ -1047,7 +1048,7 @@ void DrmDisplay::issueHotPlug( void )
         if ( mDrm.setActiveDisplay( getDrmDisplayID(), true ) )
         {
             // Synchronize required.
-            mHwc.synchronize();
+	    mDevice.synchronize();
         }
         // Startup display.
         // This will call queueStartup to complete startup with the new connection.
@@ -1115,14 +1116,13 @@ void DrmDisplay::reconnect( void )
     {
         issueHotPlug();
     }
-    return;
 }
 
 void DrmDisplay::processRecovery( void )
 {
     if (isInRecovery() && (meStatus == AVAILABLE))
     {
-       Log::ETRACE( true, "Drm Processing Recovery, displayID = %d, CRTC = %d", getDrmDisplayID(), getDrmCrtcID() );
+       Log::aloge( true, "Drm Processing Recovery, displayID = %d, CRTC = %d", getDrmDisplayID(), getDrmCrtcID() );
 
        // Exit recovery mode and then attempt recovery.
        // If recovery gets requested again while *this* recovery is being attempted
@@ -1143,8 +1143,8 @@ void DrmDisplay::processRecovery( void )
        setDisplay( );
 
        // Force redraw the last frame to get rid of the blank frame in setDisplay().
-       mHwc.forceRedraw();
-       Log::ETRACE( true, "Drm Recovery finished, displayID = %d, CRTC = %d", getDrmDisplayID(), getDrmCrtcID() );
+       mDevice.forceRedraw();
+       Log::aloge( true, "Drm Recovery finished, displayID = %d, CRTC = %d", getDrmDisplayID(), getDrmCrtcID() );
     }
 }
 
@@ -1153,12 +1153,12 @@ void DrmDisplay::recover( void )
     // Enter recovery mode.
     // The next work on the display will process recovery.
     // Any work on the display will be filtered until the display is re-started.
-    Log::ETRACE( true, "Drm Entering Recovery, displayID = %d, CRTC = %d", getDrmDisplayID(), getDrmCrtcID() );
+    Log::aloge( true, "Drm Entering Recovery, displayID = %d, CRTC = %d", getDrmDisplayID(), getDrmCrtcID() );
     enterRecovery( );
 
     // Force a redraw to ensure at least once frame is queued
     // then processRecovery( ) can be called immediately.
-    mHwc.forceRedraw();
+    mDevice.forceRedraw();
 }
 
 void DrmDisplay::onESDEvent( Drm::UEvent eEvent )
@@ -1195,7 +1195,7 @@ void DrmDisplay::doSetDisplayMode(uint32_t mode)
     HWCASSERT( mode < mDisplayTimings.size() );
     // Keep a reference to the current buffer until the mode change is complete.
     // This is to workaround an issue with pulling down buffers while they are in use.
-    sp<GraphicBuffer> pOldBlanking = mpBlankBuffer;
+    std::shared_ptr<HWCNativeHandlesp> pOldBlanking = mpBlankBuffer;
 
     // Get the display mode timing.
     Timing t;
@@ -1212,12 +1212,12 @@ void DrmDisplay::doSetDisplayMode(uint32_t mode)
     // Get the connector modeInfo.
     HWCASSERT( connectorModeIdx < (uint32_t)getDrmConnector()->count_modes );
     drmModeModeInfo modeInfo = getDrmConnector()->modes[ connectorModeIdx ];
-
+#ifdef uncomment
     // Sanity check that the logical and real display modes match size.
     LOG_FATAL_IF( ( modeInfo.hdisplay != t.getWidth() ) || ( modeInfo.vdisplay != t.getHeight() ),
                "Connector mode %u mismatches current display size (%ux%u v %ux%u)",
                connectorModeIdx, modeInfo.hdisplay, modeInfo.vdisplay, t.getWidth(), t.getHeight() );
-
+#endif
     // Just present our holding buffer initially.
     allocateBlankingLayer();
     uint32_t fb = getBlankingLayer().getBufferDeviceId();
@@ -1249,7 +1249,7 @@ void DrmDisplay::doSetDisplayMode(uint32_t mode)
     // Notify display timing change.
     notifyDisplayTimingChange( t );
 
-    mHwc.forceGeometryChange();
+    mDevice.forceGeometryChange();
 }
 
 bool DrmDisplay::getSeamlessMode( drmModeModeInfo &modeInfoOut )
@@ -1280,7 +1280,7 @@ void DrmDisplay::applySeamlessMode( const drmModeModeInfo &modeInfo )
 {
     mSeamlessAppliedRefresh = modeInfo.vrefresh;
 }
-#ifdef uncomment
+
 void DrmDisplay::legacySeamlessAdaptMode( const Layer* pLayer )
 {
     DRMDISPLAY_ASSERT_CONSUMER_THREAD
@@ -1305,7 +1305,7 @@ void DrmDisplay::legacySeamlessAdaptMode( const Layer* pLayer )
         }
     }
 }
-#endif
+
 bool DrmDisplay::defaultFrameRequired( void )
 {
     if ( mOptionDefaultFrame == eDF_Auto )
@@ -1320,7 +1320,7 @@ bool DrmDisplay::defaultFrameRequired( void )
 void DrmDisplay::setDisplay( int32_t overrideMode )
 {
     DRMDISPLAY_ASSERT_CONSUMER_THREAD
-    INTEL_UFO_HWC_ASSERT_MUTEX_NOT_HELD( mSetVSyncLock );
+    HWC_ASSERT_LOCK_NOT_HELD4( mSetVSyncLock );
     ScopedSpinLock _l(mSetVSyncLock);
 
     if ( meStatus == AVAILABLE )
@@ -1365,7 +1365,7 @@ void DrmDisplay::setDisplay( int32_t overrideMode )
 void DrmDisplay::resetDisplay( void )
 {
     DRMDISPLAY_ASSERT_CONSUMER_THREAD
-    INTEL_UFO_HWC_ASSERT_MUTEX_NOT_HELD( mSetVSyncLock );
+    HWC_ASSERT_LOCK_NOT_HELD4( mSetVSyncLock );
     ScopedSpinLock _l(mSetVSyncLock);
 
     if ( meStatus != AVAILABLE )
@@ -1415,12 +1415,13 @@ bool DrmDisplay::setNewConnection( Connection& newConnection )
 
     // Options for this pipe.
     initializeOptions( "drm", getDrmPipeIndex() );
-
+#ifdef uncomment
     // Create and register capability
     DisplayCaps* pDisplayCaps = DisplayCaps::create( getDrmPipeIndex(), Drm::get().getDeviceID());
     HWCASSERT( pDisplayCaps );
     mDrmCaps.probe( getDrmCrtcID(), getDrmPipeIndex(), getDrmConnectorID(), pDisplayCaps );
     registerDisplayCaps( pDisplayCaps );
+#endif
 
 #if HWC_USE_ATOMIC_NUCLEAR
     mpNuclearHelper = std::make_shared<DrmNuclearHelper>(*this);
@@ -1433,13 +1434,13 @@ bool DrmDisplay::setNewConnection( Connection& newConnection )
     uint32_t initialMode = getDefaultDisplayTiming( );
 
     DTRACEIF( DRMDISPLAY_MODE_DEBUG, "DRM New Connection initial mode is %u", initialMode );
-
+#ifdef uncomment
     // Check mode is in range.
     LOG_FATAL_IF(
         ( initialMode >= (uint32_t)getDrmConnector()->count_modes ) || ( initialMode >= mDisplayTimings.size() ),
         "initialMode %u out-of-range (v getDrmConnector()->count_modes %u mDisplayTimings.size() %zu)",
         initialMode, getDrmConnector()->count_modes, mDisplayTimings.size() );
-
+#endif
     // Apply the initial mode immediately.
     setInitialTiming( initialMode );
 
@@ -1614,7 +1615,7 @@ void DrmDisplay::consumeSuspend( uint32_t timelineIndex, bool bUseDPMS, bool bDe
         }
 
         // Some optimisations are dependent on suspend mode.
-        mHwc.forceGeometryChangeAndRedraw();
+	mDevice.forceGeometryChangeAndRedraw();
 
         // Optionally, deactivate display (releases all resources such as dbuf).
         if ( bDeactivateDisplay )
@@ -1710,7 +1711,7 @@ void DrmDisplay::consumeResume( void )
 #endif
 
         // Some optimisations are dependent on suspend mode.
-        mHwc.forceGeometryChangeAndRedraw();
+	mDevice.forceGeometryChangeAndRedraw();
 
 	DTRACEIF( DRM_SUSPEND_DEBUG, "*************************************************************************" );
     }
@@ -1718,7 +1719,6 @@ void DrmDisplay::consumeResume( void )
 
 void DrmDisplay::setBlanking( void )
 {
-    /*
     DRMDISPLAY_ASSERT_CONSUMER_THREAD
     DTRACEIF( DRM_DISPLAY_DEBUG, DRMDISPLAY_ID_STR " Set blanking", DRMDISPLAY_ID_PARAMS );
 
@@ -1782,10 +1782,9 @@ void DrmDisplay::setBlanking( void )
         // Delete the custom frame immediately if the flip was not applied.
         delete pBlankingFrame;
     }
-    */
 }
-#ifdef uncomment
-void DrmDisplay::releaseFlippedFrame( Frame* pOldFrame )
+
+void DrmDisplay::releaseFlippedFrame( DisplayQueue::Frame* pOldFrame )
 {
     HWCASSERT( pOldFrame );
 
@@ -1841,7 +1840,6 @@ void DrmDisplay::consumeFrame( DisplayQueue::Frame* pNewDisplayFrame )
 
     considerReleasingBuffers( );
 }
-#endif
 
 void DrmDisplay::processPending( void )
 {
@@ -1860,7 +1858,6 @@ void DrmDisplay::processPending( void )
     }
 }
 
-/*
 bool DrmDisplay::updateTiming( const DisplayQueue::Frame& frame )
 {
     DRMDISPLAY_ASSERT_CONSUMER_THREAD
@@ -1950,11 +1947,10 @@ bool DrmDisplay::updateTiming( const DisplayQueue::Frame& frame )
 
     return bRet;
 }
-*/
 
 void DrmDisplay::setVSync( bool bEnable )
 {
-    INTEL_UFO_HWC_ASSERT_MUTEX_NOT_HELD( mSetVSyncLock );
+    HWC_ASSERT_LOCK_NOT_HELD4( mSetVSyncLock );
 
     // NOTE:
     //  This must be thread safe since it services both SF event
@@ -1967,7 +1963,7 @@ void DrmDisplay::setVSync( bool bEnable )
 
 void DrmDisplay::doSetVSync( bool bEnable )
 {
-    INTEL_UFO_HWC_ASSERT_MUTEX_HELD( mSetVSyncLock );
+    HWC_ASSERT_LOCK_NOT_HELD4( mSetVSyncLock );
 
     if ( bEnable )
     {
@@ -2087,9 +2083,11 @@ public:
 void DrmDisplay::disableAllEncryptedSessions( void )
 {
     Log::add( "DRM Display Self Teardown" );
+ #ifdef uncomment
     int64_t p;
     HwcService& hwcService = HwcService::getInstance();
     hwcService.notify(HwcService::ePavpDisableAllEncryptedSessions, 0, &p);
+#endif
 }
 
 String8 DrmDisplay::queueStateDump( void )
@@ -2301,7 +2299,6 @@ int DrmDisplay::queueFrame( const Content::Display& display, uint32_t zorder, in
     }
 }
 
-/*
 void DrmDisplay::consumeWork( DisplayQueue::WorkItem* pWork )
 {
     DRMDISPLAY_ASSERT_CONSUMER_THREAD
@@ -2358,6 +2355,5 @@ void DrmDisplay::consumeWork( DisplayQueue::WorkItem* pWork )
         }
     }
 }
-*/
 
 }; // namespace hwcomposer

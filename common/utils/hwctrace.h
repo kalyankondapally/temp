@@ -215,10 +215,12 @@ class TraceFunc {
 #define HWC_ASSERT_LOCK_NOT_HELD(mLock) HWCASSERT(!mLock.islocked());
 #define HWC_ASSERT_LOCK_NOT_HELD2( mTimingLock ) HWCASSERT(!mTimingLock.islocked());
 #define HWC_ASSERT_LOCK_NOT_HELD3( mDisplayTimingsLock ) HWCASSERT(!mDisplayTimingsLock.islocked());
+#define HWC_ASSERT_LOCK_NOT_HELD4( mSetVSyncLock ) HWCASSERT(!mSetVSyncLock.islocked());
 #else
 #define HWC_ASSERT_LOCK_NOT_HELD(mLock) ((void)0)
 #define HWC_ASSERT_LOCK_NOT_HELD2( mTimingLock ) ((void)0);
 #define HWC_ASSERT_LOCK_NOT_HELD3( mDisplayTimingsLock ) ((void)0);
+#define HWC_ASSERT_LOCK_NOT_HELD4( mSetVSyncLock ) ((void)0);
 #endif
 
 #define BUFFER_MANAGER_DEBUG            0 // Debug from buffer manager.

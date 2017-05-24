@@ -85,9 +85,16 @@ bool GrallocBufferHandler::CreateBuffer(uint32_t w, uint32_t h, int /*format*/,
 
 HWCNativeHandle GrallocBufferHandler::CreateGraphicsBuffer(uint32_t w, uint32_t h, int /*format*/, int usage) {
   struct gralloc_handle *temp = new struct gralloc_handle();
+  int gralloc_usage = 0;
+  if (usage & kHwcRender)
+    gralloc_usage |= GRALLOC_USAGE_HW_RENDER;
+
+  if (usage & kHwcomposer)
+    gralloc_usage |= GRALLOC_USAGE_HW_COMPOSER;
+
   temp->buffer_ =
       new android::GraphicBuffer(w, h, android::PIXEL_FORMAT_RGBA_8888,
-				 usage);
+				 gralloc_usage);
   temp->handle_ = temp->buffer_->handle;
   gralloc_->registerBuffer(gralloc_, temp->handle_);
 

@@ -72,6 +72,7 @@ vk_SOURCES =\
 
 drm_SOURCES =              \
     common/drm/drm.cpp \
+    common/drm/drmdisplay.cpp \
     common/drm/drmdisplaycaps.cpp \
     common/drm/drmeventthread.cpp \
     common/drm/drmlegacypagefliphandler.cpp \

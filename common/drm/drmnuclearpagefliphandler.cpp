@@ -16,9 +16,7 @@
 
 #include "drmnuclearpagefliphandler.h"
 #include "drm_internal.h"
-#ifdef uncomment
 #include "drmdisplay.h"
-#endif
 #include "displaycaps.h"
 #include "log.h"
 #include "hwcutils.h"
@@ -173,7 +171,7 @@ DrmNuclearHelper::DrmNuclearHelper( DrmDisplay& display ) :
     mPropCrtcActive = mDrm.getPlanePropertyID(plane_id, "ACTIVE");
 #endif
 }
-#ifdef uncomment
+
 uint32_t DrmNuclearHelper::getBlendFunc(const Layer& layer)
 {
     EBlendMode blending = layer.getBlending();
@@ -254,7 +252,6 @@ void DrmNuclearHelper::updatePlane(const Layer* pLayer, Properties& props, uint3
     props.addObject(drmPlaneId);
 #endif
 }
-#endif
 
 void DrmNuclearHelper::updateMode(bool active, uint32_t drmModeId, Properties& props)
 {
@@ -352,7 +349,7 @@ String8 DrmNuclearHelper::dump(const Properties& props) const
 #endif
     return output;
 }
-#ifdef uncomment
+
 int DrmNuclearHelper::setCrtcNuclear( const drmModeModeInfoPtr pModeInfo, const Layer* pLayer )
 {
     if (pLayer && !pLayer->isBufferDeviceIdValid())
@@ -392,7 +389,6 @@ int DrmNuclearHelper::setCrtcNuclear( const drmModeModeInfoPtr pModeInfo, const 
 #endif
     return drmAtomic(DRM_MODE_ATOMIC_ALLOW_MODESET, props, 0);
 }
-#endif
 
 // *****************************************************************************
 // DrmNuclearPageFlipHandler
@@ -414,7 +410,7 @@ bool DrmNuclearPageFlipHandler::test( DrmDisplay& )
     ITRACE("DRM/KMS Nuclear is %s", ret ? "available" : "unavailable");
     return ret;
 }
-#ifdef uncomment
+
 bool DrmNuclearPageFlipHandler::doFlip( DisplayQueue::Frame* pNewFrame, bool /* bMainBlanked */, uint32_t flipEvData )
 {
     DrmNuclearHelper::Properties props;
@@ -450,10 +446,10 @@ bool DrmNuclearPageFlipHandler::doFlip( DisplayQueue::Frame* pNewFrame, bool /* 
     uint32_t flags = DRM_MODE_PAGE_FLIP_EVENT; /* TODO, this needs enabling | DRM_MODE_PAGE_FLIP_ASYNC */
 
     drmModeModeInfo seamlesModeInfo;
-    sp<Drm::Blob> pModeBlob;
+    std::unique_ptr<Drm::Blob> pModeBlob;
     if (sOptionNuclearDrrs && mDisplay.getSeamlessMode(seamlesModeInfo))
     {
-        pModeBlob = mDrm.createBlob( &seamlesModeInfo, sizeof(seamlesModeInfo) );
+	pModeBlob.reset(mDrm.createBlob( &seamlesModeInfo, sizeof(seamlesModeInfo) ));
         if (pModeBlob != NULL)
         {
             mDisplay.mpNuclearHelper->updateMode(true, pModeBlob->getID(), props);
@@ -491,7 +487,6 @@ bool DrmNuclearPageFlipHandler::doFlip( DisplayQueue::Frame* pNewFrame, bool /* 
 
     return ret == Drm::SUCCESS;
 }
-#endif
 
 }; // namespace hwcomposer
 

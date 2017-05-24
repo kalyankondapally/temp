@@ -17,11 +17,12 @@
 #ifndef COMMON_DRM_DRMDISPLAY_H
 #define COMMON_DRM_DRMDISPLAY_H
 
+#include "Content.h"
 #include "drm_internal.h"
 #include "physicaldisplay.h"
 #include "drmpagefliphandler.h"
 #include "drmdisplaycaps.h"
-//#include "displayqueue.h"
+#include "DisplayQueue.h"
 #include "layer.h"
 #include "option.h"
 #include "spinlock.h"
@@ -38,7 +39,7 @@ class DrmDisplayCaps;
 class DrmNuclearHelper;
 class GpuDevice;
 
-class DrmDisplay : public PhysicalDisplay //, FIXME: public DisplayQueue
+class DrmDisplay : public PhysicalDisplay, public DisplayQueue
 {
 public:
 
@@ -68,10 +69,10 @@ public:
 
     // Release miscellaneous Drm resources such as panel fitter.
     void releaseDrmResources( void );
-#ifdef uncomment
+
     // Implements AbstractDisplay::onVSyncEnable( ).
     virtual void onSet(const Content::Display& display, uint32_t zorder, int* pRetireFenceFd);
-#endif
+
     // Implements AbstractDisplay::onVSyncEnable( ).
     virtual int onVSyncEnable( bool bEnable );
     // Implements AbstractDisplay::onBlank( ).
@@ -116,10 +117,9 @@ public:
     // The buffer is sized to the current display mode adjusted for current global display scaling.
     // It is possible to override the default size.
     void allocateBlankingLayer( const uint32_t width = 0, const uint32_t height = 0 );
-#ifdef uncomment
+
     // Get the blanking layer.
     const Layer& getBlankingLayer( void ) { mBlankBufferFramesSinceLastUsed = 0; return mBlankLayer; }
-#endif
 
     // Release unused buffers if they have not been used for a number of frames.
     void considerReleasingBuffers( void );
@@ -168,13 +168,13 @@ public:
     virtual void reconnect( void );
 
     // Enter recovery mode - the display will be recovered before the next work is consumed.
-    void enterRecovery( void ) { android_atomic_write( 1, &mRecovering ); }
+    void enterRecovery( void ) { mRecovering.store(true); }
 
     // Exit recovery (called before display recovery is attempted).
-    void exitRecovery( void ) { android_atomic_write( 0, &mRecovering ); }
+    void exitRecovery( void ) { mRecovering.store(false); }
 
     // Is the display in recovery mode?
-    bool isInRecovery( void ) { return mRecovering; }
+    bool isInRecovery( void ) { return mRecovering.load(); }
 
     // Do recovery
     void recover( void );
@@ -232,9 +232,7 @@ private:
     // Drm ID is set by the DRM probe class
     friend int Drm::probe(GpuDevice& hwc);
     void setDrmDisplayID(uint32_t id)    { mDrmDisplay = id; }
-#ifdef uncomment
     bool updateTiming( const DisplayQueue::Frame& frame );
-#endif
 
     // Connection.
     // This encapsulates a Connector ptr plus CrtcID and PipeIndex if they are known.
@@ -379,9 +377,8 @@ private:
     void consumeResume( void );
 
     // Consume flip work.
-#ifdef uncomment
-    // void consumeFrame( DisplayQueue::Frame* pNewDisplayFrame );
-#endif
+    void consumeFrame( DisplayQueue::Frame* pNewDisplayFrame );
+
     // Called before any work is consumed to process any deferred/pending work/state.
     void processPending( void );
 
@@ -404,10 +401,10 @@ private:
         processRecovery();
         return !isAvailable( ) || mPageFlipHandler.readyForFlip( );
     }
-#ifdef uncomment
+
     // Called from page flip handler to release the old frame when a new frame has been flipped.
-    void releaseFlippedFrame( Frame* pOldFrame );
-#endif
+    void releaseFlippedFrame( DisplayQueue::Frame* pOldFrame );
+
     // Implements DisplayQueue::syncFlip( ).
     // This is called from the DisplayQueue worker to ensure the most recent Drm flip has completed.
     virtual void syncFlip( void );
@@ -480,7 +477,7 @@ private:
     uint32_t            mDrmDisplay;                        // ID for this DrmDisplay instance (set by Drm manager).
     DrmDisplayCaps      mDrmCaps;                           // Augmented capabilities (stores generic DisplayCaps).
     EStatus             meStatus;                           // Current status.
-    sp<GraphicBuffer>   mpBlankBuffer;                      // Blanking buffer used when main plane should be disabled.
+    std::shared_ptr<HWCNativeHandlesp>   mpBlankBuffer;     // Blanking buffer used when main plane should be disabled.
     bool                mbBlankBufferPurged;                // Blanking buffer is succesfully purged.
     Layer               mBlankLayer;                        // Blanking layer used when main plane should be disabled.
     uint32_t            mBlankBufferFramesSinceLastUsed;    // Count of frames without use of blanking buffer/layer.
@@ -513,7 +510,7 @@ private:
     bool                mbVSyncGenEnabled:1;                // Is vsync generation (sw or hw) enabled for this display?
 
 
-    volatile int32_t mRecovering;                           // Is in recovery mode?
+    std::atomic<bool> mRecovering;                           // Is in recovery mode?
 
     Option mOptionNuclearModeset;
     // Technically only a pointer so we don't really need to #if this out....
@@ -562,7 +559,7 @@ private:
 
     // Implements DisplayQueue::consumeWork( ).
     // This is called from the DisplayQueue worker to issue flips and events.
-   //virtual void consumeWork( DisplayQueue::WorkItem* pWork );
+    virtual void consumeWork( DisplayQueue::WorkItem* pWork );
 };
 
 }; // namespace hwcomposer
