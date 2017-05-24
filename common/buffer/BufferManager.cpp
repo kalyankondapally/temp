@@ -146,10 +146,8 @@ void BufferManager::reallocateGraphicBuffer( std::shared_ptr<HWCNativeHandlesp>&
     pGB.reset(buffer_handler_->ReAllocateGraphicsBuffer( w, h, format, usage, pGB.get() ));
     if ( ( pGB == NULL ) || ( pGB->handle == NULL ) )
     {
-#ifdef uncomment
 	ETRACE( "reallocateGraphicBuffer %s failed to allocate GraphicBuffer [%ux%u fmt:%u/%s usage:0x%x]",
 	    pchTag, w, h, format, getDRMFormatString(format), usage );
-#endif
         pGB = NULL;
     }
     if ( sbInternalBuild )

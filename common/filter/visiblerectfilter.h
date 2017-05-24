@@ -14,18 +14,11 @@
 // limitations under the License.
 */
 
-#ifndef INTEL_COMMON_HWC_VISIBLERECTFILTER_H
-#define INTEL_COMMON_HWC_VISIBLERECTFILTER_H
+#ifndef COMMON_FILTER_VISIBLERECTFILTER_H
+#define COMMON_FILTER_VISIBLERECTFILTER_H
 
-#ifdef uncomment
-#include <utils/List.h>
-#include <ui/GraphicBuffer.h>
-#endif
 #include "abstractfilter.h"
 
-//namespace intel {
-//namespace ufo {
-//namespace hwc {
 namespace hwcomposer {
 
 class VisibleRectFilter : public AbstractFilter
@@ -56,9 +49,6 @@ protected:
     DisplayState mDisplayState[cMaxSupportedSFDisplays];
 };
 
-};
-//}; // namespace hwc
-//}; // namespace ufo
-//}; // namespace intel
+}; // namespace hwcomposer
 
-#endif // INTEL_COMMON_HWC_VISIBLERECTFILTER_H
+#endif // COMMON_FILTER_VISIBLERECTFILTER_H

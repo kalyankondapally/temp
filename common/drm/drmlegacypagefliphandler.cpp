@@ -265,7 +265,6 @@ DrmLegacyPageFlipHandler::~DrmLegacyPageFlipHandler( )
 
 void DrmLegacyPageFlipHandler::doInit()
 {
-#ifdef uncomment
     const DisplayCaps& genCaps = mDisplay.getDisplayCaps( );
     const DrmDisplayCaps& drmCaps = mDisplay.getDrmDisplayCaps( );
 
@@ -311,7 +310,6 @@ void DrmLegacyPageFlipHandler::doInit()
             maPlanes[p].getDrmObjectID( ),
             Drm::getObjectTypeString( maPlanes[p].getDrmObjectType( ) ) );
     }
-#endif
 }
 
 void DrmLegacyPageFlipHandler::doUninit( void )

@@ -33,11 +33,7 @@
 #define DRM_PFH_NAME "DrmPageFlip"
 
 #define DRMDISPLAY_ID_STR               "DrmDisplay %u DrmConnector %u [Crtc %u]"
-#ifdef uncomment
 #define DRMDISPLAY_ID_PARAMS            mDisplay.getDrmDisplayID(), mDisplay.getDrmConnectorID(), mDisplay.getDrmCrtcID()
-#else
-#define DRMDISPLAY_ID_PARAMS 0
-#endif
 
 namespace hwcomposer {
 
@@ -65,13 +61,11 @@ DrmPageFlipHandler::~DrmPageFlipHandler( )
 void DrmPageFlipHandler::startupDisplay( void )
 {
     // Initialise the display's retirement timeline.
-#ifdef uncomment
     String8 name = String8::format( "HWC.DRM%d", mDisplay.getDrmDisplayID() );
     if ( !mTimeline.init( name ) )
     {
 	ETRACE( "Failed to create sync timeline for %s", name.string() );
     }
-#endif
 }
 
 void DrmPageFlipHandler::init()
@@ -84,7 +78,7 @@ void DrmPageFlipHandler::init()
     {
         return;
     }
-#ifdef uncomment
+
     const DisplayCaps& genCaps = mDisplay.getDisplayCaps( );
     const DrmDisplayCaps& drmCaps = mDisplay.getDrmDisplayCaps( );
     mNumPlanes = genCaps.getNumPlanes( );
@@ -98,7 +92,7 @@ void DrmPageFlipHandler::init()
             break;
         }
     }
-#endif
+
     delete mpImpl;
     mpImpl = NULL;
 
@@ -444,7 +438,6 @@ void DrmPageFlipHandler::retirePreviousFrames( DisplayQueue::Frame* pNewFrame )
 
 void DrmPageFlipHandler::completeFlip( void )
 {
-#ifdef uncomment
     HWC_ASSERT_LOCK_NOT_HELD( mLock );
     DTRACEIF( DRM_PAGEFLIP_DEBUG,
               DRM_PFH_NAME " " DRMDISPLAY_ID_STR " Complete flip : Entry %s",
@@ -454,6 +447,7 @@ void DrmPageFlipHandler::completeFlip( void )
 
     if ( DISPLAY_TRACE )
     {
+#ifdef uncomment
         // Systrace frame flip complete.
         // NOTE:
         //  Frame latency is the time taken from when we first received the frame content (back in onPrepare)
@@ -465,6 +459,7 @@ void DrmPageFlipHandler::completeFlip( void )
             DRMDISPLAY_ID_PARAMS, mpLastFlippedFrame->getFrameId().dump().string(), latencyUs ) );
         ATRACE_INT_IF( DISPLAY_TRACE, String8::format( DRMDISPLAY_ID_STR " Latency",
             DRMDISPLAY_ID_PARAMS ), latencyUs );
+#endif
     }
 
     // Validate flipped frame.
@@ -492,7 +487,6 @@ void DrmPageFlipHandler::completeFlip( void )
     DTRACEIF( DRM_PAGEFLIP_DEBUG,
               DRM_PFH_NAME " " DRMDISPLAY_ID_STR " Complete flip : Exit %s",
               DRMDISPLAY_ID_PARAMS, getStatusString( ).string( ) );
-#endif
 }
 
 String8 DrmPageFlipHandler::getStatusString( void )

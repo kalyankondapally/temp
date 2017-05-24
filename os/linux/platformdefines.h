@@ -55,7 +55,7 @@ int property_set(const char *key, const char *value);
 
 int property_list(void (*propfn)(const char *key, const char *value,
                                  void *cookie),
-                  void *cookie);
+		  void *cookie);
 }
 
 #define PROPERTY_VALUE_MAX 92

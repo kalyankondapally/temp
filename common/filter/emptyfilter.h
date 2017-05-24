@@ -19,6 +19,8 @@
 
 #include "AbstractBufferManager.h"
 #include "abstractfilter.h"
+#include "platformdefines.h"
+#include <hwcbuffer.h>
 
 #include<list>
 
@@ -35,9 +37,8 @@ public:
     HWCString dump();
 
 protected:
-#ifdef uncomment
-    buffer_handle_t getBlankBuffer(uint32_t width, uint32_t height);
-#endif
+    HWCNativeHandle getBlankBuffer(uint32_t width, uint32_t height);
+
     void ageBlankBuffers();
 
     AbstractBufferManager& mBM;
@@ -57,9 +58,9 @@ protected:
     struct BufferState
     {
         BufferState() : mFramesSinceLastUsed(0) {}
-#ifdef uncomment
-        sp<GraphicBuffer> mpBuffer;
-#endif
+
+	std::shared_ptr<HWCNativeHandlesp> mpBuffer;
+	HwcBuffer buffer_data;
         uint32_t mFramesSinceLastUsed;
     };
     std::list<BufferState> mBufferList;

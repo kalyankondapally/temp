@@ -49,14 +49,13 @@ const Content& DebugFilter::onApply(const Content& ref)
     // Run through each display
     for (uint32_t d = 0; d < ref.size() && d < mDebugDisplay.size(); d++)
     {
-#ifdef uncomment
         Content::Display& display = mReference.editDisplay(d);
 
         // If anything changed since last frame, propagate a geometry change through the stack
         if (mDebugDisplay[d].mbGeometryChange)
         {
             display.editLayerStack().setGeometryChanged(true);
-            mDebugDisplay.editItemAt(d).mbGeometryChange = false;
+	    mDebugDisplay.at(d).mbGeometryChange = false;
         }
 
         uint32_t mask;
@@ -90,18 +89,17 @@ const Content& DebugFilter::onApply(const Content& ref)
         if (mDebugDisplay[d].mDumpFrames != 0)
         {
             // Make adjustment to indices prior to dumping so they are consistent for following dumpHardwareFrame.
-            ++mDebugDisplay.editItemAt(d).mDumpFrameIdx;
+	    ++mDebugDisplay.at(d).mDumpFrameIdx;
             if (mDebugDisplay[d].mDumpFrames > 0)
             {
-                --mDebugDisplay.editItemAt(d).mDumpFrames;
+		--mDebugDisplay.at(d).mDumpFrames;
             }
 
             HWCString prefix = HWCString::format( "df_frame%u_d%u_i%u_in", display.getFrameIndex(), d, mDebugDisplay[d].mDumpFrameIdx );
             Log::alogd( true, "Dumping %s", prefix.string() );
             display.dumpContentToTGA( prefix );
-            mDebugDisplay.editItemAt(d).mDumpHardwareFrame = display.getFrameIndex();
+	    mDebugDisplay.at(d).mDumpHardwareFrame = display.getFrameIndex();
         }
-#endif
     }
     return mReference;
 }
@@ -110,7 +108,7 @@ void DebugFilter::enableDisplay(uint32_t d)
 {
 #ifdef uncomment
     if (mDebugDisplay.size() <= d)
-        mDebugDisplay.insertAt(mDebugDisplay.size(), d + 1 - mDebugDisplay.size());
+	mDebugDisplay.insertAt(mDebugDisplay.size(), d + 1 - mDebugDisplay.size());
 
     DisplayDebug& dd = mDebugDisplay.editItemAt(d);
     dd.mbGeometryChange = true;
@@ -124,7 +122,7 @@ void DebugFilter::disableDisplay(uint32_t d, bool bBlank)
 {
 #ifdef uncomment
     if (mDebugDisplay.size() <= d)
-        mDebugDisplay.insertAt(mDebugDisplay.size(), d + 1 - mDebugDisplay.size());
+	mDebugDisplay.insertAt(mDebugDisplay.size(), d + 1 - mDebugDisplay.size());
 
     DisplayDebug& dd = mDebugDisplay.editItemAt(d);
     dd.mbGeometryChange = true;
@@ -140,7 +138,7 @@ void DebugFilter::maskLayer(uint32_t d, uint32_t layer, bool bHide)
 {
 #ifdef uncomment
     if (mDebugDisplay.size() < d + 1)
-        mDebugDisplay.insertAt(mDebugDisplay.size(), d + 1 - mDebugDisplay.size());
+	mDebugDisplay.insertAt(mDebugDisplay.size(), d + 1 - mDebugDisplay.size());
 
     DisplayDebug& dd = mDebugDisplay.editItemAt(d);
     dd.mbGeometryChange = true;

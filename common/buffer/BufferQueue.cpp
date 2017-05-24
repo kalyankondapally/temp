@@ -168,7 +168,7 @@ bool Buffer::matchesConfiguration(uint32_t w, uint32_t h, int32_t format, uint32
     HWCASSERT( h );
     HWCASSERT( format );
 #ifdef uncomment
-    HWCASSERT( usage & GRALLOC_USAGE_HW_COMPOSER );
+    HWCASSERT( usage & kHwcomposer );
 #endif
     if ( !allocationOK() )
         return false;
@@ -528,10 +528,8 @@ BufferQueue::BufferHandle BufferQueue::dequeue(uint32_t width, uint32_t height, 
     int altFormat = equivalentFormatWithAlpha( bufferFormat );
     if ( altFormat != bufferFormat )
     {
-#ifdef uncomment
 	DTRACEIF( BUFFERQUEUE_DEBUG, "BufferQueue::dequeue Using alpha equivalent format %d/%s for %d/%s",
 	    altFormat, getDRMFormatString( altFormat ), bufferFormat, getDRMFormatString( bufferFormat ) );
-#endif
         bufferFormat = altFormat;
     }
 

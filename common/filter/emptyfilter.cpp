@@ -60,7 +60,7 @@ const Content& EmptyFilter::onApply(const Content& ref)
                 mReference = ref;
                 modified = true;
             }
-#ifdef uncomment
+
             Content::Display& disp = mReference.editDisplay(d);
             Content::LayerStack& layerStack = disp.editLayerStack();
             bool modifiedLayers = false;
@@ -86,7 +86,6 @@ const Content& EmptyFilter::onApply(const Content& ref)
                 layerStack.setGeometryChanged(true);
             }
             dispState.mbWasModified = modifiedLayers;
-#endif
         }
         else
         {
@@ -132,19 +131,18 @@ HWCString EmptyFilter::dump()
     return output;
 }
 
-#ifdef uncomment
-buffer_handle_t EmptyFilter::getBlankBuffer(uint32_t width, uint32_t height)
+HWCNativeHandle EmptyFilter::getBlankBuffer(uint32_t width, uint32_t height)
 {
     // Look for the biggest accomodating buffer.
-    List<BufferState>::iterator i = mBufferList.begin(), m = mBufferList.end();
+    std::list<BufferState>::iterator i = mBufferList.begin(), m = mBufferList.end();
     for (; i != mBufferList.end(); ++i)
     {
-        if (((uint32_t)i->mpBuffer->width >= width)
-            && ((uint32_t)i->mpBuffer->height >= height))
+	if (((uint32_t)i->buffer_data.width >= width)
+	    && ((uint32_t)i->buffer_data.height >= height))
         {
             if ( (m == mBufferList.end())
-                    || (i->mpBuffer->width > m->mpBuffer->width)
-                    || (i->mpBuffer->height > m->mpBuffer->height))
+		    || (i->buffer_data.width > m->buffer_data.width)
+		    || (i->buffer_data.height > m->buffer_data.height))
                 m = i;
         }
     }
@@ -154,19 +152,20 @@ buffer_handle_t EmptyFilter::getBlankBuffer(uint32_t width, uint32_t height)
         BufferState bs;
         bs.mpBuffer = mBM.createPurgedGraphicBuffer( "EMPTYFILTER", width, height,
                                                      INTEL_HWC_DEFAULT_HAL_PIXEL_FORMAT,
-                                                     GRALLOC_USAGE_HW_COMPOSER | GRALLOC_USAGE_HW_RENDER );
+						     kHwcomposer | kHwcRender );
         if (bs.mpBuffer == 0)
             return NULL;
 
-        mBufferList.push_front(bs);
+	mBM.getBufferDetails(bs.mpBuffer.get(), &bs.buffer_data);
+	mBufferList.insert(mBufferList.begin(), bs);
         m = mBufferList.begin();
     }
 
     // Mark as recently used and return the handle
     m->mFramesSinceLastUsed = 0;
-    return m->mpBuffer->handle;
+    return m->mpBuffer.get();
 }
-#endif
+
 void EmptyFilter::ageBlankBuffers()
 {
     // Age all buffers and destroy any that are too old.

@@ -37,9 +37,7 @@ void Content::setGeometryChanged(bool geometry)
 {
     for (size_t d = 0; d < size(); d++)
     {
-#ifdef uncomment
         editDisplay(d).setGeometryChanged(geometry);
-#endif
     }
 }
 
@@ -174,9 +172,8 @@ void Content::LayerStack::removeLayer(uint32_t ly, bool bUpdateSource)
         layer.closeAcquireFence();
         layer.returnReleaseFence(-1);
     }
-#ifdef uncomment
-    mpLayers.removeAt(ly);
-#endif
+
+    mpLayers.erase(mpLayers.begin() + ly);
 }
 
 void Content::LayerStack::removeAllLayers(bool bUpdateSource)
@@ -257,9 +254,7 @@ void Content::LayerStack::subset(const LayerStack source, uint32_t start, uint32
     this->resize(size);
     for (uint32_t ly = 0; ly < size; ly++)
     {
-#ifdef uncommet
         this->setLayer(ly, &source.getLayer(start + ly));
-#endif
     }
 }
 
@@ -449,7 +444,6 @@ void Content::snapshotOf( const Content& from, std::vector<Layer> copiedLayers[]
     *this = from;
     for ( uint32_t d = 0; d < size(); ++d )
     {
-#ifdef uncomment
         Content::LayerStack& layerStack = editDisplay(d).editLayerStack();
         const uint32_t numLayers = layerStack.size();
         copiedLayers[d].resize( numLayers );
@@ -463,7 +457,6 @@ void Content::snapshotOf( const Content& from, std::vector<Layer> copiedLayers[]
             // Replace layer with copied layer,
             layerStack.setLayer( ly, &copiedLayers[d][ly] );
         }
-#endif
     }
 }
 

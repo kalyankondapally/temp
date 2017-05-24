@@ -52,7 +52,7 @@ public:
 
     Content();
     ~Content();
-#ifdef uncomment
+#ifdef uncomment_hwc1
     // TODO: Remove this later. Temporary constructor
     Content(hwc_display_contents_1_t** pDisplay, uint32_t num);
 #else

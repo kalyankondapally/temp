@@ -16,18 +16,10 @@
 
 #include "hwcutils.h"
 #include "log.h"
-#ifdef uncomment
-#include "Transform.h"
-#endif
+#include "transform.h"
 #include "layer.h"
 #include "visiblerectfilter.h"
 #include "filtermanager.h"
-
-using namespace hwcomposer;
-
-//namespace intel {
-//namespace ufo {
-//namespace hwc {
 
 namespace hwcomposer {
 
@@ -50,7 +42,7 @@ const Content& VisibleRectFilter::onApply(const Content& ref)
 {
     bool bModified = false;
     mReference = ref;
-#ifdef uncomment
+
     for (uint32_t d = 0; d < mReference.size(); d++)
     {
         Content::Display& display = mReference.editDisplay(d);
@@ -66,7 +58,7 @@ const Content& VisibleRectFilter::onApply(const Content& ref)
                 bool isVisibleLayer = true;
 
                 // Get visible rect that can cover all visible rects of this layer
-                const hwc_rect_t visibleRect = getVisibleRegionBoundingBox(layer);
+		const HwcRect<int> visibleRect = getVisibleRegionBoundingBox(layer);
 
                 // Dst rect was the same with visible rect, early skip
                 if( layer.getDst() == visibleRect )
@@ -104,7 +96,6 @@ const Content& VisibleRectFilter::onApply(const Content& ref)
             }
         }
     }
-#endif
 
     if ( bModified == false )
     {
