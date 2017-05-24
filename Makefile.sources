@@ -71,18 +71,14 @@ vk_SOURCES =\
         $(NULL)
 
 drm_SOURCES =              \
-    common/drm/drm.cpp \
-    common/drm/drmdisplay.cpp \
-    common/drm/drmdisplaycaps.cpp \
-    common/drm/drmeventthread.cpp \
-    common/drm/drmlegacypagefliphandler.cpp \
-    common/drm/drmnuclearpagefliphandler.cpp \
-    common/drm/drmpagefliphandler.cpp \
-    common/drm/drmueventthread.cpp \
-	$(NULL)
-
-drm_SOURCES2 =              \
-    common/drm/drmdisplay.cpp \
+    drm/drm.cpp \
+    drm/drmdisplay.cpp \
+    drm/drmdisplaycaps.cpp \
+    drm/drmeventthread.cpp \
+    drm/drmlegacypagefliphandler.cpp \
+    drm/drmnuclearpagefliphandler.cpp \
+    drm/drmpagefliphandler.cpp \
+    drm/drmueventthread.cpp \
 	$(NULL)
 
 common_SOURCES += $(drm_SOURCES)
