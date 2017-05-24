@@ -16,6 +16,7 @@
 
 #include <inttypes.h>
 
+#include "AbstractBufferManager.h"
 #include "layer.h"
 #include "utils.h"
 #include "log.h"
@@ -144,11 +145,7 @@ void Layer::onUpdatePending(nsecs_t now)
 
 void Layer::onUpdateFrameState(HWCNativeHandle handle, nsecs_t now)
 {
-#ifdef uncomment
-    bool bHandleChanged = handle != mHandle;
-#else
-    bool bHandleChanged = false;
-#endif
+    bool bHandleChanged = handle->handle != mHandle->handle;
     mFrameRate.update(now, bHandleChanged);
     mHandle = handle;
 
@@ -350,7 +347,7 @@ void Layer::onUpdateAll(HWCNativeHandle handle, bool bForceOpaque)
 #ifdef uncomment
     mVisibleRegions.editItemAt(0) = mDst;
 #else
-    mVisibleRegions[0] = mDst;
+    mVisibleRegions.insert(mVisibleRegions.begin(), mDst);
 #endif
     onUpdateFlags();
 }
@@ -380,19 +377,16 @@ bool Layer::doWaitAcquireFence(nsecs_t timeoutNs) const
 
 void Layer::onUpdateBufferState()
 {
-#ifdef uncomment
     AbstractBufferManager::get().getLayerBufferDetails( this, &mBufferDetails );
-#endif
 }
 
 void Layer::setBufferPavpSession(uint32_t session, uint32_t instance, uint32_t isEncrypted)
 {
-#ifdef uncomment
     if (mHandle != NULL)
     {
         AbstractBufferManager::get().setPavpSession( mHandle, session, instance, isEncrypted );
     }
-#endif
+
     mBufferDetails.setEncrypted( isEncrypted );
     mBufferDetails.setPavpSessionID( session );
     mBufferDetails.setPavpInstanceID( instance );

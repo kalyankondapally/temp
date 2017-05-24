@@ -94,7 +94,6 @@ private:
 
 uint32_t DrmNuclearHelper::getPropertyIDIfValid(const char *name)
 {
-#ifdef uncomment
     // Query first plane whether gets this property: if not, disable it.
     const DrmDisplayCaps& drmCaps = mDisplay.getDrmDisplayCaps( );
     const DrmDisplayCaps::PlaneCaps& planeCaps = drmCaps.getPlaneCaps( 0 );
@@ -122,16 +121,12 @@ uint32_t DrmNuclearHelper::getPropertyIDIfValid(const char *name)
     }
 
     return propertyID;
-#else
-    return 0;
-#endif
 }
 
 DrmNuclearHelper::DrmNuclearHelper( DrmDisplay& display ) :
     mDisplay( display ),
     mDrm( Drm::get() )
 {
-#ifdef uncomment
     const DrmDisplayCaps& drmCaps = mDisplay.getDrmDisplayCaps( );
 
     // The property IDs are common across all planes, so just query the first plane.
@@ -169,7 +164,6 @@ DrmNuclearHelper::DrmNuclearHelper( DrmDisplay& display ) :
     mProcBlendColor = getPropertyIDIfValid("blend_color");
     mPropCrtcMode = mDrm.getPlanePropertyID(plane_id, "MODE_ID");
     mPropCrtcActive = mDrm.getPlanePropertyID(plane_id, "ACTIVE");
-#endif
 }
 
 uint32_t DrmNuclearHelper::getBlendFunc(const Layer& layer)
@@ -232,7 +226,7 @@ void DrmNuclearHelper::updatePlane(const Layer* pLayer, Properties& props, uint3
         props.addObject(drmPlaneId);
         return;
     }
-#ifdef uncomment
+
     const Layer& layer = *pLayer;
     props.add       ( mPropCrtc, mDisplay.getDrmCrtcID());
     props.add       ( mPropFb,   layer.getBufferDeviceId() );
@@ -250,18 +244,15 @@ void DrmNuclearHelper::updatePlane(const Layer* pLayer, Properties& props, uint3
     props.addIfValid( mProcBlendFunc, getBlendFunc(layer));
     props.addIfValid( mProcBlendColor, getBlendColor(layer));
     props.addObject(drmPlaneId);
-#endif
 }
 
 void DrmNuclearHelper::updateMode(bool active, uint32_t drmModeId, Properties& props)
 {
-#ifdef uncomment
     props.add( mPropCrtcMode, active ? drmModeId : 0 );
     props.add( mPropCrtcActive, active ? 1 : 0 );
     props.addObject( mDisplay.getDrmCrtcID() );
     props.add( mPropCrtc, active ? mDisplay.getDrmCrtcID() : 0 );
     props.addObject( mDisplay.getDrmConnectorID() );
-#endif
 }
 
 int DrmNuclearHelper::drmAtomic(uint32_t flags, const Properties& props, uint32_t user_data)
@@ -316,7 +307,7 @@ String8 DrmNuclearHelper::dump(const Properties& props) const
     const uint32_t* pPropsCounts  = props.getPropCounts();
     const uint32_t* pProps        = props.getProps();
     const uint64_t* pValues       = props.getValues();
-#ifdef uncomment
+
     for (uint32_t o = 0; o < props.getNumObjs(); o++)
     {
         String8 str;
@@ -346,7 +337,7 @@ String8 DrmNuclearHelper::dump(const Properties& props) const
         pProps += pPropsCounts[o];
         pValues += pPropsCounts[o];
     }
-#endif
+
     return output;
 }
 
@@ -375,7 +366,6 @@ int DrmNuclearHelper::setCrtcNuclear( const drmModeModeInfoPtr pModeInfo, const 
 
     DrmNuclearHelper::Properties props;
     updateMode(active, modeId, props);
-#ifdef uncomment
     // We will reset all layers here regardless.
     // If a blanking layer is specified then we will set it.
     const DrmDisplayCaps& drmCaps = mDisplay.getDrmDisplayCaps( );
@@ -386,7 +376,7 @@ int DrmNuclearHelper::setCrtcNuclear( const drmModeModeInfoPtr pModeInfo, const 
     {
         updatePlane(NULL, props, drmCaps.getPlaneCaps( p ).getDrmID());
     }
-#endif
+
     return drmAtomic(DRM_MODE_ATOMIC_ALLOW_MODESET, props, 0);
 }
 

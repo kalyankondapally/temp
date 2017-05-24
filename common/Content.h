@@ -59,9 +59,7 @@ public:
 #endif
 
     const Display&              getDisplay(uint32_t l) const            { return mDisplays[l]; }
-#ifdef uncomment
-    Display&                    editDisplay(uint32_t l)                 { return mDisplays.editItemAt(l); }
-#endif
+    Display&                    editDisplay(uint32_t l)                 { return mDisplays.at(l); }
 
     uint32_t                    size() const                            { return mDisplays.size(); }
     void                        resize(uint32_t size)                   { mDisplays.resize(size); }
@@ -94,10 +92,10 @@ public:
     virtual ~LayerStack();
 
     const Layer&            getLayer(uint32_t ly) const                 { HWCASSERT(mpLayers[ly]); return *(mpLayers[ly]); }
-#ifdef uncomment
-    const Layer* const*     getLayerArray() const                       { return mpLayers.array(); }
-    void                    setLayer(uint32_t ly, const Layer* pL)      { mpLayers.editItemAt(ly) = pL; }
-#endif
+
+    const Layer* const*     getLayerArray() const                       { return mpLayers.data(); }
+    void                    setLayer(uint32_t ly, const Layer* pL)      { mpLayers[ly] = pL; }
+
     const Layer&            operator[](uint32_t ly) const               { return *(mpLayers[ly]); }
 
     uint32_t                size() const                                { return mpLayers.size(); }

@@ -22,10 +22,6 @@
 #include "abstractfilter.h"
 #include "filterposition.h"
 #include "singleton.h"
-#ifdef uncomment
-#include <utils/SortedVector.h>
-#include <utils/Mutex.h>
-#endif
 
 #include <mutex>
 
@@ -98,8 +94,6 @@ private:
 };
 
 
-}; // namespace hwc
-//}; // namespace ufo
-//}; // namespace intel
+}; // namespace hwcomposer
 
 #endif // INTEL_COMMON_HWC_FILTERMANAGER_H

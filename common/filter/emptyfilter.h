@@ -17,17 +17,11 @@
 #ifndef INTEL_COMMON_HWC_EMPTYFILTER_H
 #define INTEL_COMMON_HWC_EMPTYFILTER_H
 
-#ifdef uncomment
-#include <utils/List.h>
-#include "abstractbuffermanager.h"
-#endif
+#include "AbstractBufferManager.h"
 #include "abstractfilter.h"
 
 #include<list>
 
-//namespace intel {
-//namespace ufo {
-//namespace hwc {
 namespace hwcomposer {
 
 class EmptyFilter : public AbstractFilter
@@ -43,11 +37,10 @@ public:
 protected:
 #ifdef uncomment
     buffer_handle_t getBlankBuffer(uint32_t width, uint32_t height);
+#endif
     void ageBlankBuffers();
-#endif
-#ifdef uncomment
+
     AbstractBufferManager& mBM;
-#endif
     // Private reference to hold modified state
     Content mReference;
 

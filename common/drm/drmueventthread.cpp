@@ -18,9 +18,7 @@
 
 #include "drmueventthread.h"
 #include "drm_internal.h"
-#ifdef uncomment
 #include "drmdisplay.h"
-#endif
 
 #include "gpudevice.h"
 #include "hwctrace.h"

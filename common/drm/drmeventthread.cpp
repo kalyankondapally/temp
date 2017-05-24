@@ -15,9 +15,7 @@
 */
 
 #include "drmeventthread.h"
-#ifdef uncomment
 #include "drmdisplay.h"
-#endif
 #include "drm_internal.h"
 #include "log.h"
 #include "hwctrace.h"
@@ -54,11 +52,7 @@ void DrmEventThread::VSyncHandler::setDisplay( uint16_t index, DrmDisplay* pDisp
     mIndex = index;
 
     // Update flags according to pipeId
-#ifdef uncomment
     uint32_t pipe = mpDisplay->getDrmPipeIndex();
-#else
-    uint32_t pipe = 0;
-#endif
     uint32_t flags = DRM_VBLANK_RELATIVE | DRM_VBLANK_EVENT;
     if(pipe == 1)
         flags |= DRM_VBLANK_SECONDARY;
@@ -156,12 +150,10 @@ void DrmEventThread::VSyncHandler::event(unsigned int frame, unsigned int sec, u
         bIssueEvent = ( ( meMode == eModeRunning )
                      && ( mpDisplay != NULL ) );
     }
- #ifdef uncomment
     if ( bIssueEvent )
     {
         mpDisplay->vsyncEvent(frame, sec, usec);
     }
-#endif
     // Now process state updates and request next event.
     {
 	ScopedSpinLock _l( mLockData );
@@ -231,7 +223,6 @@ void DrmEventThread::page_flip_handler(int, unsigned int, unsigned int, unsigned
     ATRACE_CALL_IF(DISPLAY_TRACE);
     static Drm& drm = Drm::get();
     int32_t displayIndex = decodeIndex( (uint32_t)((uintptr_t)data&0xFFFFFFFF) );
-#ifdef uncomment
     if ( displayIndex >= 0 )
     {
         DrmDisplay* pDisplay = drm.getDrmDisplay( displayIndex );
@@ -241,7 +232,6 @@ void DrmEventThread::page_flip_handler(int, unsigned int, unsigned int, unsigned
             return;
         }
     }
-#endif
     Log::aloge( true, "Page flip for unknown display %d [data %p]", displayIndex, data );
     HWCASSERT( false );
 }
@@ -265,7 +255,6 @@ bool DrmEventThread::enableVSync(DrmDisplay* pDisp)
     ATRACE_CALL_IF(DISPLAY_TRACE);
 
     uint32_t handler;
-#ifdef uncomment
     switch ( pDisp->getDisplayType( ) )
     {
         case eDTPanel:
@@ -278,7 +267,6 @@ bool DrmEventThread::enableVSync(DrmDisplay* pDisp)
 	    ETRACE( "Expected eDTExternal or eDTPanel" );
             return false;
     }
-#endif
     DTRACEIF( VSYNC_DEBUG,
         "DrmEventThread::enableVSync P:%u, DrmDisplay %u/%p, handler %u",
         pDisp->getDisplayManagerIndex( ), pDisp->getDrmDisplayID( ), pDisp, handler );
@@ -299,7 +287,6 @@ bool DrmEventThread::disableVSync(DrmDisplay* pDisp, bool bWait)
     HWCASSERT( pDisp );
     ATRACE_CALL_IF(DISPLAY_TRACE);
     uint32_t handler;
-#ifdef uncomment
     switch ( pDisp->getDisplayType( ) )
     {
         case eDTPanel:
@@ -312,7 +299,6 @@ bool DrmEventThread::disableVSync(DrmDisplay* pDisp, bool bWait)
 	    ETRACE( "Expected eDTHDMI or eDTPanel" );
             return false;
     }
-#endif
     DTRACEIF( VSYNC_DEBUG,
         "DrmEventThread::disableVSync P:%u, DrmDisplay %u/%p, bWait %d, handler %u",
         pDisp->getDisplayManagerIndex( ), pDisp->getDrmDisplayID( ), pDisp, bWait, handler );

@@ -64,7 +64,6 @@ const Content& Rotate180Filter::onApply(const Content& ref)
     mContent = ref;
     for (uint32_t d = 0; d < ref.size() && d < cMaxSupportedSFDisplays; d++)
     {
-#ifdef uncomment
         Content::Display& display = mContent.editDisplay(d);
         if ( !display.isEnabled() )
             continue;
@@ -85,7 +84,7 @@ const Content& Rotate180Filter::onApply(const Content& ref)
                 layer.setTransform(ETransform(t));
 
                 // We also need to rotate the coordinates, flip all 4 across X and Y
-                hwc_rect_t r;
+		HwcRect<int> r;
                 r.left = display.getWidth() - layer.getDst().right;
                 r.right = display.getWidth() - layer.getDst().left;
                 r.top = display.getHeight() - layer.getDst().bottom;
@@ -96,7 +95,6 @@ const Content& Rotate180Filter::onApply(const Content& ref)
                 layerStack.setLayer(ly, &layer);
             }
         }
-#endif
     }
 
     return mContent;

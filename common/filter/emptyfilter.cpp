@@ -16,16 +16,10 @@
 
 #include "hwcutils.h"
 #include "layer.h"
-#ifdef uncomment
-#include "abstractbuffermanager.h"
-#endif
+#include "AbstractBufferManager.h"
 
 #include "emptyfilter.h"
 #include "filtermanager.h"
-
-//namespace intel {
-//namespace ufo {
-//namespace hwc {
 
 namespace hwcomposer {
 
@@ -34,12 +28,8 @@ const uint32_t cMaxBufferAge = 10; // Arbitrary guess for now.
 // Factory instance
 EmptyFilter gEmptyFilter;
 
-#ifdef uncomment
 EmptyFilter::EmptyFilter() :
     mBM( AbstractBufferManager::get() )
-#else
-EmptyFilter::EmptyFilter()
-#endif
 {
     // Add this filter to the filter list
     FilterManager::getInstance().add(*this, FilterPosition::Empty);
@@ -103,9 +93,7 @@ const Content& EmptyFilter::onApply(const Content& ref)
             dispState.mbWasModified = false;
         }
     }
-#ifdef uncomment
     ageBlankBuffers();
-#endif
     if (!modified)
     {
         // No work to do so return the unmodified content.
@@ -178,11 +166,11 @@ buffer_handle_t EmptyFilter::getBlankBuffer(uint32_t width, uint32_t height)
     m->mFramesSinceLastUsed = 0;
     return m->mpBuffer->handle;
 }
-
+#endif
 void EmptyFilter::ageBlankBuffers()
 {
     // Age all buffers and destroy any that are too old.
-    List<BufferState>::iterator i = mBufferList.begin();
+    std::list<BufferState>::iterator i = mBufferList.begin();
     while (i != mBufferList.end())
     {
         i->mFramesSinceLastUsed++;
@@ -192,7 +180,5 @@ void EmptyFilter::ageBlankBuffers()
             ++i;
     }
 }
-#endif
-}; // namespace hwc
-//}; // namespace ufo
-//}; // namespace intel
+
+}; // namespace hwcomposer
