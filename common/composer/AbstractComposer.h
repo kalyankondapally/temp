@@ -14,14 +14,16 @@
 // limitations under the License.
 */
 
-#ifndef INTEL_UFO_HWC_ABSTRACTCOMPOSER_H
-#define INTEL_UFO_HWC_ABSTRACTCOMPOSER_H
+#ifndef COMMON_HWC_ABSTRACTCOMPOSER_H
+#define COMMON_HWC_ABSTRACTCOMPOSER_H
 
-#include "layer.h"
+#include "Content.h"
+#include <cfloat>
 
-namespace intel {
-namespace ufo {
-namespace hwc {
+//namespace intel {
+//namespace ufo {
+//namespace hwc {
+namespace hwcomposer {
 
 class AbstractComposer
 {
@@ -92,6 +94,7 @@ public:
     virtual void onRelease(ResourceHandle hResource) = 0;
 };
 
+#ifdef uncomment
 namespace old {
 class AbstractComposer
 {
@@ -101,7 +104,7 @@ public:
 
     // TODO: Old Abstract Composer entrypoints: Remove as older implementations get updated
 public:
-
+#ifdef uncomment_hwc1
     // This is the standard Hwc prepare entrypoint. In this function we look at all the source
     // layers and mark any that we want to handle as Overlay. We store internally the indices
     // of the layers that we want to handle.
@@ -111,15 +114,16 @@ public:
     // previous compositions. The function either returns the input rendertarget if it has nothing
     // to compose or it returns a new render target otherwise.
     virtual hwc_layer_1_t* onCompose(hwc_display_contents_1_t* pDisp, hwc_layer_1_t* pRenderTarget) = 0;
-
+#endif
     // This is the complete composition entrypoint for this display. This is called after the display
     // composition has completed with the appropriate release fence fd for the render target buffer.
     virtual int onComplete(int releaseFenceFd) = 0;
 };
 }; // namespace old
+#endif
+};
+//}; // namespace hwc
+//}; // namespace ufo
+//}; // namespace intel
 
-}; // namespace hwc
-}; // namespace ufo
-}; // namespace intel
-
-#endif // INTEL_UFO_HWC_ABSTRACTCOMPOSER_H
+#endif // COMMON_HWC_ABSTRACTCOMPOSER_H

@@ -14,16 +14,17 @@
 // limitations under the License.
 */
 
-#ifndef INTEL_UFO_HWC_PLANECOMPOSITION_H
-#define INTEL_UFO_HWC_PLANECOMPOSITION_H
+#ifndef COMMON_HWC_PLANECOMPOSITION_H
+#define COMMON_HWC_PLANECOMPOSITION_H
 
 #include "AbstractComposition.h"
 #include "AbstractComposer.h"
 #include "layer.h"
 
-namespace intel {
-namespace ufo {
-namespace hwc {
+//namespace intel {
+//namespace ufo {
+//namespace hwc {
+namespace hwcomposer {
 
 class CompositionManager;
 class DisplayCaps;
@@ -72,7 +73,7 @@ public:
     void            fallbackToSurfaceFlinger(uint32_t display);
 
     void            setCompositionManager(CompositionManager* pCompositionManager) { mpCompositionManager = pCompositionManager; };
-    void            setDisplayInput(const Content::Display* input) { ALOG_ASSERT(input), mpDisplayInput = input; };
+    void            setDisplayInput(const Content::Display* input) { HWCASSERT(input), mpDisplayInput = input; };
 
     const Content::Display& getDisplayOutput() const { return mDisplayOutput; }
 
@@ -106,9 +107,9 @@ private:
 
 };
 
+};
+//}; // namespace hwc
+//}; // namespace ufo
+//}; // namespace intel
 
-}; // namespace hwc
-}; // namespace ufo
-}; // namespace intel
-
-#endif // INTEL_UFO_HWC_PLANECOMPOSITION_H
+#endif // COMMON_HWC_PLANECOMPOSITION_H

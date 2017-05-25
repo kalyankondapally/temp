@@ -31,7 +31,7 @@
 namespace hwcomposer {
 
 class Layer;
-class AbstractComposition;
+//class AbstractComposition;
 
 // This class defines a display state at any point in time as a list of pointers to layer
 // objects.

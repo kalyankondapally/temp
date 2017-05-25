@@ -20,13 +20,17 @@
 #include "Utils.h"
 
 #include <math.h>
+#include <vector>
 
+#ifdef uncomment
 #include <ui/Region.h>
 #include <utils/Vector.h>
+#endif
 
-namespace intel {
-namespace ufo {
-namespace hwc {
+//namespace intel {
+//namespace ufo {
+//namespace hwc {
+namespace hwcomposer {
 
 PartitionedComposer::PartitionedComposer(std::shared_ptr<CellComposer> renderer):
     mpRenderer(renderer),
@@ -45,13 +49,13 @@ const char* PartitionedComposer::getName() const
 
 float PartitionedComposer::onEvaluate(const Content::LayerStack& source, const Layer& target, AbstractComposer::CompositionState** ppState, Cost type)
 {
-    ALOGD_IF(COMPOSITION_DEBUG, "PartitionedComposer: Evaluating\n%sRT %s", source.dump().string(), target.dump().string());
+    DTRACEIF(COMPOSITION_DEBUG, "PartitionedComposer: Evaluating\n%sRT %s", source.dump().string(), target.dump().string());
     HWC_UNUSED(ppState);
 
     // Check that the Vpp composer supports all the layer types
     if (!mpRenderer->isLayerSupportedAsOutput(target))
     {
-        ALOGD_IF(COMPOSITION_DEBUG, "PartitionedComposer: Unsupported output format: %s", target.dump().string());
+        DTRACEIF(COMPOSITION_DEBUG, "PartitionedComposer: Unsupported output format: %s", target.dump().string());
         return Eval_Not_Supported;
     }
 
@@ -62,7 +66,7 @@ float PartitionedComposer::onEvaluate(const Content::LayerStack& source, const L
 
         if (!mpRenderer->isLayerSupportedAsInput(layer))
         {
-            ALOGD_IF(COMPOSITION_DEBUG, "PartitionedComposer: Unsupported input format of layer %d: %s", ly, layer.dump().string());
+            DTRACEIF(COMPOSITION_DEBUG, "PartitionedComposer: Unsupported input format of layer %d: %s", ly, layer.dump().string());
             unsupportedInput = true;
         }
     }
@@ -71,7 +75,7 @@ float PartitionedComposer::onEvaluate(const Content::LayerStack& source, const L
     // with this composer.
     if (!mOptionPartitionVideo && source.isVideo() && isVideo(target.getBufferFormat()))
     {
-        ALOGD_IF(COMPOSITION_DEBUG, "PartitionedComposer: Video to Video composition disabled");
+        DTRACEIF(COMPOSITION_DEBUG, "PartitionedComposer: Video to Video composition disabled");
         return Eval_Not_Supported;
     }
 
@@ -79,11 +83,11 @@ float PartitionedComposer::onEvaluate(const Content::LayerStack& source, const L
     {
         if (!mpRenderer->canBlankUnsupportedInputLayers())
         {
-            ALOGD_IF(COMPOSITION_DEBUG, "PartitionedComposer: Unsupported input layers");
+            DTRACEIF(COMPOSITION_DEBUG, "PartitionedComposer: Unsupported input layers");
             return Eval_Not_Supported;
         }
 
-        ALOGD_IF(COMPOSITION_DEBUG, "PartitionedComposer: Evaluation cost(%d) = %f with blanked input!", type, Eval_Cost_Max);
+        DTRACEIF(COMPOSITION_DEBUG, "PartitionedComposer: Evaluation cost(%d) = %f with blanked input!", type, Eval_Cost_Max);
         return Eval_Cost_Max;
     }
 
@@ -112,7 +116,7 @@ float PartitionedComposer::onEvaluate(const Content::LayerStack& source, const L
     }
 
     // TODO: Very simple guestimate for now based on expected bandwidth usage
-    ALOGD_IF(COMPOSITION_DEBUG, "PartitionedComposer: Evaluation cost(%d) = %f", type, cost);
+    DTRACEIF(COMPOSITION_DEBUG, "PartitionedComposer: Evaluation cost(%d) = %f", type, cost);
     return cost;
 }
 
@@ -123,18 +127,18 @@ public:
     Partition() {}
     Partition(const Rect &rect) : mRegion(rect) {}
 
-    String8 dump(const char* pStr = "") const
+    HWCString dump(const char* pStr = "") const
     {
-        String8 output = String8::format("%s numLayers:%zd ", pStr, mLayers.size());
+        HWCString output = String8::format("%s numLayers:%zd ", pStr, mLayers.size());
         for(uint32_t i=0; i < mLayers.size(); i++)
-            output += String8::format("%d,", mLayers[i]);
+            output += HWCString::format("%d,", mLayers[i]);
 
         size_t size;
         const Rect* pRects = mRegion.getArray(&size);
 
-        output += String8::format(" numRects:%zd ", size);
+        output += HWCString::format(" numRects:%zd ", size);
         for (uint32_t i = 0; i < size; i++)
-            output += String8::format("(%d, %d, %d, %d) ", pRects[i].left, pRects[i].top, pRects[i].right, pRects[i].bottom);
+            output += HWCString::format("(%d, %d, %d, %d) ", pRects[i].left, pRects[i].top, pRects[i].right, pRects[i].bottom);
         return output;
     }
 
@@ -150,7 +154,7 @@ static void intersect(const Content::LayerStack& source, int32_t ly, Vector<Part
         return;
 
     const Layer& layer = source.getLayer(ly);
-    const hwc_rect_t& r = source.getLayer(ly).getDst();
+    const HwcRect<int>& r = source.getLayer(ly).getDst();
     Rect rect(r.left, r.top, r.right, r.bottom);
 
     Region inside = partitions[pi].mRegion.intersect(rect);
@@ -196,7 +200,7 @@ void PartitionedComposer::onCompose(const Content::LayerStack& source, const Lay
     ATRACE_NAME_IF(RENDER_TRACE, "PartitionedComposer");
     HWC_UNUSED(pState);
 
-    ALOGD_IF(PARTITION_DEBUG, "PartitionedComposer: onCompose\n%sRT %s", source.dump().string(), target.dump().string());
+    DTRACEIF(PARTITION_DEBUG, "PartitionedComposer: onCompose\n%sRT %s", source.dump().string(), target.dump().string());
     Log::add(source, target, "PartitionedComposer");
 
     target.waitAcquireFence();
@@ -227,7 +231,7 @@ void PartitionedComposer::onCompose(const Content::LayerStack& source, const Lay
     {
         const Partition& p = partitions[pi];
 
-        ALOGD_IF(PARTITION_DEBUG, "%s", p.dump().string());
+        DTRACEIF(PARTITION_DEBUG, "%s", p.dump().string());
         mpRenderer->drawLayerSet(p.mLayers.size(), p.mLayers.array(), p.mRegion);
     }
 
@@ -246,6 +250,7 @@ void PartitionedComposer::onRelease(ResourceHandle hResource)
     HWC_UNUSED(hResource);
 }
 
-} // namespace hwc
-} // namespace ufo
-} // namespace intel
+};
+//} // namespace hwc
+//} // namespace ufo
+//} // namespace intel

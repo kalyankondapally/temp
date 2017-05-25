@@ -14,21 +14,24 @@
 // limitations under the License.
 */
 
-#ifndef INTEL_UFO_HWC_PARTITIONEDCOMPOSER_H
-#define INTEL_UFO_HWC_PARTITIONEDCOMPOSER_H
+#ifndef COMMON_HWC_PARTITIONEDCOMPOSER_H
+#define COMMON_HWC_PARTITIONEDCOMPOSER_H
 
 #include "base.h"
 #include "AbstractComposer.h"
 #include "Option.h"
+#ifdef uncomment
 #include <ui/Region.h>
+#endif
 
 #include <memory>
 
 class HwcContext;
 
-namespace intel {
-namespace ufo {
-namespace hwc {
+//namespace intel {
+//namespace ufo {
+//namespace hwc {
+namespace hwcomposer {
 
 class PartitionedComposer : NonCopyable, public AbstractComposer
 {
@@ -62,8 +65,9 @@ private:
     Option mOptionPartitionVideo; // Allow video to video compositions.
 };
 
-} // namespace hwc
-} // namespace ufo
-} // namespace intel
+};
+//} // namespace hwc
+//} // namespace ufo
+//} // namespace intel
 
-#endif // INTEL_UFO_HWC_PARTITIONEDCOMPOSER_H
+#endif // COMMON_HWC_PARTITIONEDCOMPOSER_H

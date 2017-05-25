@@ -14,13 +14,14 @@
 // limitations under the License.
 */
 
-#ifndef INTEL_UFO_HWC_GLCELLCOMPOSER_H
-#define INTEL_UFO_HWC_GLCELLCOMPOSER_H
+#ifndef COMMON_HWC_GLCELLCOMPOSER_H
+#define COMMON_HWC_GLCELLCOMPOSER_H
 
 #define GL_GLEXT_PROTOTYPES
 #define EGL_EGLEXT_PROTOTYPES
 
 #include "base.h"
+#ifdef uncomment
 #include <EGL/egl.h>
 #include <EGL/eglext.h>
 #include <GLES2/gl2.h>
@@ -28,13 +29,14 @@
 #include <utils/RefBase.h>
 #include <utils/LruCache.h>
 #include <utils/JenkinsHash.h>
-
+#endif
 #include "PartitionedComposer.h"
 #include "Option.h"
 
-namespace intel {
-namespace ufo {
-namespace hwc {
+//namespace intel {
+//namespace ufo {
+//namespace hwc {
+namespace hwcomposer {
 
 
 /** \brief Helper class to save and restore the current GL context
@@ -275,16 +277,18 @@ private:
     void bindAVbo();
 };
 
-} // namespace hwc
-} // namespace ufo
-} // namespace intel
+};
+//} // namespace hwc
+//} // namespace ufo
+//} // namespace intel
 
+#if 0
 namespace android {
 template<> inline hash_t hash_type(const intel::ufo::hwc::GlCellComposer::ProgramKey& key)
 {
     return JenkinsHashWhiten(JenkinsHashMixBytes(0, (uint8_t*)&key, sizeof(key)));
 }
 }
+#endif
 
-
-#endif // INTEL_UFO_HWC_GLCELLCOMPOSER_H
+#endif // COMMON_HWC_GLCELLCOMPOSER_H

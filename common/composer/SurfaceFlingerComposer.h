@@ -14,15 +14,17 @@
 // limitations under the License.
 */
 
-#ifndef INTEL_UFO_HWC_SURFACEFLINGERCOMPOSER_H
-#define INTEL_UFO_HWC_SURFACEFLINGERCOMPOSER_H
+#ifndef COMMON_HWC_SURFACEFLINGERCOMPOSER_H
+#define COMMON_HWC_SURFACEFLINGERCOMPOSER_H
 
+#include "layer.h"
 #include "AbstractComposer.h"
-#include "AbstractFilter.h"
+#include "abstractfilter.h"
 
-namespace intel {
-namespace ufo {
-namespace hwc {
+//namespace intel {
+//namespace ufo {
+//namespace hwc {
+namespace hwcomposer {
 
 class BufferQueue;
 
@@ -43,17 +45,19 @@ public:
     virtual void onCompose(const Content::LayerStack& source, const Layer& target, AbstractComposer::CompositionState* pState);
     virtual ResourceHandle onAcquire(const Content::LayerStack& source, const Layer& target);
     virtual void onRelease(ResourceHandle hResource);
-
+#ifdef uncomment_hwc1
     // Entrypoints to this composer to inform it of the layer lists
     void onPrepareBegin(size_t numDisplays, hwc_display_contents_1_t** ppDisplayContents, nsecs_t now);
+#endif
 
     // This function needs to update the flags on the SF inputs to indicate what compositions
     // this composition engine is required to perform
     void onPrepareEnd();
 
+#ifdef uncomment_hwc1
     // This function informs the composer about the render target provided by the SurfaceFlinger
     void onSet(size_t numDisplays, hwc_display_contents_1_t** ppDisplayContents, nsecs_t now);
-
+#endif
     // This function returns the actual target of a composition.
     const Layer& getTarget(ResourceHandle hResource);
 
@@ -63,7 +67,7 @@ public:
 
     // AbstractFilter interfaces
     const Content& onApply(const Content& ref);
-    String8 dump();
+    HWCString dump();
 
 private:
     void findUnsupportedLayerRange(uint32_t d, const Content::Display& in);
@@ -74,7 +78,9 @@ private:
 private:
     nsecs_t                         mTimestamp;
     uint32_t                        mNumDisplays;
+#ifdef hwc1
     hwc_display_contents_1_t**      mppDisplayContents;
+#endif
 
     // Per display state
     class Composition : public AbstractComposition
@@ -87,8 +93,10 @@ private:
         const char*     getName() const;
 
         void            onUpdatePending(nsecs_t frameTime);
+#ifdef hwc1
         void            onUpdateFrameState(hwc_layer_1& layer, nsecs_t frameTime);
         void            onUpdateAll(hwc_layer_1& layer, nsecs_t frameTime);
+#endif
         void            onUpdate(const Content::LayerStack& src);
         void            onUpdateOutputLayer(const Layer& target);
         void            onCompose();
@@ -96,7 +104,7 @@ private:
         void            onRelease();
 
         float           getEvaluationCost() { return  AbstractComposer::Eval_Cost_Max; }
-        String8         dump(const char* pIdentifier = "") const;
+        HWCString         dump(const char* pIdentifier = "") const;
 
         const Layer&  getRenderTarget() const { return mRenderTarget; }
     private:
@@ -122,8 +130,10 @@ private:
     Content  mOutRef;
 };
 
-}; // namespace hwc
-}; // namespace ufo
-}; // namespace intel
+};
 
-#endif // INTEL_UFO_HWC_SURFACEFLINGERCOMPOSER_H
+//}; // namespace hwc
+//}; // namespace ufo
+//}; // namespace intel
+
+#endif // COMMON_HWC_SURFACEFLINGERCOMPOSER_H

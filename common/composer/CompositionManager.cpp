@@ -14,15 +14,22 @@
 // limitations under the License.
 */
 
+#ifdef uncomment
 #include "Hwc.h"
+#endif
 #include "CompositionManager.h"
-#include "Log.h"
-#include "Utils.h"
+#include "log.h"
+#include "utils.h"
+#ifdef uncomment
 #include "ufo/graphics.h"
+#endif
 
-namespace intel {
-namespace ufo {
-namespace hwc {
+#include "gbmbufferhandler.h"
+
+//namespace intel {
+//namespace ufo {
+//namespace hwc {
+namespace hwcomposer {
 
 // Default composition buffer pool constraints.
 // This is:
@@ -81,9 +88,9 @@ public:
     void            invalidate()    { mbTargetValid = false; }
 
     uint32_t        lock( void ) { ++mLocks; return mLocks; }
-    uint32_t        unlock( void ) { ALOG_ASSERT(mLocks>0); --mLocks; return mLocks; }
+    uint32_t        unlock( void ) { HWCASSERT(mLocks>0); --mLocks; return mLocks; }
 
-    String8         dump(nsecs_t now, const char* pIdentifier = "") const;
+    HWCString         dump(nsecs_t now, const char* pIdentifier = "") const;
 
     // Invalidate the composition's render target (used when buffer queue buffers are expired/modified).
     void            invalidateRenderTarget( void );
@@ -99,7 +106,7 @@ private:
     void onUpdateTimestamp(nsecs_t timestamp) { mTimestamp = timestamp; };
     void onUpdateBufferPavpSession();
     void onUpdateMediaTimestampFps();
-    void expireBuffer( buffer_handle_t bufferHandle );
+    void expireBuffer( HWCNativeHandle bufferHandle );
 
 private:
     CompositionManager*                     mpCompositionManager;   // Pointer back to the manager
@@ -153,13 +160,13 @@ void CompositionManager::Composition::setRenderTargetBuffer( BufferQueue::Buffer
 {
     if ( mRenderTargetBuffer == handle )
     {
-        ALOGD_IF( COMPOSITION_DEBUG, "setRenderTargetBuffer %p no change", handle );
+        DTRACEIF( COMPOSITION_DEBUG, "setRenderTargetBuffer %p no change", handle );
         return;
     }
     if ( mRenderTargetBuffer )
     {
         // Release this composition's existing reference.
-        ALOGD_IF( COMPOSITION_DEBUG, "setRenderTargetBuffer remove old reference %p", mRenderTargetBuffer );
+        DTRACEIF( COMPOSITION_DEBUG, "setRenderTargetBuffer remove old reference %p", mRenderTargetBuffer );
         mpCompositionManager->getBufferQueue().registerReference( mRenderTargetBuffer, NULL );
     }
     // Update RT.
@@ -187,23 +194,23 @@ void CompositionManager::Composition::referenceInvalidate( BufferQueue::BufferHa
     HWC_UNUSED( handle );
     Log::alogd( COMPOSITION_DEBUG, "CompositionManager composition %p invalidated from buffer queue with record %p", this, handle );
     // If we receive a reference callback then we MUST have a reference to it.
-    ALOG_ASSERT( mRenderTargetBuffer != NULL );
-    ALOG_ASSERT( mRenderTargetBuffer == handle );
+    HWCASSERT( mRenderTargetBuffer != NULL );
+    HWCASSERT( mRenderTargetBuffer == handle );
     // We don't anticipate a reference callback if the target was provided.
-    ALOG_ASSERT( !mbTargetProvided );
+    HWCASSERT( !mbTargetProvided );
     // Invalidate this composition's render target (clear its reference to the buffer queue).
     invalidateRenderTarget();
 }
 
 void CompositionManager::Composition::clear()
 {
-    ALOG_ASSERT( !mLocks );
+    HWCASSERT( !mLocks );
     delete mpComposerCompositionState;
     mpComposerCompositionState = NULL;
     mpComposer              = NULL;
     mRefCount               = 0;
     mEvaluationCost         = AbstractComposer::Eval_Cost_Max;
-    mRenderTargetUsage      = GRALLOC_USAGE_HW_COMPOSER;
+    mRenderTargetUsage      = GBM_BO_USE_RENDERING | GBM_BO_USE_SCANOUT; 
     mCompositionFormat      = 0;
     mComposerResource       = NULL;
     mLocks                  = 0;
@@ -217,7 +224,7 @@ void CompositionManager::Composition::clear()
 bool CompositionManager::Composition::match(const Content::LayerStack& src, uint32_t width, uint32_t height, uint32_t format,
                                             ECompressionType compression, bool* pbMatchedHandles, bool* pbContainsComposition) const
 {
-    ALOG_ASSERT( mRenderTarget.getComposition() == this );
+    HWCASSERT( mRenderTarget.getComposition() == this );
 
     // Check the render target resolution
     if ( ( width  != mRenderTarget.getDstWidth() )
@@ -225,9 +232,9 @@ bool CompositionManager::Composition::match(const Content::LayerStack& src, uint
       || ( format != mCompositionFormat )
       || ( compression != mRenderTarget.getBufferCompression() ) )
     {
-        ALOGD_IF(COMPOSITION_DEBUG, "Mismatched width %d=%d , height %d=%d, format %s=%s or compression %u=%u",
+        DTRACEIF(COMPOSITION_DEBUG, "Mismatched width %d=%d , height %d=%d, format %s=%s or compression %u=%u",
             width, mRenderTarget.getDstWidth(), height, mRenderTarget.getDstHeight(),
-	    getDRMFormatString(format), getDRMFormatString(mCompositionFormat),
+            getHALFormatShortString(format), getHALFormatShortString(mCompositionFormat),
             compression, mRenderTarget.getBufferCompression());
         return false;
     }
@@ -235,7 +242,7 @@ bool CompositionManager::Composition::match(const Content::LayerStack& src, uint
     // Check the layer stacks match in size
     if (src.size() != mSourceLayers.size())
     {
-        ALOGD_IF(COMPOSITION_DEBUG, "Mismatched src.size()=%d mSourceLayers.size()=%d", src.size(), uint32_t(mSourceLayers.size()));
+        DTRACEIF(COMPOSITION_DEBUG, "Mismatched src.size()=%d mSourceLayers.size()=%d", src.size(), uint32_t(mSourceLayers.size()));
         return false;
     }
 
@@ -248,9 +255,9 @@ bool CompositionManager::Composition::match(const Content::LayerStack& src, uint
 
         if ( !ours.matches( theirs, &bThisLayerMatchesHandles ) )
         {
-            ALOGD_IF( COMPOSITION_DEBUG, "Mismatch" );
-            ALOGD_IF( COMPOSITION_DEBUG, "Ours: %s", ours.dump().string() );
-            ALOGD_IF( COMPOSITION_DEBUG, "Theirs: %s", theirs.dump().string() );
+            DTRACEIF( COMPOSITION_DEBUG, "Mismatch" );
+            DTRACEIF( COMPOSITION_DEBUG, "Ours: %s", ours.dump().string() );
+            DTRACEIF( COMPOSITION_DEBUG, "Theirs: %s", theirs.dump().string() );
             return false;
         }
 
@@ -270,7 +277,7 @@ bool CompositionManager::Composition::match(const Content::LayerStack& src, uint
     return true;
 }
 
-void CompositionManager::Composition::expireBuffer( buffer_handle_t bufferHandle )
+void CompositionManager::Composition::expireBuffer( HWCNativeHandle bufferHandle )
 {
     if ( mRenderTarget.getHandle() == bufferHandle )
     {
@@ -309,27 +316,27 @@ void CompositionManager::Composition::onUpdateAll(const Content::LayerStack& src
         if (maxFramerate < fps)
             maxFramerate = fps;
 
-        ALOGD_IF( COMPOSITION_DEBUG, "%s", src.getLayer(ly).dump("CompositionManager::Composition::onUpdateAll S").string());
-        ALOGD_IF( COMPOSITION_DEBUG, "CompositionManager::onUpdateAll: S %s", src.getLayer(ly).getFrameRateTracker().dump().string());
-        ALOGD_IF( COMPOSITION_DEBUG, "%s", internalLayer.dump("CompositionManager::Composition::onUpdateAll D").string());
-        ALOGD_IF( COMPOSITION_DEBUG, "CompositionManager::onUpdateAll: D %s", internalLayer.getFrameRateTracker().dump().string());
+        DTRACEIF( COMPOSITION_DEBUG, "%s", src.getLayer(ly).dump("CompositionManager::Composition::onUpdateAll S").string());
+        DTRACEIF( COMPOSITION_DEBUG, "CompositionManager::onUpdateAll: S %s", src.getLayer(ly).getFrameRateTracker().dump().string());
+        DTRACEIF( COMPOSITION_DEBUG, "%s", internalLayer.dump("CompositionManager::Composition::onUpdateAll D").string());
+        DTRACEIF( COMPOSITION_DEBUG, "CompositionManager::onUpdateAll: D %s", internalLayer.getFrameRateTracker().dump().string());
     }
     mSourceStack = Content::LayerStack(mSourceLayers.data(), mSourceLayers.size());
     mSourceStack.updateLayerFlags();
 
-    ALOGD_IF( COMPOSITION_DEBUG, "CompositionManager::onUpdateAll: maxFrameRate %d", maxFramerate);
+    DTRACEIF( COMPOSITION_DEBUG, "CompositionManager::onUpdateAll: maxFrameRate %d", maxFramerate);
 
     mRenderTarget.setHandle(0);
     setRenderTargetBuffer( NULL );
 
     // 1:1 mapping on the render target. Generate an appropriate target layer structure
-    hwc_frect_t& s = mRenderTarget.editSrc();
+    HwcRect<float>& s = mRenderTarget.editSrc();
     s.left = 0;
     s.top = 0;
     s.right = width;
     s.bottom = height;
 
-    hwc_rect_t& d = mRenderTarget.editDst();
+    HwcRect<int>& d = mRenderTarget.editDst();
     d.left = 0;
     d.top = 0;
     d.right = width;
@@ -338,32 +345,38 @@ void CompositionManager::Composition::onUpdateAll(const Content::LayerStack& src
     // Since we permit BufferQueue to return an alpha equivalent format for non-alpha composition requests,
     // we must explicitly track the original requested format and set blending on/off as necessary.
     mCompositionFormat = format;
+#ifdef uncomment
     if ( isAlpha( mCompositionFormat ) )
     {
         mRenderTarget.setBlending( EBlendMode::PREMULT );
-        ALOGD_IF( COMPOSITION_DEBUG, "CompositionManager::onUpdateAll: Enable blending for requested alpha format %d/%s",
-	    mCompositionFormat, getDRMFormatString( mCompositionFormat ) );
+        DTRACEIF( COMPOSITION_DEBUG, "CompositionManager::onUpdateAll: Enable blending for requested alpha format %d/%s",
+            mCompositionFormat, getHALFormatShortString( mCompositionFormat ) );
     }
     else
+#endif
     {
         mRenderTarget.setBlending( EBlendMode::NONE );
-        ALOGD_IF( COMPOSITION_DEBUG, "CompositionManager::onUpdateAll: Disable blending for requested opaque format %d/%s",
-	    mCompositionFormat, getDRMFormatString( mCompositionFormat ) );
+        DTRACEIF( COMPOSITION_DEBUG, "CompositionManager::onUpdateAll: Disable blending for requested opaque format %d/%s",
+            mCompositionFormat, getHALFormatShortString( mCompositionFormat ) );
     }
     mRenderTarget.setPlaneAlpha(1.0f);
     mRenderTarget.setBufferFormat(format);
     mRenderTarget.setBufferCompression(compression);
     mRenderTarget.editVisibleRegions().resize(1);
+#ifdef uncomment
     mRenderTarget.editVisibleRegions().editItemAt(0) = d;
+#endif
     mRenderTarget.editFrameRateTracker().reset(mpCompositionManager->getTimestamp(), maxFramerate);
     mbTargetValid = false;
     mbConsiderForReuse = false;
 
     // TODO: Pipe render target flags through to the physical display.
     // An NV12 output format is expected to go to the encoder
-    mRenderTargetUsage = GRALLOC_USAGE_HW_COMPOSER | GRALLOC_USAGE_HW_RENDER;
+    mRenderTargetUsage = GBM_BO_USE_RENDERING | GBM_BO_USE_SCANOUT;
+#ifdef uncomment
     if (format == HWC_PIXEL_FORMAT_NV12_Y_TILED_INTEL)
-        mRenderTargetUsage |= GRALLOC_USAGE_HW_VIDEO_ENCODER;
+        mRenderTargetUsage |= GBM_BO_USE_SW_READ_OFTEN;
+#endif
 
     mRenderTarget.onUpdateFlags();
 
@@ -375,7 +388,7 @@ void CompositionManager::Composition::onUpdateAll(const Content::LayerStack& src
     // Propagate media timestamp to the render target if required.
     onUpdateMediaTimestampFps();
 
-    ALOG_ASSERT( mRenderTarget.getComposition() == this );
+    HWCASSERT( mRenderTarget.getComposition() == this );
 }
 
 void CompositionManager::Composition::onUpdate(const Content::LayerStack& src)
@@ -386,15 +399,15 @@ void CompositionManager::Composition::onUpdate(const Content::LayerStack& src)
         bool bMatch = match(src, mRenderTarget.getDstWidth(), mRenderTarget.getDstHeight(), mCompositionFormat, mRenderTarget.getBufferCompression());
         if ( !bMatch )
         {
-            ALOGE( "CompositionManager composition update mismatch" );
-            ALOGE( "RT Layer   : %s", mRenderTarget.dump().string() );
-            ALOGE( "SRC Stack  : %s", src.dump().string() );
-            ALOG_ASSERT(0);
+            DTRACE( "CompositionManager composition update mismatch" );
+            DTRACE( "RT Layer   : %s", mRenderTarget.dump().string() );
+            DTRACE( "SRC Stack  : %s", src.dump().string() );
+            HWCASSERT(0);
         }
     }
 
     // Update our source for this composition
-    ALOGD_IF( COMPOSITION_DEBUG, "CompositionManager::onUpdate: src %s", src.dump().string());
+    DTRACEIF( COMPOSITION_DEBUG, "CompositionManager::onUpdate: src %s", src.dump().string());
 
     // Run through the handles in the composition updating them if required
     for (uint32_t ly = 0; ly < mSourceLayers.size(); ly++)
@@ -413,14 +426,16 @@ void CompositionManager::Composition::onUpdate(const Content::LayerStack& src)
             mbTargetValid = false;
         }
         internalCopy.onUpdateFrameState(inputLayer);
-        ALOGD_IF( COMPOSITION_DEBUG, "%u %s", ly, internalCopy.dump().string());
+        DTRACEIF( COMPOSITION_DEBUG, "%u %s", ly, internalCopy.dump().string());
     }
 
     mbConsiderForReuse = false;
+#ifdef uncomment
     if (mbTargetValid)
         Log::add(mSourceStack, mRenderTarget, "Smart Composition Reuse: ");
+#endif
 
-    ALOG_ASSERT( mRenderTarget.getComposition() == this );
+    HWCASSERT( mRenderTarget.getComposition() == this );
 }
 
 void CompositionManager::Composition::onUpdateFences(const Content::LayerStack& src)
@@ -436,19 +451,21 @@ void CompositionManager::Composition::onUpdateFences(const Content::LayerStack& 
 
 void CompositionManager::Composition::onUpdateOutputLayer(const Layer& target)
 {
-    ALOGD_IF( COMPOSITION_DEBUG, "CompositionManager::onUpdateOutputLayer to: %s", target.dump().string());
+    DTRACEIF( COMPOSITION_DEBUG, "CompositionManager::onUpdateOutputLayer to: %s", target.dump().string());
     // Check the that the render target matches the source layer
-    //ALOG_ASSERT(mRenderTarget.getDstWidth()     == target.getDstWidth()    );
-    //ALOG_ASSERT(mRenderTarget.getDstHeight()    == target.getDstHeight()   );
-    //ALOG_ASSERT(mRenderTarget.getBufferFormat() == target.getBufferFormat());
+    //HWCASSERT(mRenderTarget.getDstWidth()     == target.getDstWidth()    );
+    //HWCASSERT(mRenderTarget.getDstHeight()    == target.getDstHeight()   );
+    //HWCASSERT(mRenderTarget.getBufferFormat() == target.getBufferFormat());
 
     mRenderTarget.onUpdateFrameState(target);
     // A Composition's render target layer composition should never change.
+#ifdef uncomment
     mRenderTarget.setComposition( this );
+#endif
     mbTargetProvided = true;
     mbTargetValid = false;
 
-    ALOG_ASSERT( mRenderTarget.getComposition() == this );
+    HWCASSERT( mRenderTarget.getComposition() == this );
 }
 
 void CompositionManager::Composition::onUpdateMediaTimestampFps()
@@ -465,7 +482,7 @@ void CompositionManager::Composition::onUpdateMediaTimestampFps()
    }
    // No video timestamp by default.
    mRenderTarget.onUpdateMediaTimestampFps(0,0);
-   ALOG_ASSERT( mRenderTarget.getComposition() == this );
+   HWCASSERT( mRenderTarget.getComposition() == this );
 }
 
 void CompositionManager::Composition::onUpdateBufferPavpSession()
@@ -493,27 +510,27 @@ void CompositionManager::Composition::onUpdateBufferPavpSession()
         }
     }
 
-    ALOG_ASSERT( mRenderTarget.getComposition() == this );
+    HWCASSERT( mRenderTarget.getComposition() == this );
 }
 
 
 void CompositionManager::Composition::onCompose()
 {
-    ALOGD_IF( COMPOSITION_DEBUG, "CompositionManager::onCompose to:");
-    ALOGD_IF( COMPOSITION_DEBUG, "%s", mSourceStack.dump().string());
-    ALOGD_IF( COMPOSITION_DEBUG, "%s", mRenderTarget.dump(" T").string());
+    DTRACEIF( COMPOSITION_DEBUG, "CompositionManager::onCompose to:");
+    DTRACEIF( COMPOSITION_DEBUG, "%s", mSourceStack.dump().string());
+    DTRACEIF( COMPOSITION_DEBUG, "%s", mRenderTarget.dump(" T").string());
 
     // Just in case no evaluation has been done yet, find an appropriate engine and forward
     if (!mbEvaluationValid)
     {
-        ALOGD_IF( COMPOSITION_DEBUG, "CompositionManager::onCompose: chooseBestCompositionEngine");
+        DTRACEIF( COMPOSITION_DEBUG, "CompositionManager::onCompose: chooseBestCompositionEngine");
         mpCompositionManager->chooseBestCompositionEngine(*this, AbstractComposer::Power);
     }
 
     // If the composition isnt possible, fail
     if (isImpossible())
     {
-        ALOGE("onCompose: Impossible composition requested");
+        DTRACE("onCompose: Impossible composition requested");
         return;
     }
 
@@ -530,24 +547,24 @@ void CompositionManager::Composition::onCompose()
             uint32_t allocW = alignTo(mRenderTarget.getDstWidth(),  cBufferWidthAlignment);
             uint32_t allocH = alignTo(mRenderTarget.getDstHeight(), cBufferHeightAlignment);
 
-            ALOGD_IF( COMPOSITION_DEBUG, "onCompose dequeuing new buffer [current mRenderTargetBuffer %p]", mRenderTargetBuffer );
+            DTRACEIF( COMPOSITION_DEBUG, "onCompose dequeuing new buffer [current mRenderTargetBuffer %p]", mRenderTargetBuffer );
 
             BufferQueue::BufferHandle handle = mpCompositionManager->getBufferQueue().dequeue(allocW, allocH, mRenderTarget.getBufferFormat(), mRenderTargetUsage, &pReleaseFence);
-            sp<GraphicBuffer> pGB = mpCompositionManager->getBufferQueue().getGraphicBuffer( handle );
+            std::shared_ptr<HWCNativeHandlesp> pGB = mpCompositionManager->getBufferQueue().getGraphicBuffer( handle );
             if ( ( pGB == NULL ) || ( pGB->handle == NULL ) )
             {
-                ALOGE( "onCompose: Failed to dequeue render target buffer" );
+                DTRACE( "onCompose: Failed to dequeue render target buffer" );
                 return;
             }
 
-            ALOGD_IF( COMPOSITION_DEBUG, "onCompose dequeued new buffer setting %p", handle );
+            DTRACEIF( COMPOSITION_DEBUG, "onCompose dequeued new buffer setting %p", handle );
             setRenderTargetBuffer( handle );
             mRenderTarget.setAcquireFenceReturn(Timeline::NullNativeFenceReference);
             mRenderTarget.setReleaseFenceReturn(pReleaseFence);
-
+#ifdef uncomment
             // Update the handle of the render target
             mRenderTarget.onUpdateFrameState(pGB->handle, mpCompositionManager->getTimestamp());
-
+#endif
             // Queue this immediately, the release fence will be filled in later.
             mpCompositionManager->getBufferQueue().queue();
         }
@@ -560,10 +577,10 @@ void CompositionManager::Composition::onCompose()
         // Propagate media timestamp to the render target if required.
         onUpdateMediaTimestampFps();
 
-        ALOGD_IF( COMPOSITION_DEBUG, "mRenderTarget %s = %s", mbTargetProvided ? "provided" : "allocated", mRenderTarget.dump().string());
+        DTRACEIF( COMPOSITION_DEBUG, "mRenderTarget %s = %s", mbTargetProvided ? "provided" : "allocated", mRenderTarget.dump().string());
 
         // We must have a render target handle.
-        ALOG_ASSERT( mRenderTarget.getHandle( ) );
+        HWCASSERT( mRenderTarget.getHandle( ) );
         // Mark it used.
         mpCompositionManager->getBufferQueue().markUsed( mRenderTargetBuffer );
 
@@ -582,18 +599,18 @@ void CompositionManager::Composition::onCompose()
 
             if (layer.getAcquireFence() >= 0)
             {
-                ALOGD_IF( COMPOSITION_DEBUG, "CompositionManager::onCompose: Closing unused fence %d", mSourceStack.getLayer(ly).getAcquireFence());
+                DTRACEIF( COMPOSITION_DEBUG, "CompositionManager::onCompose: Closing unused fence %d", mSourceStack.getLayer(ly).getAcquireFence());
                 mSourceStack.getLayer(ly).closeAcquireFence();
             }
         }
 
         // We must have a render target handle.
-        ALOG_ASSERT( mRenderTarget.getHandle( ) );
+        HWCASSERT( mRenderTarget.getHandle( ) );
         // Mark it used.
         mpCompositionManager->getBufferQueue().markUsed( mRenderTargetBuffer );
     }
 
-    ALOG_ASSERT( mRenderTarget.getComposition() == this );
+    HWCASSERT( mRenderTarget.getComposition() == this );
 }
 
 bool CompositionManager::Composition::onAcquire()
@@ -601,7 +618,7 @@ bool CompositionManager::Composition::onAcquire()
     mRefCount++;
     mComposerResource = mpComposer->onAcquire(mSourceStack, mRenderTarget);
 
-    ALOG_ASSERT( mRenderTarget.getComposition() == this );
+    HWCASSERT( mRenderTarget.getComposition() == this );
 
     return mComposerResource != NULL;
 }
@@ -629,7 +646,9 @@ CompositionManager::~CompositionManager()
 void CompositionManager::firstFrameInit( void )
 {
     // Set primary tid and register tracker for buffer alloc/free.
+#ifdef uncomment
     mPrimaryTid = gettid();
+#endif
     AbstractBufferManager::get().registerTracker( *this );
 
     // Set buffer queue constraints from options.
@@ -639,6 +658,7 @@ void CompositionManager::firstFrameInit( void )
     mBufferQueue.setConstraints( compBufferCount, compBufferAlloc );
 }
 
+#ifdef uncommenthwc1
 void CompositionManager::onPrepareBegin(size_t numDisplays, hwc_display_contents_1_t** displays, nsecs_t timestamp)
 {
 
@@ -648,7 +668,7 @@ void CompositionManager::onPrepareBegin(size_t numDisplays, hwc_display_contents
     }
     else
     {
-        ALOG_ASSERT( mPrimaryTid == gettid() );
+        HWCASSERT( mPrimaryTid == gettid() );
     }
 
     mTimestamp = timestamp;
@@ -660,7 +680,7 @@ void CompositionManager::onPrepareBegin(size_t numDisplays, hwc_display_contents
     mBufferQueue.onPrepareBegin();
     return;
 }
-
+#endif
 
 void CompositionManager::onPrepareEnd()
 {
@@ -669,7 +689,7 @@ void CompositionManager::onPrepareEnd()
     return;
 }
 
-void CompositionManager::invalidate(buffer_handle_t handle)
+void CompositionManager::invalidate(HWCNativeHandle handle)
 {
     for (uint32_t i = 0; i < mCompositions.size(); i++)
     {
@@ -690,7 +710,7 @@ void CompositionManager::onAccept(const Content::Display& display, uint32_t d)
     {
         // On a geometry change, order can change, layers can be added etc.
         // Hence, we need to do a full search of old handles and new handles.
-        for (buffer_handle_t handle : mCurrentHandles[d])
+        for (HWCNativeHandle handle : mCurrentHandles[d])
         {
             bool bFound = false;
             for (uint32_t ly = 0 ; ly < layerStack.size(); ++ly)
@@ -702,6 +722,7 @@ void CompositionManager::onAccept(const Content::Display& display, uint32_t d)
                     break;
                 }
             }
+#ifdef uncomment
             if (!bFound)
             {
                 // Mark this handle as unused. Invalidate any compositions containing the handle if no displays reference this now.
@@ -709,6 +730,7 @@ void CompositionManager::onAccept(const Content::Display& display, uint32_t d)
                 if (mCurrentHandleUsage[handle] == 0)
                     invalidate(handle);
             }
+#endif
         }
 
         // Update handle list. Mark all handles as in use, remarking an already in use handle is harmless
@@ -716,9 +738,11 @@ void CompositionManager::onAccept(const Content::Display& display, uint32_t d)
         for (uint32_t ly = 0 ; ly < layerStack.size(); ++ly)
         {
             const Layer& layer = layerStack.getLayer(ly);
-            buffer_handle_t handle = layer.getHandle();
+            HWCNativeHandle handle = layer.getHandle();
             mCurrentHandles[d][ly] = handle;
+#ifdef uncomment
             mCurrentHandleUsage[handle] |= (1 << d);
+#endif
         }
     }
     else
@@ -729,11 +753,12 @@ void CompositionManager::onAccept(const Content::Display& display, uint32_t d)
             const Layer& layer = layerStack.getLayer(ly);
             if (mCurrentHandles[d][ly] != layer.getHandle())
             {
-                buffer_handle_t handle = mCurrentHandles[d][ly];
+                HWCNativeHandle handle = mCurrentHandles[d][ly];
+#ifdef uncomment
                 mCurrentHandleUsage[handle] &= ~(1 << d);
                 if (mCurrentHandleUsage[handle] == 0)
                     invalidate(handle);
-
+#endif
                 invalidate(mCurrentHandles[d][ly]);
                 mCurrentHandles[d][ly] = layer.getHandle();
             }
@@ -741,6 +766,7 @@ void CompositionManager::onAccept(const Content::Display& display, uint32_t d)
     }
 }
 
+#ifdef uncommenthwc1
 void CompositionManager::onSetBegin(size_t numDisplays, hwc_display_contents_1_t** ppDisplayContents)
 {
     mSurfaceFlingerComposer.onSet(numDisplays, ppDisplayContents, mTimestamp);
@@ -752,15 +778,15 @@ void CompositionManager::onSetBegin(size_t numDisplays, hwc_display_contents_1_t
         Composition& c = mCompositions[i];
         if ((c.mpComposer == &mSurfaceFlingerComposer) && c.mComposerResource)
         {
-            ALOGD_IF( COMPOSITION_DEBUG, "UpdateOutputLayer on composition %d",i);
+            DTRACEIF( COMPOSITION_DEBUG, "UpdateOutputLayer on composition %d",i);
             c.onUpdateOutputLayer(mSurfaceFlingerComposer.getTarget(c.mComposerResource));
-            ALOG_ASSERT( c.mRenderTarget.getComposition() == &c );
+            HWCASSERT( c.mRenderTarget.getComposition() == &c );
         }
     }
 
     return;
 }
-
+#endif
 void CompositionManager::onEndOfFrame( uint32_t hwcFrameIndex )
 {
     HWC_UNUSED( hwcFrameIndex );
@@ -768,6 +794,7 @@ void CompositionManager::onEndOfFrame( uint32_t hwcFrameIndex )
     for (uint32_t i = 0; i < mCompositions.size(); i++)
     {
         Composition& c = mCompositions[i];
+#ifdef uncomment
         if (c.mRefCount || c.mTimestamp + ms2ns( cReuseCompositionMs ) > mTimestamp)
         {
             // If there are references or this was used very recently, then do not reuse record
@@ -777,16 +804,17 @@ void CompositionManager::onEndOfFrame( uint32_t hwcFrameIndex )
         {
             c.mbConsiderForReuse = true;
         }
+#endif
     }
     mBufferQueue.onSetEnd( );
 }
 
 AbstractComposition* CompositionManager::requestComposition(const Content::LayerStack& src, uint32_t width, uint32_t height, uint32_t format, ECompressionType compression, AbstractComposer::Cost type)
 {
-    ALOGD_IF( COMPOSITION_DEBUG, "CompositionManager::requestComposition: Looking for composition to %dx%d %s. compositions known:%d %p", width, height, getDRMFormatString(format), mCompositions.size(), this);
-    ALOGD_IF( COMPOSITION_DEBUG, "%s", src.dump().string());
+    DTRACEIF( COMPOSITION_DEBUG, "CompositionManager::requestComposition: Looking for composition to %dx%d %s. compositions known:%d %p", width, height, getHALFormatShortString(format), mCompositions.size(), this);
+    DTRACEIF( COMPOSITION_DEBUG, "%s", src.dump().string());
 
-    ALOGE_IF( src.isFrontBufferRendered(),
+    DTRACEIF( src.isFrontBufferRendered(),
               "Composition request includes a front buffer rendered layer\n%s",
               src.dump().string() );
 
@@ -799,15 +827,15 @@ AbstractComposition* CompositionManager::requestComposition(const Content::Layer
     {
         Composition& c = mCompositions[i];
 
-        ALOGD_IF( COMPOSITION_DEBUG, "CompositionManager::requestComposition: Checking composition %d/%p", i, &c);
-        ALOGD_IF( COMPOSITION_DEBUG, "%s", c.dump(mTimestamp).string());
+        DTRACEIF( COMPOSITION_DEBUG, "CompositionManager::requestComposition: Checking composition %d/%p", i, &c);
+        DTRACEIF( COMPOSITION_DEBUG, "%s", c.dump(mTimestamp).string());
 
         // If this composition is old, then skip it but remember its index, we will reuse the oldest record
         if (c.mRefCount == 0 && c.mbConsiderForReuse)
         {
             if (c.mLocks==0 && c.mTimestamp < newEntryTimestamp)
             {
-                ALOGD_IF( COMPOSITION_DEBUG, "CompositionManager::requestComposition: Discarding old composition %d. May reuse index", i);
+                DTRACEIF( COMPOSITION_DEBUG, "CompositionManager::requestComposition: Discarding old composition %d. May reuse index", i);
                 newEntrySlot = i;
                 newEntryTimestamp = c.mTimestamp;
             }
@@ -822,7 +850,7 @@ AbstractComposition* CompositionManager::requestComposition(const Content::Layer
             // If the composition is impossible then we can just say so!
             if (c.isImpossible())
             {
-                ALOGD_IF( COMPOSITION_DEBUG, "CompositionManager::requestComposition: composition matched as impossible");
+                DTRACEIF( COMPOSITION_DEBUG, "CompositionManager::requestComposition: composition matched as impossible");
                 return NULL;
             }
 
@@ -830,7 +858,7 @@ AbstractComposition* CompositionManager::requestComposition(const Content::Layer
             // we can skip the handle lookup
             if (bMatchedHandles)
             {
-                ALOGD_IF( COMPOSITION_DEBUG, "CompositionManager::requestComposition: composition matched current frame");
+                DTRACEIF( COMPOSITION_DEBUG, "CompositionManager::requestComposition: composition matched current frame");
                 // Update the counter to indicate that this composition is now current for this frame
                 // No need to recompose, this is the smart composition case
                 c.onUpdateFences(src);
@@ -838,19 +866,23 @@ AbstractComposition* CompositionManager::requestComposition(const Content::Layer
 
                 if (bContainsComposition)
                 {
+#ifdef uncomment
                     // Have to recompose this entry if there is a composition present
                     Log::add(src, c.getTarget(), "Smart Composition Invalidate: Contains Composition");
+#endif
                     c.invalidate();
                 }
                 else
                 {
+#ifdef uncomment
                     Log::add(src, c.getTarget(), "Smart Composition Reuse: ");
+#endif
                 }
                 return &c;
             }
             if (c.mTimestamp != mTimestamp)
             {
-                ALOGD_IF( COMPOSITION_DEBUG, "CompositionManager::requestComposition: composition matched older frame - update handles");
+                DTRACEIF( COMPOSITION_DEBUG, "CompositionManager::requestComposition: composition matched older frame - update handles");
                 // This matches an older composition. Update the handles and reuse this entry.
                 c.onUpdate(src);
                 c.onUpdateTimestamp(mTimestamp);
@@ -861,7 +893,7 @@ AbstractComposition* CompositionManager::requestComposition(const Content::Layer
         }
     }
 
-    ALOGD_IF( COMPOSITION_DEBUG, "CompositionManager::requestComposition: No suitable previous composition found, adding composition at entry %d", newEntrySlot);
+    DTRACEIF( COMPOSITION_DEBUG, "CompositionManager::requestComposition: No suitable previous composition found, adding composition at entry %d", newEntrySlot);
 
     // No match was found, need to recreate a new composition entry
     // TODO: We may want to limit the size of this table here by now looking for unused composition entries
@@ -874,7 +906,9 @@ AbstractComposition* CompositionManager::requestComposition(const Content::Layer
     Composition& ce = mCompositions[newEntrySlot];
     ce.clear();
     ce.mpCompositionManager = this;
+#ifdef uncomment
     ce.mRenderTarget.setComposition(&ce);
+#endif
     ce.onUpdateAll(src, width, height, format, compression, mTimestamp);
 
     // Now do a preliminary search for the best composition engine for this composition
@@ -896,13 +930,13 @@ uint32_t CompositionManager::lockComposition( AbstractComposition* pComposition 
         if ( &c == pComposition )
         {
             uint32_t newLocks = c.lock();
-            ALOGD_IF( COMPOSITION_DEBUG,
+            DTRACEIF( COMPOSITION_DEBUG,
                       "CompositionManager::lockComposition %p : entry %d, locks %u",
                       pComposition, i, newLocks );
             return newLocks;
         }
     }
-    ALOGE( "CompositionManager::lockComposition %p : not found", pComposition );
+    DTRACE( "CompositionManager::lockComposition %p : not found", pComposition );
     return 0;
 }
 
@@ -914,13 +948,13 @@ uint32_t CompositionManager::unlockComposition( AbstractComposition* pCompositio
         if ( &c == pComposition )
         {
             uint32_t newLocks = c.unlock();
-            ALOGD_IF( COMPOSITION_DEBUG,
+            DTRACEIF( COMPOSITION_DEBUG,
                       "CompositionManager::unlockComposition %p : entry %d, locks %u",
                       pComposition, i, newLocks );
             return newLocks;
         }
     }
-    ALOGE( "CompositionManager::unlockComposition %p : not found", pComposition );
+    DTRACE( "CompositionManager::unlockComposition %p : not found", pComposition );
     return 0;
 }
 
@@ -939,7 +973,7 @@ void CompositionManager::chooseBestCompositionEngine(Composition& c, AbstractCom
         {
             if (cost < bestCost)
             {
-                ALOGD_IF( COMPOSITION_DEBUG, "CompositionManager::chooseBestCompositionEngine: %d %s evaluated a cost of %f: Best so far", i, composer.getName(), cost);
+                DTRACEIF( COMPOSITION_DEBUG, "CompositionManager::chooseBestCompositionEngine: %d %s evaluated a cost of %f: Best so far", i, composer.getName(), cost);
                 // Track best composer/cost/state.
                 bestComposer = i;
                 bestCost = cost;
@@ -950,18 +984,18 @@ void CompositionManager::chooseBestCompositionEngine(Composition& c, AbstractCom
             {
                 delete pState;
                 pState = NULL;
-                ALOGD_IF( COMPOSITION_DEBUG, "CompositionManager::chooseBestCompositionEngine: %d %s evaluated a cost of %f: Already seen better", i, composer.getName(), cost);
+                DTRACEIF( COMPOSITION_DEBUG, "CompositionManager::chooseBestCompositionEngine: %d %s evaluated a cost of %f: Already seen better", i, composer.getName(), cost);
             }
         }
         else
         {
-            ALOGD_IF( COMPOSITION_DEBUG, "CompositionManager::chooseBestCompositionEngine: %d %s failed evaluation %f", i, composer.getName(), cost);
-            ALOG_ASSERT( pState == NULL );
+            DTRACEIF( COMPOSITION_DEBUG, "CompositionManager::chooseBestCompositionEngine: %d %s failed evaluation %f", i, composer.getName(), cost);
+            HWCASSERT( pState == NULL );
         }
     }
 
-    ALOG_ASSERT( c.mpComposer == NULL );
-    ALOG_ASSERT( c.mpComposerCompositionState == NULL );
+    HWCASSERT( c.mpComposer == NULL );
+    HWCASSERT( c.mpComposerCompositionState == NULL );
     if (bestComposer == Composition::INVALID_COMPOSER)
     {
         c.mpComposer = NULL;
@@ -975,51 +1009,55 @@ void CompositionManager::chooseBestCompositionEngine(Composition& c, AbstractCom
     c.mEvaluationCost = bestCost;
     c.mbTargetValid = false;
 
-    ALOG_ASSERT( c.mRenderTarget.getComposition() == &c );
+    HWCASSERT( c.mRenderTarget.getComposition() == &c );
 }
 
-void CompositionManager::notifyBufferAlloc( buffer_handle_t handle )
+void CompositionManager::notifyBufferAlloc( HWCNativeHandle handle )
 {
     HWC_UNUSED( handle );
 }
 
-void CompositionManager::notifyBufferFree( buffer_handle_t handle )
+void CompositionManager::notifyBufferFree( HWCNativeHandle handle )
 {
-    ALOGD_IF( COMPOSITION_DEBUG, "CompositionManager::notifyBufferFree handle %p", handle );
+    DTRACEIF( COMPOSITION_DEBUG, "CompositionManager::notifyBufferFree handle %p", handle );
     // Compositions will be expired as necessary at the start of the next frame
     // or immediately if this is the main thread.
     {
         // Put the freed handle into the stale buffer handle list.
-        Mutex::Autolock _l( mStaleBufferMutex );
+        mStaleBufferMutex.lock();
         mStaleBufferHandles.push_back( handle );
+        mStaleBufferMutex.unlock();
     }
+#ifdef uncomment
     if ( gettid() == mPrimaryTid )
     {
         // Process immediately if this is the main thread.
         expireBuffers();
     }
+#endif
 }
 
 void CompositionManager::expireBuffers( void )
 {
-    ALOG_ASSERT( gettid() == mPrimaryTid );
-    Mutex::Autolock _l( mStaleBufferMutex );
+    HWCASSERT( gettid() == mPrimaryTid );
+    mStaleBufferMutex.lock();
     if ( !mStaleBufferHandles.empty() )
     {
         // Process compositions for buffer handles that are stale.
-        for (buffer_handle_t handle : mStaleBufferHandles)
+        for (HWCNativeHandle handle : mStaleBufferHandles)
         {
-            ALOGD_IF( COMPOSITION_DEBUG, "CompositionManager::expireBuffers buffer %p", handle );
+            DTRACEIF( COMPOSITION_DEBUG, "CompositionManager::expireBuffers buffer %p", handle );
             // Expire any compositions for which this buffer was a source.
             for (uint32_t i = 0; i < mCompositions.size(); i++)
             {
                 Composition& c = mCompositions[i];
-                ALOGD_IF( COMPOSITION_DEBUG, "CompositionManager::expireComposition: Checking composition %d/%p %s", i, &c, c.dump(mTimestamp).string() );
+                DTRACEIF( COMPOSITION_DEBUG, "CompositionManager::expireComposition: Checking composition %d/%p %s", i, &c, c.dump(mTimestamp).string() );
                 c.expireBuffer( handle );
             }
         }
         mStaleBufferHandles.clear();
     }
+    mStaleBufferMutex.unlock();
 }
 
 bool CompositionManager::performComposition(const Content::LayerStack& src, const Layer& target)
@@ -1041,12 +1079,12 @@ bool CompositionManager::performComposition(const Content::LayerStack& src, cons
 }
 
 // Dump a little info about all the compositions
-String8 CompositionManager::dump() const
+HWCString CompositionManager::dump() const
 {
     if (!sbInternalBuild)
-        return String8();
+        return HWCString();
 
-    String8 output;
+    HWCString output;
     output += mBufferQueue.dump();
     for (uint32_t i = 0; i < mCompositions.size(); i++)
     {
@@ -1058,18 +1096,20 @@ String8 CompositionManager::dump() const
 }
 
 // Dump a little info about the composition
-String8 CompositionManager::Composition::dump(nsecs_t now, const char* pIdentifier) const
+HWCString CompositionManager::Composition::dump(nsecs_t now, const char* pIdentifier) const
 {
     if (!sbInternalBuild)
-        return String8();
+        return HWCString();
 
-    ALOG_ASSERT( ( mRenderTarget.getComposition() == NULL )
+    HWCASSERT( ( mRenderTarget.getComposition() == NULL )
               || ( mRenderTarget.getComposition() == this ) );
 
-    String8 output = String8(pIdentifier);
+    HWCString output = String8(pIdentifier);
 
+#ifdef uncomment
     output.appendFormat( "Name %s, RefCount:%u Locks:%u Timestamp:%" PRIu64 "(%d seconds ago) %s\n", getName(),
         mRefCount, mLocks, mTimestamp, uint32_t((now - mTimestamp)/1000000000), mbConsiderForReuse ? "Reuse" : "");
+#endif
     for (uint32_t i = 0; i < mSourceLayers.size(); i++)
     {
         const Layer& src = mSourceLayers[i];
@@ -1079,7 +1119,7 @@ String8 CompositionManager::Composition::dump(nsecs_t now, const char* pIdentifi
     return output;
 }
 
-
-}; // namespace hwc
-}; // namespace ufo
-}; // namespace intel
+};
+//}; // namespace hwc
+//}; // namespace ufo
+//}; // namespace intel

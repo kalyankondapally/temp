@@ -23,20 +23,23 @@
 #include "Utils.h"
 
 #include <ufo/graphics.h>
-#include <utils/String8.h>
+#include <utils/HWCString.h>
 
+#ifdef uncomment
 #include <GLES/gl.h>
 #include <GLES/glext.h>
 #include <GLES2/gl2ext.h>
+#endif
 
 #define GL_RENDER_TO_NV12_OPTION_NAME    "glrendertonv12"
 #define GL_RENDER_TO_NV12_OPTION_DEFAULT 1
 
-using namespace android;
+//using namespace android;
 
-namespace intel {
-namespace ufo {
-namespace hwc {
+//namespace intel {
+//namespace ufo {
+//namespace hwc {
+namespace hwcomposer {
 
 template<class T> static bool getGLErrorGen(const char* operation, const char* desc, T (*pFnGetError)(void), GLint successVal)
 {
@@ -244,14 +247,14 @@ GlCellComposer::CProgramStore::CRendererProgram::~CRendererProgram()
 
 bool GlCellComposer::CProgramStore::CRendererProgram::setPlaneAlphaUniforms(uint32_t numLayers, float planeAlphas[])
 {
-    ALOGD_IF(COMPOSER_DEBUG, "GlCellComposer::CProgramStore::CRendererProgram::setPlaneAlphaUniforms");
+    DTRACEIF(COMPOSER_DEBUG, "GlCellComposer::CProgramStore::CRendererProgram::setPlaneAlphaUniforms");
     uint32_t index;
     for (index = 0; index < numLayers; ++index)
     {
-        ALOGD_IF(COMPOSER_DEBUG, "setPlaneAlphaUniforms %d %f, %f", index, planeAlphas[index], mPlaneAlphas[index]);
+        DTRACEIF(COMPOSER_DEBUG, "setPlaneAlphaUniforms %d %f, %f", index, planeAlphas[index], mPlaneAlphas[index]);
         if (fabs(planeAlphas[index] - mPlaneAlphas[index]) > 0.00001f)
         {
-            ALOGD_IF(COMPOSER_DEBUG, "glUniform1f(mUPlaneAlphas[%d] == %d, %f)", index, mUPlaneAlphas[index], planeAlphas[index]);
+            DTRACEIF(COMPOSER_DEBUG, "glUniform1f(mUPlaneAlphas[%d] == %d, %f)", index, mUPlaneAlphas[index], planeAlphas[index]);
             glUniform1f(mUPlaneAlphas[index], planeAlphas[index]);
             if (getGLError("glUniform1f", "Error setting up per-plane alpha uniform"))
             {
@@ -325,14 +328,14 @@ bool GlCellComposer::CProgramStore::getProgramLocations(
         }
     }
 
-    ALOGD_IF(COMPOSER_DEBUG, "puPlaneAlphas = %p", puPlaneAlphas);
+    DTRACEIF(COMPOSER_DEBUG, "puPlaneAlphas = %p", puPlaneAlphas);
     if (puPlaneAlphas)
     {
         uint32_t index;
 
         for (index = 0; result && index < numLayers; ++index)
         {
-            String8 planeAlphaUniformName = String8::format("uPlaneAlpha[%d]", index);
+            HWCString planeAlphaUniformName = HWCString::format("uPlaneAlpha[%d]", index);
             uPlaneAlphas[index] = glGetUniformLocation(program.get(), planeAlphaUniformName);
             if (getGLError("glGetUniformLocation"))
             {
@@ -343,7 +346,7 @@ bool GlCellComposer::CProgramStore::getProgramLocations(
             // Setup a default alpha
             if (result)
             {
-                ALOGD_IF(COMPOSER_DEBUG, "glUniform1f(uPlaneAlphas[%d] == %d, %f)", index, uPlaneAlphas[index], defaultAlpha);
+                DTRACEIF(COMPOSER_DEBUG, "glUniform1f(uPlaneAlphas[%d] == %d, %f)", index, uPlaneAlphas[index], defaultAlpha);
                 glUniform1f(uPlaneAlphas[index], defaultAlpha);
                 if (getGLError("glUniform1iv"))
                 {
@@ -397,7 +400,7 @@ GlCellComposer::CProgramStore::createProgram(
     uint32_t blankLayerMask,
     bool renderToNV12)
 {
-    String8 vertexShaderSource;
+    HWCString vertexShaderSource;
 
     if (numLayers)
     {
@@ -418,15 +421,15 @@ GlCellComposer::CProgramStore::createProgram(
         static const char texCoordDeclarationFormat[] = "in mediump vec2 vinTexCoords%d;\n";
         static const char texCoordSetupFormat[] = "    finTexCoords[%d] = vinTexCoords%d;\n";
 
-        String8 texCoordDeclarationBlock;
-        String8 texCoordSetupBlock;
+        HWCString texCoordDeclarationBlock;
+        HWCString texCoordSetupBlock;
         for (uint32_t i = 0; i < numLayers; ++i)
         {
-            texCoordDeclarationBlock += String8::format(texCoordDeclarationFormat, i);
-            texCoordSetupBlock += String8::format(texCoordSetupFormat, i, i);
+            texCoordDeclarationBlock += HWCString::format(texCoordDeclarationFormat, i);
+            texCoordSetupBlock += HWCString::format(texCoordSetupFormat, i, i);
         }
 
-        vertexShaderSource = String8::format(vertexShaderFormat, texCoordDeclarationBlock.string(), numLayers, texCoordSetupBlock.string());
+        vertexShaderSource = HWCString::format(vertexShaderFormat, texCoordDeclarationBlock.string(), numLayers, texCoordSetupBlock.string());
     }
     else
     {
@@ -438,7 +441,7 @@ GlCellComposer::CProgramStore::createProgram(
             "    gl_Position = vec4(vinPosition.x, vinPosition.y, 0, 1);\n"
             "}";
     }
-    ALOGD_IF(COMPOSITION_DEBUG, "\nVertex Shader:\n%s\n", vertexShaderSource.string());
+    DTRACEIF(COMPOSITION_DEBUG, "\nVertex Shader:\n%s\n", vertexShaderSource.string());
 
     auto vertexShader = GlCellComposer::createShader(GL_VERTEX_SHADER, vertexShaderSource);
     if (!vertexShader.get())
@@ -447,7 +450,7 @@ GlCellComposer::CProgramStore::createProgram(
         return NULL;
     }
 
-    String8 fragmentShaderSource;
+    HWCString fragmentShaderSource;
 
     // Additional output declarations for NV12
     static const char fragmentShaderNV12OutputDecls[] =
@@ -529,15 +532,15 @@ GlCellComposer::CProgramStore::createProgram(
         static const char blendingFormatWritePremultBlend[] =
             "    outColor = outColor * (1.0-incoming.a) + incoming;\n";
 
-        String8 blendingBlock;
+        HWCString blendingBlock;
 
         for (uint32_t i = 0; i < numLayers; ++i)
         {
             if (blankLayerMask & (1 << i))
                 blendingBlock += blendingFormatSampleBlack;
             else
-                blendingBlock += String8::format(blendingFormatSample, i, i);
-            blendingBlock += String8::format(blendingFormatSamplePlaneAlpha, i);
+                blendingBlock += HWCString::format(blendingFormatSample, i, i);
+            blendingBlock += HWCString::format(blendingFormatSamplePlaneAlpha, i);
 
             bool opaque = opaqueLayerMask & (1 << i);
             bool premult = premultLayerMask & (1 << i);
@@ -563,8 +566,8 @@ GlCellComposer::CProgramStore::createProgram(
                 blendingBlock += blendingFormatWritePremultBlend;
         }
 
-        String8 outputDecls;
-        String8 outputConversion;
+        HWCString outputDecls;
+        HWCString outputConversion;
 
         if (renderToNV12)
         {
@@ -572,7 +575,7 @@ GlCellComposer::CProgramStore::createProgram(
             outputConversion = fragmentShaderNV12OutputConversion;
         }
 
-        fragmentShaderSource = String8::format(fragmentShaderFormat, outputDecls.string(), numLayers, numLayers, numLayers, blendingBlock.string(), outputConversion.string());
+        fragmentShaderSource = HWCString::format(fragmentShaderFormat, outputDecls.string(), numLayers, numLayers, numLayers, blendingBlock.string(), outputConversion.string());
     }
     else
     {
@@ -585,8 +588,8 @@ GlCellComposer::CProgramStore::createProgram(
             "    outColor = %s;\n"
             "}";
 
-        String8 outputDecls;
-        String8 outputValue;
+        HWCString outputDecls;
+        HWCString outputValue;
         if (renderToNV12)
         {
             outputDecls = fragmentShaderNV12OutputDecls;
@@ -597,10 +600,10 @@ GlCellComposer::CProgramStore::createProgram(
             outputValue = "vec4(0,0,0,0)";
         }
 
-        fragmentShaderSource = String8::format(fragmentShaderFormat, outputDecls.string(), outputValue.string());
+        fragmentShaderSource = HWCString::format(fragmentShaderFormat, outputDecls.string(), outputValue.string());
     }
 
-    ALOGD_IF(COMPOSITION_DEBUG, "Fragment Shader:\n%s\n", fragmentShaderSource.string());
+    DTRACEIF(COMPOSITION_DEBUG, "Fragment Shader:\n%s\n", fragmentShaderSource.string());
 
     auto fragmentShader = GlCellComposer::createShader(GL_FRAGMENT_SHADER, fragmentShaderSource);
     if (!fragmentShader.get())
@@ -653,7 +656,7 @@ bool GlCellComposer::CProgramStore::bind(
     uint32_t blankLayerMask,
     bool renderToNV12)
 {
-    ALOG_ASSERT(numLayers <= maxNumLayers);
+    HWCASSERT(numLayers <= maxNumLayers);
 
     ProgramKey key;
     key.type = (renderToNV12 ? eCellRenderProgramNV12 : eCellRenderProgram);
@@ -772,7 +775,7 @@ bool GlCellComposer::isLayerSupportedAsOutput(const Layer& layer)
 	case HWC_PIXEL_FORMAT_NV12_LINEAR_INTEL:
 	case HWC_PIXEL_FORMAT_NV12_LINEAR_PACKED_INTEL:
 	case HWC_PIXEL_FORMAT_NV12_X_TILED_INTEL:
-            ALOGD_IF(COMPOSITION_DEBUG, "NV12HWC: %s format = %d (%s and %s)", __FUNCTION__, format, mNv12TargetSupported ? "supported" : "unsupported", mNv12RenderingEnabled ? "enabled" : "disabled");
+            DTRACEIF(COMPOSITION_DEBUG, "NV12HWC: %s format = %d (%s and %s)", __FUNCTION__, format, mNv12TargetSupported ? "supported" : "unsupported", mNv12RenderingEnabled ? "enabled" : "disabled");
             return ((mNv12TargetSupported && mNv12RenderingEnabled)
                     && (!hasPlaneAlpha) // NV12 output is not compatible with constant alpha
                     && (compression == COMPRESSION_NONE));
@@ -978,7 +981,7 @@ std::shared_ptr<GlCellComposer> GlCellComposer::create(std::shared_ptr<GLContext
     // Query the context for extension support
     const char* pExtensions = reinterpret_cast<const char*>(glGetString(GL_EXTENSIONS));
     composer->mNv12TargetSupported = (pExtensions != NULL) && (strstr(pExtensions, "GL_EXT_YUV_target") != NULL);
-    ALOGD_IF(COMPOSITION_DEBUG, "NV12HWC: NV12 rendering is %s", composer->mNv12TargetSupported ? "supported" : "unsupported");
+    DTRACEIF(COMPOSITION_DEBUG, "NV12HWC: NV12 rendering is %s", composer->mNv12TargetSupported ? "supported" : "unsupported");
 
     return composer;
 }
@@ -1027,7 +1030,7 @@ std::unique_ptr<GlCellComposer::Texture> GlCellComposer::Texture::createTexture(
 {
     const uint32_t texturingUnit = 0;
 
-    ALOG_ASSERT(layer.getHandle());
+    HWCASSERT(layer.getHandle());
 
     sp<GraphicBuffer> pBuffer = bm.createGraphicBuffer( "GLCELLTEX",
                                         layer.getBufferWidth(), layer.getBufferHeight(),
@@ -1212,9 +1215,9 @@ status_t GlCellComposer::beginFrame(const Content::LayerStack& source, const Lay
 {
     ATRACE_CALL_IF(HWC_TRACE);
 
-    ALOGD_IF(COMPOSITION_DEBUG, "GlCellComposer::beginFrame\n%sRT %s", source.dump().string(), target.dump().string());
+    DTRACEIF(COMPOSITION_DEBUG, "GlCellComposer::beginFrame\n%sRT %s", source.dump().string(), target.dump().string());
 
-    ALOG_ASSERT(target.getHandle());
+    HWCASSERT(target.getHandle());
 
     // Realloc the source layers array
     if (source.size() > mSourceTextures.size())
@@ -1237,7 +1240,7 @@ status_t GlCellComposer::beginFrame(const Content::LayerStack& source, const Lay
     mDestHeight = target.getDstHeight();
 
     uint32_t bufferFormat = target.getBufferFormat();
-    ALOGD_IF(COMPOSITION_DEBUG, "NV12HWC: %s destBufferFormat=%d", __FUNCTION__, bufferFormat);
+    DTRACEIF(COMPOSITION_DEBUG, "NV12HWC: %s destBufferFormat=%d", __FUNCTION__, bufferFormat);
     switch (bufferFormat)
     {
     case HWC_PIXEL_FORMAT_NV12_Y_TILED_INTEL:
@@ -1284,18 +1287,18 @@ status_t GlCellComposer::beginFrame(const Content::LayerStack& source, const Lay
     return OK;
 }
 
-String8 static dump(uint32_t numIndices, const uint32_t* pIndices, const Region& region)
+HWCString static dump(uint32_t numIndices, const uint32_t* pIndices, const Region& region)
 {
-    String8 output = String8::format("numIndices:%d ", numIndices);
+    HWCString output = HWCString::format("numIndices:%d ", numIndices);
     for(uint32_t i=0; i < numIndices; i++)
-        output += String8::format("%d,", pIndices[i]);
+        output += HWCString::format("%d,", pIndices[i]);
 
     size_t size;
     const Rect* pRects = region.getArray(&size);
 
-    output += String8::format(" numRects:%zd ", size);
+    output += HWCString::format(" numRects:%zd ", size);
     for (uint32_t i = 0; i < size; i++)
-        output += String8::format("(%d, %d, %d, %d) ", pRects[i].left, pRects[i].top, pRects[i].right, pRects[i].bottom);
+        output += HWCString::format("(%d, %d, %d, %d) ", pRects[i].left, pRects[i].top, pRects[i].right, pRects[i].bottom);
     return output;
 }
 
@@ -1303,10 +1306,10 @@ status_t GlCellComposer::drawLayerSetInternal(uint32_t numIndices, const uint32_
 {
     ATRACE_CALL_IF(HWC_TRACE);
 
-    ALOGD_IF(COMPOSITION_DEBUG, "GlCellComposer::drawLayerSetInternal: %s", dump(numIndices, pIndices, region).string());
+    DTRACEIF(COMPOSITION_DEBUG, "GlCellComposer::drawLayerSetInternal: %s", dump(numIndices, pIndices, region).string());
 
     // Check that the destination texture is ready to go.
-    ALOG_ASSERT(mDestTexture);
+    HWCASSERT(mDestTexture);
 
     // Bind the source textures
     uint32_t i;
@@ -1323,8 +1326,8 @@ status_t GlCellComposer::drawLayerSetInternal(uint32_t numIndices, const uint32_
 
     // We use a 32bit mask for layer state so we cannot exceed that number of
     // layers without making changes.
-    ALOG_ASSERT(CProgramStore::maxNumLayers <= 32);
-    ALOG_ASSERT(numIndices <= 32);
+    HWCASSERT(CProgramStore::maxNumLayers <= 32);
+    HWCASSERT(numIndices <= 32);
 
     // Setup a vector with the per-plane alphas and masks for transparency state
     float planeAlphas[ numIndices ];
@@ -1431,7 +1434,7 @@ status_t GlCellComposer::drawLayerSet(uint32_t numIndices, const uint32_t* pIndi
 {
     ATRACE_CALL_IF(HWC_TRACE);
 
-    ALOGD_IF(COMPOSITION_DEBUG, "GlCellComposer::drawLayerSet: %s", dump(numIndices, pIndices, region).string());
+    DTRACEIF(COMPOSITION_DEBUG, "GlCellComposer::drawLayerSet: %s", dump(numIndices, pIndices, region).string());
 
     // Check that the destination texture is attached to the FBO
     if (!mDestTexture)
@@ -1450,8 +1453,8 @@ status_t GlCellComposer::drawLayerSet(uint32_t numIndices, const uint32_t* pIndi
 
         if (startIndex > 0)
         {
-            ALOGD_IF(COMPOSITION_DEBUG, "NV12HWC: Enabling Blend!");
-            ALOG_ASSERT(!mDestTextureExternal);
+            DTRACEIF(COMPOSITION_DEBUG, "NV12HWC: Enabling Blend!");
+            HWCASSERT(!mDestTextureExternal);
 
             glEnable(GL_BLEND);
             glBlendFunc(GL_ONE, GL_ONE_MINUS_SRC_ALPHA);
@@ -1500,6 +1503,7 @@ void GlCellComposer::bindAVbo()
     }
 }
 
-} // namespace hwc
-} // namespace ufo
-} // namespace intel
+};
+//} // namespace hwc
+//} // namespace ufo
+//} // namespace intel

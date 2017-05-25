@@ -293,6 +293,6 @@ inline void computeRelativeRect( const HwcRect<float>& inCoordSpace,
     dstRect.bottom = outCoordSpace.top + (rect.bottom - inCoordSpace.top) * y_ratio;
 }
 
-} // namespace hwcomposer
+}; // namespace hwcomposer
 
 #endif // COMMON_UTILS_UTILS_H
