@@ -14,10 +14,11 @@
 // limitations under the License.
 */
 
-#include "Common.h"
+#include "hwcutils.h"
+#include "layer.h"
 #include "PartitionedComposer.h"
-#include "Log.h"
-#include "Utils.h"
+#include "log.h"
+#include "utils.h"
 
 #include <math.h>
 #include <vector>
@@ -70,7 +71,7 @@ float PartitionedComposer::onEvaluate(const Content::LayerStack& source, const L
             unsupportedInput = true;
         }
     }
-
+#ifdef uncomment
     // If the option is disabled then don't allow video to video composition
     // with this composer.
     if (!mOptionPartitionVideo && source.isVideo() && isVideo(target.getBufferFormat()))
@@ -78,7 +79,7 @@ float PartitionedComposer::onEvaluate(const Content::LayerStack& source, const L
         DTRACEIF(COMPOSITION_DEBUG, "PartitionedComposer: Video to Video composition disabled");
         return Eval_Not_Supported;
     }
-
+#endif
     if (unsupportedInput)
     {
         if (!mpRenderer->canBlankUnsupportedInputLayers())
@@ -125,29 +126,32 @@ class Partition
 {
 public:
     Partition() {}
-    Partition(const Rect &rect) : mRegion(rect) {}
-
+#ifdef uncomment
+    Partition(const HwcRect<int> &rect) : mRegion(rect) {}
+#endif
     HWCString dump(const char* pStr = "") const
     {
-        HWCString output = String8::format("%s numLayers:%zd ", pStr, mLayers.size());
+        HWCString output = HWCString::format("%s numLayers:%zd ", pStr, mLayers.size());
         for(uint32_t i=0; i < mLayers.size(); i++)
             output += HWCString::format("%d,", mLayers[i]);
-
+#ifdef uncomment
         size_t size;
-        const Rect* pRects = mRegion.getArray(&size);
+        const HwcRect<int>* pRects = mRegion.getArray(&size);
 
         output += HWCString::format(" numRects:%zd ", size);
         for (uint32_t i = 0; i < size; i++)
             output += HWCString::format("(%d, %d, %d, %d) ", pRects[i].left, pRects[i].top, pRects[i].right, pRects[i].bottom);
+#endif
         return output;
     }
-
+#ifdef uncomment
     Region           mRegion;
-    Vector<uint32_t> mLayers;
+#endif
+    std::vector<uint32_t> mLayers;
 };
 
 // Intersect the current partition list with the layer specified in ly and any relevant lower layers
-static void intersect(const Content::LayerStack& source, int32_t ly, Vector<Partition> &partitions, uint32_t pi)
+static void intersect(const Content::LayerStack& source, int32_t ly, std::vector<Partition> &partitions, uint32_t pi)
 {
     // Terminate the recursion when the layer count goes negative
     if (ly < 0)
@@ -155,8 +159,8 @@ static void intersect(const Content::LayerStack& source, int32_t ly, Vector<Part
 
     const Layer& layer = source.getLayer(ly);
     const HwcRect<int>& r = source.getLayer(ly).getDst();
-    Rect rect(r.left, r.top, r.right, r.bottom);
-
+    HwcRect<int> rect(r.left, r.top, r.right, r.bottom);
+#ifdef uncomment
     Region inside = partitions[pi].mRegion.intersect(rect);
 
     // If there is no intersection, leave this entry entirely alone and go to next layer
@@ -191,6 +195,7 @@ static void intersect(const Content::LayerStack& source, int32_t ly, Vector<Part
     {
         intersect(source, ly-1, partitions, pi);
     }
+#endif
     return;
 }
 
@@ -201,7 +206,9 @@ void PartitionedComposer::onCompose(const Content::LayerStack& source, const Lay
     HWC_UNUSED(pState);
 
     DTRACEIF(PARTITION_DEBUG, "PartitionedComposer: onCompose\n%sRT %s", source.dump().string(), target.dump().string());
+#ifdef uncomment
     Log::add(source, target, "PartitionedComposer");
+#endif
 
     target.waitAcquireFence();
     for (uint32_t index = 0; index < source.size(); ++index)
@@ -215,11 +222,12 @@ void PartitionedComposer::onCompose(const Content::LayerStack& source, const Lay
         srcLayer.returnReleaseFence(-1);
     }
 
-    Vector<Partition> partitions;
+    std::vector<Partition> partitions;
 
     // Initialise partition list to top of stack
-    const hwc_rect_t& r = target.getDst();
-    partitions.push_back(Partition(Rect(r.left, r.top, r.right, r.bottom)));
+    const HwcRect<int>& r = target.getDst();
+#ifdef uncomment
+    partitions.push_back(Partition(HwcRect<int>(r.left, r.top, r.right, r.bottom)));
 
     // Generate the partitions from frontmost to backmost
     intersect(source, source.size()-1, partitions, 0);
@@ -234,7 +242,7 @@ void PartitionedComposer::onCompose(const Content::LayerStack& source, const Lay
         DTRACEIF(PARTITION_DEBUG, "%s", p.dump().string());
         mpRenderer->drawLayerSet(p.mLayers.size(), p.mLayers.array(), p.mRegion);
     }
-
+#endif
     mpRenderer->endFrame();
 }
 

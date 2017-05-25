@@ -19,7 +19,7 @@
 
 #include "base.h"
 #include "AbstractComposer.h"
-#include "Option.h"
+#include "option.h"
 #ifdef uncomment
 #include <ui/Region.h>
 #endif
@@ -42,9 +42,11 @@ public:
         CellComposer() {}
         virtual ~CellComposer() {}
 
-        virtual android::status_t beginFrame(const Content::LayerStack& source, const Layer& target) = 0;
-        virtual android::status_t drawLayerSet(uint32_t numIndices, const uint32_t* pIndices, const Region& region) = 0;
-        virtual android::status_t endFrame() = 0;
+        virtual bool beginFrame(const Content::LayerStack& source, const Layer& target) = 0;
+#ifdef uncomment
+        virtual bool drawLayerSet(uint32_t numIndices, const uint32_t* pIndices, const Region& region) = 0;
+#endif
+        virtual bool endFrame() = 0;
 
         virtual bool isLayerSupportedAsInput(const Layer& layer) = 0;
         virtual bool isLayerSupportedAsOutput(const Layer& layer) = 0;

@@ -15,21 +15,24 @@
 */
 
 #include <stdio.h>
-#include "Hwc.h"
 #include "physicaldisplay.h"
+#ifdef uncomment
+#include "Hwc.h"
+#endif
 #include "GlCellComposer.h"
-#include "Utils.h"
-#include "Log.h"
-#include "Utils.h"
-
-#include <ufo/graphics.h>
-#include <utils/HWCString.h>
+#include "utils.h"
+#include "log.h"
 
 #ifdef uncomment
+#include <ufo/graphics.h>
+#include <utils/HWCString.h>
+#endif
+#include <EGL/egl.h>
+#include <EGL/eglext.h>
 #include <GLES/gl.h>
 #include <GLES/glext.h>
+#include <GLES2/gl2.h>
 #include <GLES2/gl2ext.h>
-#endif
 
 #define GL_RENDER_TO_NV12_OPTION_NAME    "glrendertonv12"
 #define GL_RENDER_TO_NV12_OPTION_DEFAULT 1
@@ -48,7 +51,7 @@ template<class T> static bool getGLErrorGen(const char* operation, const char* d
         GLint error = pFnGetError();
         if (error != successVal)
         {
-            ALOGE("Error 0x%x on %s%s%s\n", error, operation, (desc ? ": " : ""), desc ? desc : "");
+            DTRACE("Error 0x%x on %s%s%s\n", error, operation, (desc ? ": " : ""), desc ? desc : "");
             return true;
         }
     }
@@ -126,6 +129,7 @@ void GlCellComposer::ProgramDeleter::operator()(int id)
     }
 }
 
+#ifdef uncomment
 GlCellComposer::ShaderHandle GlCellComposer::createShader(GLenum shaderType, const char* source)
 {
     ShaderHandle result = ShaderHandle( glCreateShader(shaderType), ShaderDeleter() );
@@ -158,13 +162,13 @@ GlCellComposer::ShaderHandle GlCellComposer::createShader(GLenum shaderType, con
             description = buffer;
         }
 
-        ALOGE("Error on shader compilation: %s. \n%s\n", description, source);
+        DTRACE("Error on shader compilation: %s. \n%s\n", description, source);
 
         return NULL;
     }
-
     return result;
 }
+#endif
 
 /** \brief Link several shaders to produce a ready to use program
 
@@ -173,6 +177,7 @@ sequence was successful the id of the newly created program replaces the
 old one. The program id becomes 0 otherwise.
 */
 
+#ifdef uncomment
 GlCellComposer::ProgramHandle GlCellComposer::createProgram(std::initializer_list< std::reference_wrapper<const ShaderHandle> > shaders)
 {
     ProgramHandle prog = ProgramHandle( glCreateProgram(), ProgramDeleter() );
@@ -208,13 +213,13 @@ GlCellComposer::ProgramHandle GlCellComposer::createProgram(std::initializer_lis
             description = buffer;
         }
 
-        ALOGE("Error on program linkage: %s", description );
+        DTRACE("Error on program linkage: %s", description );
 
         return NULL;
     }
-
     return prog;
 }
+#endif
 
 bool GlCellComposer::use(const ProgramHandle& prog)
 {
@@ -223,10 +228,13 @@ bool GlCellComposer::use(const ProgramHandle& prog)
 }
 
 GlCellComposer::CProgramStore::CProgramStore()
+#ifdef uncomment
  : mPrograms(64) // TODO: check that this is a sensible size at some point...
+#endif
 {
 }
 
+#ifdef uncomment
 GlCellComposer::CProgramStore::CRendererProgram::CRendererProgram(
     uint32_t numLayers, ProgramHandle handle):
         mHandle(std::move(handle)),
@@ -244,6 +252,7 @@ GlCellComposer::CProgramStore::CRendererProgram::CRendererProgram(
 GlCellComposer::CProgramStore::CRendererProgram::~CRendererProgram()
 {
 }
+#endif
 
 bool GlCellComposer::CProgramStore::CRendererProgram::setPlaneAlphaUniforms(uint32_t numLayers, float planeAlphas[])
 {
@@ -339,7 +348,7 @@ bool GlCellComposer::CProgramStore::getProgramLocations(
             uPlaneAlphas[index] = glGetUniformLocation(program.get(), planeAlphaUniformName);
             if (getGLError("glGetUniformLocation"))
             {
-                ALOGE("Unable to find the %s uniform location", planeAlphaUniformName.string());
+                DTRACE("Unable to find the %s uniform location", planeAlphaUniformName.string());
                 result = false;
             }
 
@@ -350,7 +359,7 @@ bool GlCellComposer::CProgramStore::getProgramLocations(
                 glUniform1f(uPlaneAlphas[index], defaultAlpha);
                 if (getGLError("glUniform1iv"))
                 {
-                    ALOGE("Unable to set a default value for the %s uniform", planeAlphaUniformName.string());
+                    DTRACE("Unable to set a default value for the %s uniform", planeAlphaUniformName.string());
                     result = false;
                 }
             }
@@ -442,14 +451,14 @@ GlCellComposer::CProgramStore::createProgram(
             "}";
     }
     DTRACEIF(COMPOSITION_DEBUG, "\nVertex Shader:\n%s\n", vertexShaderSource.string());
-
+#ifdef uncomment
     auto vertexShader = GlCellComposer::createShader(GL_VERTEX_SHADER, vertexShaderSource);
     if (!vertexShader.get())
     {
-        ALOGE("Error on \"composite\" vertex shader creation");
+        DTRACE("Error on \"composite\" vertex shader creation");
         return NULL;
     }
-
+#endif
     HWCString fragmentShaderSource;
 
     // Additional output declarations for NV12
@@ -605,33 +614,33 @@ GlCellComposer::CProgramStore::createProgram(
 
     DTRACEIF(COMPOSITION_DEBUG, "Fragment Shader:\n%s\n", fragmentShaderSource.string());
 
+#ifdef uncomment
     auto fragmentShader = GlCellComposer::createShader(GL_FRAGMENT_SHADER, fragmentShaderSource);
     if (!fragmentShader.get())
     {
-        ALOGE("Error on \"composite\" fragment shader creation");
+        DTRACE("Error on \"composite\" fragment shader creation");
         return NULL;
     }
-
     ProgramHandle program = GlCellComposer::createProgram({vertexShader, fragmentShader});
     if (!program.get())
     {
-        ALOGE("Error on \"composite\" program shader creation");
+        DTRACE("Error on \"composite\" program shader creation");
     }
     else if (!use(program))
     {
-        ALOGE("Error on \"composite\" program binding");
+        DTRACE("Error on \"composite\" program binding");
     }
 
     auto prog = std::make_shared<CRendererProgram>(numLayers, std::move(program));
     if (!prog->getLocations())
     {
-        ALOGE("Error on \"composite\" program shader locations query");
+        DTRACE("Error on \"composite\" program shader locations query");
     }
     else
     {
         return prog;
     }
-
+#endif
     return NULL;
 }
 
@@ -664,7 +673,7 @@ bool GlCellComposer::CProgramStore::bind(
     key.opaqueLayerMask = opaqueLayerMask;
     key.premultLayerMask = premultLayerMask;
     key.blankLayerMask = blankLayerMask;
-
+#ifdef uncomment
     // Make sure the program exists
     if (mPrograms.get(key) == NULL)
     {
@@ -682,7 +691,7 @@ bool GlCellComposer::CProgramStore::bind(
         }
         return true;
     }
-
+#endif
     return false;
 }
 
@@ -855,7 +864,7 @@ std::shared_ptr<GLContext> GLContext::create()
     context->mDisplay = eglGetDisplay( EGL_DEFAULT_DISPLAY );
     if (getEGLError("eglGetDisplay") || context->mDisplay == EGL_NO_DISPLAY)
     {
-        ALOGE("Error on eglGetDisplay");
+        DTRACE("Error on eglGetDisplay");
         return NULL;
     }
 
@@ -865,7 +874,7 @@ std::shared_ptr<GLContext> GLContext::create()
     GLint status = eglInitialize(context->mDisplay, &majorVersion, &minorVersion);
     if (getEGLError("eglInitialize") || status == EGL_FALSE)
     {
-        ALOGE("Error on eglInitialize");
+        DTRACE("Error on eglInitialize");
         return NULL;
     }
 
@@ -888,7 +897,7 @@ std::shared_ptr<GLContext> GLContext::create()
     eglChooseConfig(context->mDisplay, attributes, &config, 1, &numConfigs);
     if (getEGLError("eglChooseConfig") || numConfigs == 0)
     {
-        ALOGE("Error on eglChooseConfig");
+        DTRACE("Error on eglChooseConfig");
         return NULL;
     }
 
@@ -902,7 +911,7 @@ std::shared_ptr<GLContext> GLContext::create()
     context->mContext = eglCreateContext(context->mDisplay, config, EGL_NO_CONTEXT, context_attribs);
     if (getEGLError("eglCreateContext") || context->mContext == EGL_NO_CONTEXT)
     {
-        ALOGE("Error on eglCreateContext");
+        DTRACE("Error on eglCreateContext");
         return NULL;
     }
 
@@ -918,7 +927,7 @@ std::shared_ptr<GLContext> GLContext::create()
     context->mSurface = eglCreatePbufferSurface(context->mDisplay, config, pbuffer_attributes);
     if (getEGLError("eglCreatePbufferSurface") || context->mSurface == EGL_NO_SURFACE)
     {
-        ALOGE("Error on eglCreatePbufferSurface");
+        DTRACE("Error on eglCreatePbufferSurface");
         return NULL;
     }
 
@@ -926,7 +935,7 @@ std::shared_ptr<GLContext> GLContext::create()
     auto savedContext = context->makeCurrent();
     if (!savedContext)
     {
-        ALOGE("Error on eglMakeCurrent");
+        DTRACE("Error on eglMakeCurrent");
         return NULL;
     }
 
@@ -1002,7 +1011,7 @@ bool GlCellComposer::attachToFBO(GLuint textureId)
     {
         GLenum status = glCheckFramebufferStatus(GL_FRAMEBUFFER);
         if (getGLError("glCheckFramebufferStatus") || status != GL_FRAMEBUFFER_COMPLETE)
-            ALOGE("The frame buffer is not ready");
+            DTRACE("The frame buffer is not ready");
         else
             done = true;
     }
@@ -1021,7 +1030,7 @@ GlCellComposer::Texture::~Texture()
     // Destroy the destination EGL image
     if (EGL_NO_IMAGE_KHR != mEglImage)
     {
-        eglDestroyImageKHR(mDisplay, mEglImage);
+        //eglDestroyImageKHR(mDisplay, mEglImage);
         getEGLError("eglDestroyImageKHR");
     }
 }
@@ -1031,27 +1040,27 @@ std::unique_ptr<GlCellComposer::Texture> GlCellComposer::Texture::createTexture(
     const uint32_t texturingUnit = 0;
 
     HWCASSERT(layer.getHandle());
-
-    sp<GraphicBuffer> pBuffer = bm.createGraphicBuffer( "GLCELLTEX",
+#ifdef uncomment
+    std::shared_ptr<HWCNativeHandlesp> pBuffer = bm.createGraphicBuffer( "GLCELLTEX",
                                         layer.getBufferWidth(), layer.getBufferHeight(),
                                         layer.getBufferFormat(),
                                         layer.getBufferUsage(),
                                         layer.getBufferPitch(),
                                         const_cast<native_handle*>(layer.getHandle()),
                                         false );
-
     EGLImageKHR eglImage = eglCreateImageKHR(display, EGL_NO_CONTEXT, EGL_NATIVE_BUFFER_ANDROID, EGLClientBuffer(pBuffer->getNativeBuffer()), 0);
     if (getEGLError("eglCreateImageKHR", "A temporary EGL image could not be created"))
         return NULL;
 
+#endif
     // Create a texture for the EGL image
     GLuint textureId = 0;
     glGenTextures(1, &textureId);
     if (getGLError("glGenTextures", "A temporary texture could not be created"))
         return NULL;
-
+#ifdef uncomment
     std::unique_ptr<Texture> pTex(new Texture(pBuffer, eglImage, textureId, display));
-
+#endif
     glActiveTexture(GL_TEXTURE0 + texturingUnit);
     if (getGLError("glActiveTexture", "A temporary texture could not be set"))
         return NULL;
@@ -1069,14 +1078,17 @@ std::unique_ptr<GlCellComposer::Texture> GlCellComposer::Texture::createTexture(
     if (getGLError("glTexParameteri", "A temporary texture could not be set"))
         return NULL;
 
+#ifdef uncomment
     glEGLImageTargetTexture2DOES(GL_TEXTURE_2D, (GLeglImageOES)eglImage);
     if (getGLError("glEGLImageTargetTexture2DOES", "A temporary texture could not be set"))
         return NULL;
-
     return pTex;
+#else
+    return NULL;
+#endif
 }
 
-status_t GlCellComposer::bindTexture(
+bool GlCellComposer::bindTexture(
     GLuint texturingUnit,
     GLuint textureId)
 {
@@ -1170,11 +1182,11 @@ static void setupVBOData(
         // Apply transforms and scale appropriately.
         if (isFlipH(layer.getTransform()))
         {
-            swap(sourceLeft, sourceRight);
+            std::swap(sourceLeft, sourceRight);
         }
         if (isFlipV(layer.getTransform()))
         {
-            swap(sourceTop, sourceBottom);
+            std::swap(sourceTop, sourceBottom);
         }
         if (isTranspose(layer.getTransform()))
         {
@@ -1211,7 +1223,7 @@ static void setupVBOData(
     }
 }
 
-status_t GlCellComposer::beginFrame(const Content::LayerStack& source, const Layer& target)
+bool GlCellComposer::beginFrame(const Content::LayerStack& source, const Layer& target)
 {
     ATRACE_CALL_IF(HWC_TRACE);
 
@@ -1287,6 +1299,7 @@ status_t GlCellComposer::beginFrame(const Content::LayerStack& source, const Lay
     return OK;
 }
 
+#ifdef uncomment
 HWCString static dump(uint32_t numIndices, const uint32_t* pIndices, const Region& region)
 {
     HWCString output = HWCString::format("numIndices:%d ", numIndices);
@@ -1294,7 +1307,7 @@ HWCString static dump(uint32_t numIndices, const uint32_t* pIndices, const Regio
         output += HWCString::format("%d,", pIndices[i]);
 
     size_t size;
-    const Rect* pRects = region.getArray(&size);
+    const HwcRect<int>* pRects = region.getArray(&size);
 
     output += HWCString::format(" numRects:%zd ", size);
     for (uint32_t i = 0; i < size; i++)
@@ -1302,7 +1315,7 @@ HWCString static dump(uint32_t numIndices, const uint32_t* pIndices, const Regio
     return output;
 }
 
-status_t GlCellComposer::drawLayerSetInternal(uint32_t numIndices, const uint32_t* pIndices, const Region& region)
+bool GlCellComposer::drawLayerSetInternal(uint32_t numIndices, const uint32_t* pIndices, const Region& region)
 {
     ATRACE_CALL_IF(HWC_TRACE);
 
@@ -1319,7 +1332,7 @@ status_t GlCellComposer::drawLayerSetInternal(uint32_t numIndices, const uint32_
         status_t status = bindTexture(i, mSourceTextures[ly] ? mSourceTextures[ly]->getId() : 0);
         if (status != OK)
         {
-            ALOGE("Unable to bind a source texture");
+            DTRACE("Unable to bind a source texture");
             return UNKNOWN_ERROR;
         }
     }
@@ -1362,7 +1375,7 @@ status_t GlCellComposer::drawLayerSetInternal(uint32_t numIndices, const uint32_
     {
         // Todo pass this into glDrawArrays
         size_t numVisibleRegions;
-        const Rect* visibleRegions = region.getArray(&numVisibleRegions);
+        const HwcRect<int>* visibleRegions = region.getArray(&numVisibleRegions);
 
         // Setup the VBO contents
         uint32_t vertexStride = 2 + 2*numIndices;
@@ -1430,7 +1443,8 @@ status_t GlCellComposer::drawLayerSetInternal(uint32_t numIndices, const uint32_
     return OK;
 }
 
-status_t GlCellComposer::drawLayerSet(uint32_t numIndices, const uint32_t* pIndices, const Region& region)
+bool
+ GlCellComposer::drawLayerSet(uint32_t numIndices, const uint32_t* pIndices, const Region& region)
 {
     ATRACE_CALL_IF(HWC_TRACE);
 
@@ -1439,7 +1453,7 @@ status_t GlCellComposer::drawLayerSet(uint32_t numIndices, const uint32_t* pIndi
     // Check that the destination texture is attached to the FBO
     if (!mDestTexture)
     {
-        ALOGE("The destination texture is not attached to the FBO");
+        DTRACE("The destination texture is not attached to the FBO");
         return UNKNOWN_ERROR;
     }
 
@@ -1471,8 +1485,9 @@ status_t GlCellComposer::drawLayerSet(uint32_t numIndices, const uint32_t* pIndi
 
     return OK;
 }
+#endif
 
-status_t GlCellComposer::endFrame()
+bool GlCellComposer::endFrame()
 {
     ATRACE_CALL_IF(HWC_TRACE);
 

@@ -21,17 +21,20 @@
 #define EGL_EGLEXT_PROTOTYPES
 
 #include "base.h"
-#ifdef uncomment
 #include <EGL/egl.h>
 #include <EGL/eglext.h>
 #include <GLES2/gl2.h>
+#include <GLES2/gl2ext.h>
 
+#ifdef uncomment
 #include <utils/RefBase.h>
 #include <utils/LruCache.h>
 #include <utils/JenkinsHash.h>
 #endif
 #include "PartitionedComposer.h"
-#include "Option.h"
+#include "option.h"
+#include "AbstractBufferManager.h"
+#include "gbmbufferhandler.h"
 
 //namespace intel {
 //namespace ufo {
@@ -88,9 +91,11 @@ public:
 
     virtual ~GlCellComposer();
 
-    status_t beginFrame(const Content::LayerStack& source, const Layer& target);
-    status_t drawLayerSet(uint32_t numIndices, const uint32_t* pIndices, const Region& region);
-    status_t endFrame();
+    bool beginFrame(const Content::LayerStack& source, const Layer& target);
+#ifdef uncomment
+    bool drawLayerSet(uint32_t numIndices, const uint32_t* pIndices, const Region& region);
+#endif
+    bool endFrame();
 
     bool isLayerSupportedAsInput(const Layer& layer);
     bool isLayerSupportedAsOutput(const Layer& layer);
@@ -127,10 +132,10 @@ private:
 
     bool attachToFBO(GLuint textureId);
 
-    status_t bindTexture(GLuint texturingUnit, GLuint textureId);
-
-    status_t drawLayerSetInternal(uint32_t numIndices, const uint32_t* pIndices, const Region& region);
-
+    bool bindTexture(GLuint texturingUnit, GLuint textureId);
+#ifdef uncomment
+    bool drawLayerSetInternal(uint32_t numIndices, const uint32_t* pIndices, const Region& region);
+#endif
     bool shouldBlankLayer(const Layer& layer);
 
     /** \brief OpenGL shader
@@ -224,7 +229,9 @@ private:
             bool renderToNV12);
 
         RenderProgHandle mCurrent;
+#ifdef uncomment
         android::LruCache<ProgramKey, RenderProgHandle> mPrograms;
+#endif
     };
 
     class Texture
@@ -235,12 +242,12 @@ private:
 
         GLuint getId() { return mTextureId; }
     private:
-        Texture(sp<GraphicBuffer> pBuffer, EGLImageKHR eglImage, GLuint textureId, EGLDisplay display) :
+        Texture(std::shared_ptr<HWCNativeHandlesp> pBuffer, EGLImageKHR eglImage, GLuint textureId, EGLDisplay display) :
             mpBuffer(pBuffer), mEglImage(eglImage), mTextureId(textureId), mDisplay(display)
         {
         }
 
-        sp<GraphicBuffer> mpBuffer;
+        std::shared_ptr<HWCNativeHandlesp> mpBuffer;
         EGLImageKHR       mEglImage  = EGL_NO_IMAGE_KHR;
         GLuint            mTextureId = 0;
         EGLDisplay        mDisplay   = EGL_NO_DISPLAY;
