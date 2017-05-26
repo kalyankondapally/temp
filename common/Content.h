@@ -20,14 +20,7 @@
 #include "hwcutils.h"
 #include <vector>
 #include <hwcdefs.h>
-#ifdef uncomment
-#include <utils/Vector.h>
-#include <utils/Timers.h>
-#endif
 
-//namespace intel {
-//namespace ufo {
-//namespace hwc {
 namespace hwcomposer {
 
 class Layer;
@@ -240,8 +233,5 @@ private:
 };
 
 };
-//}; // namespace hwc
-//}; // namespace ufo
-//}; // namespace intel
 
 #endif // INTEL_COMMON_HWC_CONTENTREFERENCE_H

@@ -14,15 +14,14 @@
 // limitations under the License.
 */
 
+#include <cinttypes>
+
 #include "hwcutils.h"
 #include "Content.h"
 #include "layer.h"
 #include "log.h"
 #include "timeline.h"
 
-//namespace intel {
-//namespace ufo {
-//namespace hwc {
 namespace hwcomposer {
 
 Content::Content()
@@ -241,9 +240,7 @@ void Content::LayerStack::onCompose()
         const Layer& layer = *mpLayers[ly];
         if (layer.isComposition())
         {
-#ifdef uncomment
             layer.getComposition()->onCompose();
-#endif
         }
     }
 }
@@ -358,7 +355,6 @@ bool Content::Display::matches( const Display& other, bool* pbMatchesHandles ) c
 
 HWCString Content::Display::dumpHeader() const
 {
-#ifdef uncomment
     return HWCString::format("Frame:%d %" PRIi64 "s %03" PRIi64 "ms Fd:%p/%d %dx%d %dHz %s %s %s%s%s",
                            mFrameIndex,
                            mFrameReceivedTime/1000000000, (mFrameReceivedTime%1000000000)/1000000,
@@ -370,7 +366,6 @@ HWCString Content::Display::dumpHeader() const
                                                 mOutputScaledDst.right, mOutputScaledDst.bottom ).string() : "",
                            isEnabled()        ? "Enabled " : "",
                            isBlanked()        ? "Blanked " : "");
-#endif
 }
 
 
@@ -475,7 +470,3 @@ HWCString Content::dump(const char* pIdentifier) const
 }
 
 };
-
-//}; // namespace hwc
-//}; // namespace ufo
-//}; // namespace intel

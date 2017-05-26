@@ -27,17 +27,12 @@
 #include "AbstractBufferManager.h"
 #include "BufferQueue.h"
 #include "HwcList.h"
+#include "layer.h"
 #include "SurfaceFlingerComposer.h"
 #include "platformdefines.h"
 
-#ifdef uncomment
-#include <ui/GraphicBuffer.h>
-#endif
 #include "singleton.h"
 
-//namespace intel {
-//namespace ufo {
-//namespace hwc {
 namespace hwcomposer {
 
 class Hwc;

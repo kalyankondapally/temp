@@ -167,9 +167,8 @@ bool Buffer::matchesConfiguration(uint32_t w, uint32_t h, int32_t format, uint32
     HWCASSERT( w );
     HWCASSERT( h );
     HWCASSERT( format );
-#ifdef uncomment
     HWCASSERT( usage & kHwcomposer );
-#endif
+
     if ( !allocationOK() )
         return false;
 
@@ -201,8 +200,8 @@ HWCString Buffer::dump( void )
                     mUse & EUsedRecently ? 'R' : '-',
                     mLastFrameUsedTime / 1000000000,
                     ( mLastFrameUsedTime / 1000000 ) % 1000,
-                    mpRef
-                    mAcquireFence.dump().string()
+		    mpRef
+		    mAcquireFence.dump().string()
                     );
 #endif
 }

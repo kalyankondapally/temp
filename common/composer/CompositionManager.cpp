@@ -14,21 +14,12 @@
 // limitations under the License.
 */
 
-#ifdef uncomment
-#include "Hwc.h"
-#endif
 #include "CompositionManager.h"
 #include "log.h"
 #include "utils.h"
-#ifdef uncomment
-#include "ufo/graphics.h"
-#endif
 
 #include "gbmbufferhandler.h"
 
-//namespace intel {
-//namespace ufo {
-//namespace hwc {
 namespace hwcomposer {
 
 // Default composition buffer pool constraints.
