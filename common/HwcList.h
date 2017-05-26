@@ -14,12 +14,13 @@
 // limitations under the License.
 */
 
-#ifndef INTEL_UFO_HWC_HWCLIST_H
-#define INTEL_UFO_HWC_HWCLIST_H
+#ifndef COMMON_HWC_HWCLIST_H
+#define COMMON_HWC_HWCLIST_H
 
-namespace intel {
-namespace ufo {
-namespace hwc {
+//namespace intel {
+//namespace ufo {
+//namespace hwc {
+namespace hwcomposer {
 
 // This class is a specialisation for managing lists of objects, used in a variety of situations as an alternative to vectors
 // In particular, it minimises reallocations by assigning elements to an unused list
@@ -117,10 +118,10 @@ public:
     T& operator[](uint32_t index)
     {
         Element* pLayer = mpElement;
-        ALOG_ASSERT(index < mSize);
+        HWCASSERT(index < mSize);
         while (index)
         {
-            ALOG_ASSERT(pLayer);
+            HWCASSERT(pLayer);
             pLayer = pLayer->mpNext;
             index--;
         }
@@ -130,10 +131,10 @@ public:
     const T& operator[](uint32_t index) const
     {
         const Element* pLayer = mpElement;
-        ALOG_ASSERT(index < mSize);
+        HWCASSERT(index < mSize);
         while (index)
         {
-            ALOG_ASSERT(pLayer);
+            HWCASSERT(pLayer);
             pLayer = pLayer->mpNext;
             index--;
         }
@@ -155,7 +156,7 @@ private:
     // Helper to remove the requested element from the front of the list
     Element* pop_front()
     {
-        ALOG_ASSERT(mpElement && mSize);
+        HWCASSERT(mpElement && mSize);
         Element* pElement = mpElement;
         mpElement = mpElement->mpNext;
         mSize--;
@@ -165,7 +166,7 @@ private:
     // Helper to add requested element to the front of the list
     void push_front(Element* pElement)
     {
-        ALOG_ASSERT(pElement);
+        HWCASSERT(pElement);
         pElement->mpNext = mpElement;
         mpElement = pElement;
         mSize++;
@@ -191,8 +192,9 @@ private:
 
 template <class T> HwcList<T> HwcList<T>::sUnusedElements;
 
-}; // namespace hwc
-}; // namespace ufo
-}; // namespace intel
+};
+//}; // namespace hwc
+//}; // namespace ufo
+//}; // namespace intel
 
 #endif // INTEL_UFO_HWC_HWCLIST_H

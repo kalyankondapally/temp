@@ -14,14 +14,14 @@
 // limitations under the License.
 */
 
-#include "Common.h"
-#include "PlaneComposition.h"
 #include "CompositionManager.h"
-#include "DisplayCaps.h"
+#include "hwcutils.h"
+#include "PlaneComposition.h"
 
-namespace intel {
-namespace ufo {
-namespace hwc {
+//namespace intel {
+//namespace ufo {
+//namespace hwc {
+namespace hwcomposer {
 
 PlaneComposition::PlaneComposition() :
     mpCompositionManager(NULL),
@@ -51,7 +51,7 @@ void PlaneComposition::clear()
 const Layer& PlaneComposition::getTarget()
 {
     // Has no meaning for this multi target composer
-    ALOG_ASSERT(0);
+    HWCASSERT(0);
     return Layer::Empty();
 }
 
@@ -67,7 +67,7 @@ void PlaneComposition::onUpdate(const Content::LayerStack& src)
             {
                 // This is preprocessed layer. Update the source frame state to reflect the input state
                 state.mLayerPPSrc.onUpdateFrameState(src[state.mStartIndex]);
-                ALOGD_IF(COMPOSITION_DEBUG, "PlaneComposition::onUpdate Preprocessed Source Layer %i: %s", i, state.mLayerPPSrc.dump().string());
+                DTRACEIF(COMPOSITION_DEBUG, "PlaneComposition::onUpdate Preprocessed Source Layer %i: %s", i, state.mLayerPPSrc.dump().string());
             }
             state.mpComposition->onUpdate(state.mLayers);
         }
@@ -96,12 +96,12 @@ void PlaneComposition::onUpdate(const Content::Display& src)
 void PlaneComposition::onUpdateOutputLayer(const Layer&)
 {
     // Plane composer issues this call, it should never receive it.
-    ALOG_ASSERT(false);
+    HWCASSERT(false);
 }
 
 void PlaneComposition::onCompose()
 {
-    ALOG_ASSERT( mpDisplayInput );
+    HWCASSERT( mpDisplayInput );
 
     // Simply run through all our composers and compose
     for (uint32_t i = 0; i < MAX_PLANES; i++)
@@ -114,7 +114,7 @@ void PlaneComposition::onCompose()
             {
                 // This is preprocessed layer. Update the destination frame state to reflect the composition results
                 state.mLayerPPDst.onUpdateFrameState(state.mpComposition->getTarget());
-                ALOGD_IF(COMPOSITION_DEBUG, "PlaneComposition::onCompose Preprocessed Dest Layer %i: %s", i, state.mLayerPPDst.dump().string());
+                DTRACEIF(COMPOSITION_DEBUG, "PlaneComposition::onCompose Preprocessed Dest Layer %i: %s", i, state.mLayerPPDst.dump().string());
             }
         }
     }
@@ -128,7 +128,7 @@ void PlaneComposition::onCompose()
 
 bool PlaneComposition::onAcquire()
 {
-    ALOGD_IF(COMPOSITION_DEBUG, "PlaneComposition::onAcquire zorder:%d", mZOrder);
+    DTRACEIF(COMPOSITION_DEBUG, "PlaneComposition::onAcquire zorder:%d", mZOrder);
 
     uint32_t numLayers = 0;
     // Simply run through all our composers and acquire
@@ -143,7 +143,7 @@ bool PlaneComposition::onAcquire()
 
             if (state.mpComposition)
             {
-                ALOGD_IF(COMPOSITION_DEBUG, "PlaneComposition::onAcquire Layer %d Composition", i);
+                DTRACEIF(COMPOSITION_DEBUG, "PlaneComposition::onAcquire Layer %d Composition", i);
                 if (!state.mpComposition->onAcquire())
                 {
                     // Got a failure, need to release anything we acquired already
@@ -158,12 +158,12 @@ bool PlaneComposition::onAcquire()
             }
             else
             {
-                ALOGD_IF(COMPOSITION_DEBUG, "PlaneComposition::onAcquire Layer %d Dedicated", i);
+                DTRACEIF(COMPOSITION_DEBUG, "PlaneComposition::onAcquire Layer %d Dedicated", i);
             }
         }
         else
         {
-            ALOGD_IF(COMPOSITION_DEBUG, "PlaneComposition::onAcquire Layer %d Disabled", i);
+            DTRACEIF(COMPOSITION_DEBUG, "PlaneComposition::onAcquire Layer %d Disabled", i);
         }
     }
 
@@ -210,7 +210,7 @@ bool PlaneComposition::onAcquire()
         mPlaneState[0].mpComposition->onUpdateOutputLayer(*pOut);
     }
 
-    ALOGD_IF(COMPOSITION_DEBUG, "PlaneComposition::onAcquire Output:\n%s", layers.dump().string());
+    DTRACEIF(COMPOSITION_DEBUG, "PlaneComposition::onAcquire Output:\n%s", layers.dump().string());
     return true;
 }
 
@@ -228,13 +228,13 @@ void PlaneComposition::onRelease()
 
 bool PlaneComposition::addFullScreenComposition(const DisplayCaps& caps, uint32_t overlayIndex, uint32_t srcLayerIndex, uint32_t numLayers, int32_t colorFormat)
 {
-    ALOG_ASSERT(overlayIndex < MAX_PLANES);
-    ALOG_ASSERT(mpCompositionManager);
+    HWCASSERT(overlayIndex < MAX_PLANES);
+    HWCASSERT(mpCompositionManager);
 
-    ALOGD_IF(COMPOSITION_DEBUG, "PlaneComposition::addFullScreenComposition ov:%d srcIndex:%d Num:%d to input format %s", overlayIndex, srcLayerIndex, numLayers, getDRMFormatString(colorFormat));
+    DTRACEIF(COMPOSITION_DEBUG, "PlaneComposition::addFullScreenComposition ov:%d srcIndex:%d Num:%d to input format %s", overlayIndex, srcLayerIndex, numLayers, getDRMFormatString(colorFormat));
 
     PlaneState& state = mPlaneState[overlayIndex];
-    ALOG_ASSERT(state.mStartIndex < 0); // Should never initialise a layer twice
+    HWCASSERT(state.mStartIndex < 0); // Should never initialise a layer twice
 
     state.mStartIndex = srcLayerIndex;
     state.mLayers.resize(numLayers);
@@ -246,6 +246,7 @@ bool PlaneComposition::addFullScreenComposition(const DisplayCaps& caps, uint32_
     }
     state.mLayers.updateLayerFlags();
 
+#ifdef uncomment
     const DisplayCaps::PlaneCaps& planeCaps = caps.getPlaneCaps(overlayIndex);
     for (unsigned compIdx = 0; ; compIdx++)
     {
@@ -258,24 +259,24 @@ bool PlaneComposition::addFullScreenComposition(const DisplayCaps& caps, uint32_
         }
         if (compression == COMPRESSION_NONE)
         {
-            ALOGD_IF(COMPOSITION_DEBUG, "PlaneComposition::addFullScreenComposition requestComposition Failed of layers\n%s", state.mLayers.dump().string());
+            DTRACEIF(COMPOSITION_DEBUG, "PlaneComposition::addFullScreenComposition requestComposition Failed of layers\n%s", state.mLayers.dump().string());
             clear();
             return false;
         }
     }
-
+#endif
     return true;
 }
 
 bool PlaneComposition::addSourcePreprocess(const DisplayCaps& caps, uint32_t overlayIndex, uint32_t srcLayerIndex, int32_t colorFormat)
 {
-    ALOG_ASSERT(overlayIndex < MAX_PLANES);
-    ALOG_ASSERT(mpCompositionManager);
+    HWCASSERT(overlayIndex < MAX_PLANES);
+    HWCASSERT(mpCompositionManager);
 
-    ALOGD_IF(COMPOSITION_DEBUG, "PlaneComposition::addSourcePreprocess ov:%d srcIndex:%d Format:%s", overlayIndex, srcLayerIndex, getDRMFormatString(colorFormat));
+    DTRACEIF(COMPOSITION_DEBUG, "PlaneComposition::addSourcePreprocess ov:%d srcIndex:%d Format:%s", overlayIndex, srcLayerIndex, getDRMFormatString(colorFormat));
 
     PlaneState& state = mPlaneState[overlayIndex];
-    ALOG_ASSERT(state.mStartIndex < 0); // Should never initialise a layer twice
+    HWCASSERT(state.mStartIndex < 0); // Should never initialise a layer twice
 
     Content::LayerStack inputLayers = mpDisplayInput->getLayerStack();
     state.mStartIndex = srcLayerIndex;
@@ -283,7 +284,7 @@ bool PlaneComposition::addSourcePreprocess(const DisplayCaps& caps, uint32_t ove
     state.mbIsPreprocessed = true;
 
     // Remove the offset in the Source layer's destination so that the composition always renders to 0, 0 destination.
-    hwc_rect_t& rsd = state.mLayerPPSrc.editDst();
+    HwcRect<int>& rsd = state.mLayerPPSrc.editDst();
     rsd.right -= rsd.left;
     rsd.left = 0;
     rsd.bottom -= rsd.top;
@@ -291,7 +292,7 @@ bool PlaneComposition::addSourcePreprocess(const DisplayCaps& caps, uint32_t ove
 
     // Set the source of the Dest layer's source to the source above.
     state.mLayerPPDst = inputLayers.getLayer(srcLayerIndex);
-    hwc_frect_t& rds = state.mLayerPPDst.editSrc();
+    HwcRect<float>& rds = state.mLayerPPDst.editSrc();
     rds.right = rsd.right;
     rds.left = 0;
     rds.bottom = rsd.bottom;
@@ -302,7 +303,7 @@ bool PlaneComposition::addSourcePreprocess(const DisplayCaps& caps, uint32_t ove
     state.mLayers.resize(1);
     state.mLayers.setLayer(0, &state.mLayerPPSrc);
     state.mLayers.updateLayerFlags();
-
+#ifdef uncomment
     const DisplayCaps::PlaneCaps& planeCaps = caps.getPlaneCaps(overlayIndex);
     for (unsigned compIdx = 0; ; compIdx++)
     {
@@ -314,24 +315,25 @@ bool PlaneComposition::addSourcePreprocess(const DisplayCaps& caps, uint32_t ove
         }
         if (compression == COMPRESSION_NONE)
         {
-            ALOGD_IF(COMPOSITION_DEBUG, "PlaneComposition::addSourcePreprocess requestComposition Failed for layers:\n%s", state.mLayers.dump().string());
+            DTRACEIF(COMPOSITION_DEBUG, "PlaneComposition::addSourcePreprocess requestComposition Failed for layers:\n%s", state.mLayers.dump().string());
             clear();
             return false;
         }
     }
+#endif
     return true;
 }
 
 
 bool PlaneComposition::addDedicatedLayer(uint32_t overlayIndex, uint32_t srcLayerIndex)
 {
-    ALOG_ASSERT(overlayIndex < MAX_PLANES);
-    ALOG_ASSERT(mpCompositionManager);
+    HWCASSERT(overlayIndex < MAX_PLANES);
+    HWCASSERT(mpCompositionManager);
 
-    ALOGD_IF(COMPOSITION_DEBUG, "PlaneComposition::addDedicatedLayer ov:%d srcIndex:%d", overlayIndex, srcLayerIndex);
+    DTRACEIF(COMPOSITION_DEBUG, "PlaneComposition::addDedicatedLayer ov:%d srcIndex:%d", overlayIndex, srcLayerIndex);
 
     PlaneState& state = mPlaneState[overlayIndex];
-    ALOG_ASSERT(state.mStartIndex < 0); // Should never initialise a layer twice
+    HWCASSERT(state.mStartIndex < 0); // Should never initialise a layer twice
 
     state.mStartIndex = srcLayerIndex;
     state.mLayers.resize(0);
@@ -360,11 +362,12 @@ void PlaneComposition::fallbackToSurfaceFlinger(uint32_t display)
     onAcquire();
 }
 
-String8 PlaneComposition::dump(const char* pIdentifier) const
+HWCString PlaneComposition::dump(const char* pIdentifier) const
 {
     return mDisplayOutput.dump(pIdentifier);
 }
 
-}; // namespace hwc
-}; // namespace ufo
-}; // namespace intel
+};
+//}; // namespace hwc
+//}; // namespace ufo
+//}; // namespace intel

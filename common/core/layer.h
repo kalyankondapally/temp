@@ -20,14 +20,12 @@
 #include <vector>
 
 #include <hwcdefs.h>
-
+#include <AbstractComposition.h>
 #include "timeline.h"
 #include "format.h"
 #include "utils.h"
 
 namespace hwcomposer {
-
-class AbstractComposition;
 
 class Layer
 {

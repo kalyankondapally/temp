@@ -14,8 +14,13 @@
 // limitations under the License.
 */
 
-#ifndef INTEL_UFO_HWC_COMPOSITION_MANAGER_H
-#define INTEL_UFO_HWC_COMPOSITION_MANAGER_H
+#ifndef COMMON_HWC_COMPOSITION_MANAGER_H
+#define COMMON_HWC_COMPOSITION_MANAGER_H
+
+#include <vector>
+#include <mutex>
+#include <map>
+#include <bitset>
 
 #include "AbstractComposer.h"
 #include "AbstractComposition.h"
@@ -23,17 +28,17 @@
 #include "BufferQueue.h"
 #include "HwcList.h"
 #include "SurfaceFlingerComposer.h"
+#include "platformdefines.h"
 
+#ifdef uncomment
 #include <ui/GraphicBuffer.h>
-#include "Singleton.h"
+#endif
+#include "singleton.h"
 
-#include <vector>
-#include <map>
-#include <bitset>
-
-namespace intel {
-namespace ufo {
-namespace hwc {
+//namespace intel {
+//namespace ufo {
+//namespace hwc {
+namespace hwcomposer {
 
 class Hwc;
 
@@ -59,11 +64,14 @@ public:
     {
         mpComposers.push_back(pComposer);
     }
-
+#ifdef uncommenthwc1
     void onPrepareBegin(size_t numDisplays, hwc_display_contents_1_t** displays, nsecs_t timestamp);
+#endif
     void onPrepareEnd();
     void onAccept(const Content::Display& display, uint32_t d);
+#ifdef uncommenthwc1
     void onSetBegin(size_t numDisplays, hwc_display_contents_1_t** ppDisplayContents);
+#endif
     void onEndOfFrame( uint32_t hwcFrameIndex );
 
     // Request a composition of the source layer stack to the requested resolution.
@@ -97,11 +105,11 @@ public:
     //void resetEvaluation();
 
     // Implements AbstractBufferManager::Tracker
-    virtual void notifyBufferAlloc( buffer_handle_t handle );
-    virtual void notifyBufferFree( buffer_handle_t handle );
+    virtual void notifyBufferAlloc( HWCNativeHandle handle );
+    virtual void notifyBufferFree( HWCNativeHandle handle );
 
     // Dump a little info about all the composer
-    String8 dump() const;
+    HWCString dump() const;
 
 private:
     friend class Singleton<CompositionManager>;
@@ -120,7 +128,7 @@ private:
     BufferQueue&                    getBufferQueue()            { return mBufferQueue; }
 
     // Invalidate any compositions containing this buffer handle
-    void                            invalidate(buffer_handle_t handle);
+    void                            invalidate(HWCNativeHandle handle);
 
 private:
     HwcList<Composition>            mCompositions;              // List of currently active compositions
@@ -129,18 +137,19 @@ private:
     SurfaceFlingerComposer          mSurfaceFlingerComposer;    // Composer that manages surfaceflinger compositions
     BufferQueue                     mBufferQueue;               // Currently allocated Composition buffers
 
-    std::vector<buffer_handle_t>    mStaleBufferHandles;        // List of buffer handles that we know have been freed.
-    Mutex                           mStaleBufferMutex;          // Mutex for thread safe access to the stale buffer handle list.
+    std::vector<HWCNativeHandle>    mStaleBufferHandles;        // List of buffer handles that we know have been freed.
+    std::mutex                      mStaleBufferMutex;          // Mutex for thread safe access to the stale buffer handle list.
 
-    std::vector<buffer_handle_t>    mCurrentHandles[cMaxSupportedPhysicalDisplays];// List of buffer handles that we know have been freed.
-    std::map<buffer_handle_t, std::bitset<cMaxSupportedPhysicalDisplays>> mCurrentHandleUsage;
+    std::vector<HWCNativeHandle>    mCurrentHandles[cMaxSupportedPhysicalDisplays];// List of buffer handles that we know have been freed.
+    std::map<HWCNativeHandle, std::bitset<cMaxSupportedPhysicalDisplays>> mCurrentHandleUsage;
 
     pid_t                           mPrimaryTid;                // Primary thread.
     nsecs_t                         mTimestamp;                 // Time of the most recent composition
 };
 
-}; // namespace hwc
-}; // namespace ufo
-}; // namespace intel
+};
+//}; // namespace hwc
+//}; // namespace ufo
+//}; // namespace intel
 
-#endif // INTEL_UFO_HWC_COMPOSITION_MANAGER_H
+#endif // COMMON_HWC_COMPOSITION_MANAGER_H

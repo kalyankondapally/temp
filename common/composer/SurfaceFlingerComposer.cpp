@@ -14,24 +14,32 @@
 // limitations under the License.
 */
 
+#ifdef uncomment
 #include "Hwc.h"
+#endif
 #include "SurfaceFlingerComposer.h"
 #include "AbstractBufferManager.h"
-#include "Log.h"
-#include "Utils.h"
+#include "filtermanager.h"
+#include "log.h"
+#include "utils.h"
+#ifdef uncomment
 #include <ufo/graphics.h>
+#endif
 
-namespace intel {
-namespace ufo {
-namespace hwc {
+//namespace intel {
+//namespace ufo {
+//namespace hwc {
+namespace hwcomposer {
 
 // Maximum layers the HWC handles. Any layers in excess of this need to be considered as unsupported
 const static unsigned int cMaxLayers = 64;
 
 SurfaceFlingerComposer::SurfaceFlingerComposer() :
     mTimestamp(0),
-    mNumDisplays(0),
+    mNumDisplays(0)
+#ifdef uncomment
     mppDisplayContents(NULL)
+#endif
 {
     FilterManager::getInstance().add(*this, FilterPosition::SurfaceFlinger);
 }
@@ -47,12 +55,14 @@ const char* SurfaceFlingerComposer::getName() const
 
 static bool isLayerSupported(const Layer& layer)
 {
+#ifdef uncomment
     // Hwc can never support skip layers
     if (layer.getFlags() & HWC_SKIP_LAYER)
     {
-        ALOGD_IF(COMPOSITION_DEBUG, "%s Unsupported SKIP %s", __FUNCTION__, layer.dump().string());
+        DTRACEIF(COMPOSITION_DEBUG, "%s Unsupported SKIP %s", __FUNCTION__, layer.dump().string());
         return false;
     }
+#endif
 
     // Check which layer formats the HWC will attempt to handle in some way. Note, if we allow
     // an unsupportable format through at this point, it should work, however there is a chance
@@ -88,7 +98,7 @@ static bool isLayerSupported(const Layer& layer)
             break;
 
         default:
-            ALOGD_IF(COMPOSITION_DEBUG, "%s Unsupported format %s", __FUNCTION__, layer.dump().string());
+            DTRACEIF(COMPOSITION_DEBUG, "%s Unsupported format %s", __FUNCTION__, layer.dump().string());
             return false;
 
     }
@@ -133,7 +143,7 @@ void SurfaceFlingerComposer::findUnsupportedLayerRange(uint32_t d, const Content
 // reference list with the composed render target.
 const Content& SurfaceFlingerComposer::onApply(const Content& ref)
 {
-    ALOG_ASSERT(ref.size() <= cMaxSupportedSFDisplays);
+    HWCASSERT(ref.size() <= cMaxSupportedSFDisplays);
 
     // Run through each display
     bool bUnsupportedLayers = false;
@@ -159,7 +169,7 @@ const Content& SurfaceFlingerComposer::onApply(const Content& ref)
         return ref;
 
     // If not, need to update our local content ref as appropriate and pass it on to the next filter
-    ALOGD_IF(COMPOSITION_DEBUG, "SurfaceFlingerComposer: onApply Unsupported Layers seen, generating a content ref");
+    DTRACEIF(COMPOSITION_DEBUG, "SurfaceFlingerComposer: onApply Unsupported Layers seen, generating a content ref");
 
     // Copy the content
     mOutRef = ref;
@@ -192,8 +202,8 @@ const Content& SurfaceFlingerComposer::onApply(const Content& ref)
         // Leave the layer "min" alone, we will reuse as a render target
         for (int32_t ly = min+1; ly <= max; ly++)
         {
-            ALOGD_IF(COMPOSITION_DEBUG, "SurfaceFlingerComposer: onApply Remove Layer %d", ly);
-            ALOGW_IF( layerstack.getLayer( min+1 ).isFrontBufferRendered(),
+            DTRACEIF(COMPOSITION_DEBUG, "SurfaceFlingerComposer: onApply Remove Layer %d", ly);
+            DTRACEIF( layerstack.getLayer( min+1 ).isFrontBufferRendered(),
                       "SurfaceFlinger will compose front buffer rendered layer %s",
                       layerstack.getLayer( min+1 ).dump().string() );
             layerstack.removeLayer(min+1);
@@ -201,7 +211,7 @@ const Content& SurfaceFlingerComposer::onApply(const Content& ref)
 
         // Add the composed render target as a source layer
         mCompositions[d].onUpdatePending(mTimestamp);
-        ALOGD_IF(COMPOSITION_DEBUG, "SurfaceFlingerComposer: onApply Set Layer %d to %s", min, mCompositions[d].getRenderTarget().dump().string());
+        DTRACEIF(COMPOSITION_DEBUG, "SurfaceFlingerComposer: onApply Set Layer %d to %s", min, mCompositions[d].getRenderTarget().dump().string());
         layerstack.setLayer(min, &mCompositions[d].getRenderTarget());
         layerstack.updateLayerFlags();
     }
@@ -217,9 +227,11 @@ int SurfaceFlingerComposer::findMatch(const Content::LayerStack& source, int32_t
 
     for ( uint32_t d = 0; d < mNumDisplays; d++ )
     {
+#ifdef uncomment
         hwc_display_contents_1_t* pDisplayContents = mppDisplayContents[d];
         if (pDisplayContents == NULL)
             continue;
+#endif
         // Check for an existing allocation
         if (mCompositions[d].mComposeMax >= 0)
             continue;
@@ -238,6 +250,7 @@ int SurfaceFlingerComposer::findMatch(const Content::LayerStack& source, int32_t
         }
         else
         {
+#ifdef uncomment
             for (uint32_t ly = 0; ly < pDisplayContents->numHwLayers-1; ly++)
             {
                 if (layer == pDisplayContents->hwLayers[ly])
@@ -247,7 +260,7 @@ int SurfaceFlingerComposer::findMatch(const Content::LayerStack& source, int32_t
                     break;
                 }
             }
-
+#endif
             // If we didnt match the first layer, try next display
             if (max < 0)
                 continue;
@@ -267,6 +280,7 @@ int SurfaceFlingerComposer::findMatch(const Content::LayerStack& source, int32_t
             }
             else
             {
+#ifdef uncomment
                 int maxCandidate = max+1;
                 if ((maxCandidate < (int)pDisplayContents->numHwLayers-1)
                     && (layer == pDisplayContents->hwLayers[maxCandidate]))
@@ -278,12 +292,13 @@ int SurfaceFlingerComposer::findMatch(const Content::LayerStack& source, int32_t
                     max = -1;
                     break;
                 }
+#endif
             }
         }
         // If we failed a match, try next display
         if (max < 0)
             continue;
-
+#ifdef uncomment
         // We now have a min/max layer
         if (mCompositions[d].mUnsupportedMax >= 0)
         {
@@ -293,7 +308,7 @@ int SurfaceFlingerComposer::findMatch(const Content::LayerStack& source, int32_t
                 break;
             }
         }
-
+#endif
         return d;
     }
 
@@ -303,15 +318,15 @@ int SurfaceFlingerComposer::findMatch(const Content::LayerStack& source, int32_t
 
 float SurfaceFlingerComposer::onEvaluate(const Content::LayerStack& source, const Layer& target, AbstractComposer::CompositionState** ppState, Cost type)
 {
-    ALOG_ASSERT(source.size() > 0);
+    HWCASSERT(source.size() > 0);
     HWC_UNUSED(ppState);
 
-    ALOGD_IF(COMPOSITION_DEBUG, "SurfaceFlingerComposer::%s %s", __FUNCTION__, source.dump().string());
+    DTRACEIF(COMPOSITION_DEBUG, "SurfaceFlingerComposer::%s %s", __FUNCTION__, source.dump().string());
 
     // Check that the target is the default format
     if (target.getBufferFormat() != INTEL_HWC_DEFAULT_HAL_PIXEL_FORMAT)
     {
-        ALOGD_IF(COMPOSITION_DEBUG, "SurfaceFlingerComposer: Unsupported output format: %s", target.dump().string());
+        DTRACEIF(COMPOSITION_DEBUG, "SurfaceFlingerComposer: Unsupported output format: %s", target.dump().string());
         return Eval_Not_Supported;
     }
 
@@ -322,7 +337,7 @@ float SurfaceFlingerComposer::onEvaluate(const Content::LayerStack& source, cons
 
         if (layer.isEncrypted())
         {
-            ALOGD_IF(COMPOSITION_DEBUG, "SurfaceFlingerComposer: Unsupported input encrypted %d: %s", ly, layer.dump().string());
+            DTRACEIF(COMPOSITION_DEBUG, "SurfaceFlingerComposer: Unsupported input encrypted %d: %s", ly, layer.dump().string());
             return Eval_Not_Supported;
         }
     }
@@ -362,7 +377,7 @@ float SurfaceFlingerComposer::onEvaluate(const Content::LayerStack& source, cons
         break;
     }
 
-    ALOGD_IF(COMPOSITION_DEBUG, "SurfaceFlingerComposer: Evaluation cost(%d) = %d", type, cost);
+    DTRACEIF(COMPOSITION_DEBUG, "SurfaceFlingerComposer: Evaluation cost(%d) = %d", type, cost);
     return cost;
 }
 
@@ -370,12 +385,14 @@ void SurfaceFlingerComposer::onCompose(const Content::LayerStack& source, const 
 {
     ATRACE_NAME_IF(RENDER_TRACE, "SurfaceFlingerComposer");
     HWC_UNUSED(pState);
-
+#ifdef uncomment
     // Nothing much to do on this call for this composer, the composition will have already been performed by SF
     Log::add(source, "SurfaceFlingerComposer ");
+#endif
     return;
 }
 
+#ifdef uncomment
 void SurfaceFlingerComposer::onPrepareBegin(size_t numDisplays, hwc_display_contents_1_t** ppDisplayContents, nsecs_t frameTime)
 {
     mTimestamp = frameTime;
@@ -395,13 +412,15 @@ void SurfaceFlingerComposer::onPrepareBegin(size_t numDisplays, hwc_display_cont
         }
     }
 }
+#endif
 
 void SurfaceFlingerComposer::onPrepareEnd()
 {
     for (uint32_t d = 0; d < mNumDisplays; d++)
     {
-        hwc_display_contents_1_t* pDisplayContents = mppDisplayContents[d];
         bool bSFRTRequired = false;
+#ifdef uncomment
+        hwc_display_contents_1_t* pDisplayContents = mppDisplayContents[d];
         if ( pDisplayContents )
         {
             int32_t composeMin = mCompositions[d].composeMin();
@@ -427,6 +446,7 @@ void SurfaceFlingerComposer::onPrepareEnd()
 
             bSFRTRequired = ( composeMin != -1 ) || ( composeMax != -1 );
         }
+#endif
         if ( bSFRTRequired )
         {
             AbstractBufferManager::get().realizeSurfaceFlingerRenderTargets( d );
@@ -438,6 +458,7 @@ void SurfaceFlingerComposer::onPrepareEnd()
     }
 }
 
+#ifdef uncomment
 void SurfaceFlingerComposer::onSet(size_t numDisplays, hwc_display_contents_1_t** ppDisplayContents, nsecs_t frameTime)
 {
 
@@ -461,27 +482,30 @@ void SurfaceFlingerComposer::onSet(size_t numDisplays, hwc_display_contents_1_t*
         {
             // Minimal update of just the per frame state
             mCompositions[d].onUpdateFrameState(pDisplayContents->hwLayers[pDisplayContents->numHwLayers-1], frameTime);
-            ALOGD_IF(COMPOSITION_DEBUG, "SurfaceFlingerComposer: onSet Updated Display %d RenderTarget to %s", d, mCompositions[d].getRenderTarget().dump().string());
+            DTRACEIF(COMPOSITION_DEBUG, "SurfaceFlingerComposer: onSet Updated Display %d RenderTarget to %s", d, mCompositions[d].getRenderTarget().dump().string());
         }
         else
         {
             // Clean up any fence passed in when we know we arnt using this render target
             hwc_layer_1& rt = pDisplayContents->hwLayers[pDisplayContents->numHwLayers-1];
-            ALOGD_IF( COMPOSITION_DEBUG, "SurfaceFlingerComposer: onSet Closing unused fence %d", rt.acquireFenceFd);
+            DTRACEIF( COMPOSITION_DEBUG, "SurfaceFlingerComposer: onSet Closing unused fence %d", rt.acquireFenceFd);
             Timeline::closeFence(&rt.acquireFenceFd);
             rt.acquireFenceFd = -1;
         }
     }
 }
+#endif
 
 AbstractComposition* SurfaceFlingerComposer::handleAllLayers(uint32_t d)
 {
-    ALOG_ASSERT(d < mNumDisplays);
+    HWCASSERT(d < mNumDisplays);
     mCompositions[d].mUnsupportedMin = 0;
+#ifdef uncomment
     mCompositions[d].mUnsupportedMax = mppDisplayContents[d]->numHwLayers-2;
+#endif
     mCompositions[d].mbForceGeometryChange = true;
 
-    ALOGD_IF(COMPOSITION_DEBUG, "SFC handleAllLayers %s", mCompositions[d].dump().string());
+    DTRACEIF(COMPOSITION_DEBUG, "SFC handleAllLayers %s", mCompositions[d].dump().string());
 
     return &mCompositions[d];
 }
@@ -526,14 +550,14 @@ void SurfaceFlingerComposer::onRelease(ResourceHandle hResource)
 
 const Layer& SurfaceFlingerComposer::getTarget(ResourceHandle hResource)
 {
-    ALOG_ASSERT(hResource);
+    HWCASSERT(hResource);
     Composition* pC = static_cast<Composition*>(hResource);
     return pC->getTarget();
 }
 
-String8 SurfaceFlingerComposer::dump()
+HWCString SurfaceFlingerComposer::dump()
 {
-    return String8("");
+    return HWCString("");
 }
 
 SurfaceFlingerComposer::Composition::Composition() :
@@ -547,7 +571,9 @@ SurfaceFlingerComposer::Composition::Composition() :
     mRenderTargetTilingFormat(TILE_X),
     mbForceGeometryChange(false)
 {
+#ifdef uncomment
     mRenderTarget.setComposition(this);
+#endif
 }
 
 SurfaceFlingerComposer::Composition::~Composition()
@@ -560,12 +586,15 @@ void SurfaceFlingerComposer::Composition::onUpdatePending(nsecs_t frameTime)
     mRenderTarget.setBufferFormat(mRenderTargetFormat);
     mRenderTarget.setBufferTilingFormat(mRenderTargetTilingFormat);
     mRenderTarget.setBlending(composeMin() == 0 ? EBlendMode::NONE : EBlendMode::PREMULT);
+#ifdef uncomment
     mRenderTarget.setComposition(this);
+#endif
     mRenderTarget.setBufferCompression(AbstractBufferManager::get().getSurfaceFlingerCompression());
     mRenderTarget.onUpdateFlags();
-    ALOGD_IF(COMPOSITION_DEBUG, "SF Composer onUpdatePending %s", mRenderTarget.dump().string());
+    DTRACEIF(COMPOSITION_DEBUG, "SF Composer onUpdatePending %s", mRenderTarget.dump().string());
 }
 
+#ifdef uncomment
 void SurfaceFlingerComposer::Composition::onUpdateFrameState(hwc_layer_1& layer, nsecs_t frameTime)
 {
     mRenderTarget.onUpdateFrameState(layer, frameTime);
@@ -574,8 +603,8 @@ void SurfaceFlingerComposer::Composition::onUpdateFrameState(hwc_layer_1& layer,
     mRenderTarget.setBlending(composeMin() == 0 ? EBlendMode::NONE : EBlendMode::PREMULT);
     mRenderTarget.setComposition(this);
     mRenderTarget.onUpdateFlags();
-    ALOGD_IF(COMPOSITION_DEBUG, "SF Composer onUpdateFrameState S: %s", printLayer(layer).string());
-    ALOGD_IF(COMPOSITION_DEBUG, "SF Composer onUpdateFrameState RT:%s", mRenderTarget.dump().string());
+    DTRACEIF(COMPOSITION_DEBUG, "SF Composer onUpdateFrameState S: %s", printLayer(layer).string());
+    DTRACEIF(COMPOSITION_DEBUG, "SF Composer onUpdateFrameState RT:%s", mRenderTarget.dump().string());
 }
 
 void SurfaceFlingerComposer::Composition::onUpdateAll(hwc_layer_1& layer, nsecs_t frameTime)
@@ -585,19 +614,20 @@ void SurfaceFlingerComposer::Composition::onUpdateAll(hwc_layer_1& layer, nsecs_
     mRenderTarget.setBlending(composeMin() == 0 ? EBlendMode::NONE : EBlendMode::PREMULT);
     mRenderTarget.setBufferCompression(AbstractBufferManager::get().getSurfaceFlingerCompression());
     mRenderTarget.setComposition(this);
-    ALOGD_IF(COMPOSITION_DEBUG, "SF Composer onUpdateAll S: %s", printLayer(layer).string());
-    ALOGD_IF(COMPOSITION_DEBUG, "SF Composer onUpdateAll RT:%s", mRenderTarget.dump().string());
+    DTRACEIF(COMPOSITION_DEBUG, "SF Composer onUpdateAll S: %s", printLayer(layer).string());
+    DTRACEIF(COMPOSITION_DEBUG, "SF Composer onUpdateAll RT:%s", mRenderTarget.dump().string());
 }
+#endif
 
 void SurfaceFlingerComposer::Composition::onUpdate(const Content::LayerStack&)
 {
-    ALOGD_IF(COMPOSITION_DEBUG, "SF Composer onUpdate %s", mRenderTarget.dump().string());
+    DTRACEIF(COMPOSITION_DEBUG, "SF Composer onUpdate %s", mRenderTarget.dump().string());
     // Nothing to do here
 }
 
 void SurfaceFlingerComposer::Composition::onUpdateOutputLayer(const Layer&)
 {
-    ALOGD_IF(COMPOSITION_DEBUG, "SF Composer onUpdateOutputLayer %s", mRenderTarget.dump().string());
+    DTRACEIF(COMPOSITION_DEBUG, "SF Composer onUpdateOutputLayer %s", mRenderTarget.dump().string());
 #if FORCE_HWC_COPY_FOR_VIRTUAL_DISPLAYS
     // NOTE: We should trigger a RT->target composition here.
     // However: the only way we SHOULD get here is if we don't have any
@@ -608,7 +638,7 @@ void SurfaceFlingerComposer::Composition::onUpdateOutputLayer(const Layer&)
 
 void SurfaceFlingerComposer::Composition::onCompose()
 {
-    ALOGD_IF(COMPOSITION_DEBUG, "SF Composer onCompose Already Composed to: %s", mRenderTarget.dump().string());
+    DTRACEIF(COMPOSITION_DEBUG, "SF Composer onCompose Already Composed to: %s", mRenderTarget.dump().string());
     // Nothing to do here, SF has already done this
 }
 
@@ -631,11 +661,12 @@ void SurfaceFlingerComposer::Composition::onRelease()
 {
 }
 
-String8 SurfaceFlingerComposer::Composition::dump(const char* pIdentifier) const
+HWCString SurfaceFlingerComposer::Composition::dump(const char* pIdentifier) const
 {
-    return String8::format("%s SF Composer Layers %d to %d", pIdentifier, composeMin(), composeMax());
+    return HWCString::format("%s SF Composer Layers %d to %d", pIdentifier, composeMin(), composeMax());
 }
 
-}; // namespace hwc
-}; // namespace ufo
-}; // namespace intel
+};
+//}; // namespace hwc
+//}; // namespace ufo
+//}; // namespace intel

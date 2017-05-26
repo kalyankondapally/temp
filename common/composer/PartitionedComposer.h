@@ -14,21 +14,24 @@
 // limitations under the License.
 */
 
-#ifndef INTEL_UFO_HWC_PARTITIONEDCOMPOSER_H
-#define INTEL_UFO_HWC_PARTITIONEDCOMPOSER_H
+#ifndef COMMON_HWC_PARTITIONEDCOMPOSER_H
+#define COMMON_HWC_PARTITIONEDCOMPOSER_H
 
 #include "base.h"
 #include "AbstractComposer.h"
-#include "Option.h"
+#include "option.h"
+#ifdef uncomment
 #include <ui/Region.h>
+#endif
 
 #include <memory>
 
 class HwcContext;
 
-namespace intel {
-namespace ufo {
-namespace hwc {
+//namespace intel {
+//namespace ufo {
+//namespace hwc {
+namespace hwcomposer {
 
 class PartitionedComposer : NonCopyable, public AbstractComposer
 {
@@ -39,9 +42,11 @@ public:
         CellComposer() {}
         virtual ~CellComposer() {}
 
-        virtual android::status_t beginFrame(const Content::LayerStack& source, const Layer& target) = 0;
-        virtual android::status_t drawLayerSet(uint32_t numIndices, const uint32_t* pIndices, const Region& region) = 0;
-        virtual android::status_t endFrame() = 0;
+        virtual bool beginFrame(const Content::LayerStack& source, const Layer& target) = 0;
+#ifdef uncomment
+        virtual bool drawLayerSet(uint32_t numIndices, const uint32_t* pIndices, const Region& region) = 0;
+#endif
+        virtual bool endFrame() = 0;
 
         virtual bool isLayerSupportedAsInput(const Layer& layer) = 0;
         virtual bool isLayerSupportedAsOutput(const Layer& layer) = 0;
@@ -62,8 +67,9 @@ private:
     Option mOptionPartitionVideo; // Allow video to video compositions.
 };
 
-} // namespace hwc
-} // namespace ufo
-} // namespace intel
+};
+//} // namespace hwc
+//} // namespace ufo
+//} // namespace intel
 
-#endif // INTEL_UFO_HWC_PARTITIONEDCOMPOSER_H
+#endif // COMMON_HWC_PARTITIONEDCOMPOSER_H

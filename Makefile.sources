@@ -51,6 +51,11 @@ common_SOURCES =              \
     os/linux/sharedbuffer.cpp \
     os/linux/string8.cpp \
     common/compositor/scopedrendererstate.cpp \
+    common/composer/CompositionManager.cpp \
+    common/composer/PlaneComposition.cpp \
+    common/composer/SurfaceFlingerComposer.cpp \
+    common/composer/GlCellComposer.cpp \
+    common/composer/PartitionedComposer.cpp \
 	$(NULL)
 
 gl_SOURCES =              \

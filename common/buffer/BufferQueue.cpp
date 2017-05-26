@@ -186,21 +186,25 @@ HWCString Buffer::dump( void )
     if ( !allocationOK() )
 	return HWCString("Invalid Allocation");
 
+#ifdef uncomment
+
     return HWCString::format("Record:%p GraphicBuffer:%p %8u bytes%s %4dx%4d %s 0x%08x use:%c|%c %" PRIi64 "s %03" PRIi64 "ms ref:%-18p %s",
 		    this, mpGraphicBuffer.get()->handle, mSizeBytes, mbShared ? " (shared)" : "",
 		     mBuffer.width, mBuffer.height,
 #ifdef uncomment
 		    getDRMFormatString(mBuffer.format),
 #else
-			     String8(),
+			     HWCString(),
 #endif
 		    mBuffer.usage,
                     mUse & EUsedThisFrame ? 'U' : '-',
                     mUse & EUsedRecently ? 'R' : '-',
                     mLastFrameUsedTime / 1000000000,
                     ( mLastFrameUsedTime / 1000000 ) % 1000,
-                    mpRef,
-                    mAcquireFence.dump().string() );
+                    mpRef
+                    mAcquireFence.dump().string()
+                    );
+#endif
 }
 
 BufferQueue::BufferQueue() :

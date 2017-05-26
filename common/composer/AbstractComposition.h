@@ -14,14 +14,15 @@
 // limitations under the License.
 */
 
-#ifndef INTEL_UFO_HWC_ABSTRACTCOMPOSITION_H
-#define INTEL_UFO_HWC_ABSTRACTCOMPOSITION_H
+#ifndef COMMON_HWC_ABSTRACTCOMPOSITION_H
+#define COMMON_HWC_ABSTRACTCOMPOSITION_H
 
 #include "Content.h"
 
-namespace intel {
-namespace ufo {
-namespace hwc {
+//namespace intel {
+//namespace ufo {
+//namespace hwc {
+namespace hwcomposer {
 
 
 // This class is an abstract class that enables a caller to perform a composition.
@@ -60,8 +61,9 @@ public:
     virtual float getEvaluationCost() = 0;
 };
 
-}; // namespace hwc
-}; // namespace ufo
-}; // namespace intel
+};
+//}; // namespace hwc
+//}; // namespace ufo
+//}; // namespace intel
 
-#endif // INTEL_UFO_HWC_ABSTRACTCOMPOSITION_H
+#endif // COMMON_HWC_ABSTRACTCOMPOSITION_H
